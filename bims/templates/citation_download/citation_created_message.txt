@@ -1,0 +1,13 @@
+{% load i18n %}Dear {{ username }},
+
+Your citation list has been compiled and is attached to this email as a zip file ({{ total }} reference{{ total|pluralize }}, {{ citation_format }} format).
+
+{% if download_request_id %}
+You can also download the file directly from:
+http://{{ current_site }}/api/download-request/{{ download_request_id }}/file/
+{% endif %}
+
+Please remember to cite the individual source references you have used in your work.
+
+Kind regards,
+The {{ current_site }} team

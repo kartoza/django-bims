@@ -89,6 +89,57 @@ DATE_ISSUES_TO_EXCLUDE = [
 BOUNDARY_BATCH_SIZE = 5
 
 
+def check_exclusion_rules(row: dict, rules: list) -> tuple:
+    """Evaluate configured exclusion rules against a single DwC occurrence row.
+
+    :param row: Raw occurrence dict (one row from the DwC archive).
+    :param rules: List of rule dicts from ``SiteSetting.gbif_exclusion_rules_effective``.
+    :returns: ``(matched: bool, reason: str)`` — *matched* is True when the
+        record should be skipped; *reason* is a human-readable explanation.
+
+    Supported rule schema::
+
+        {
+            "field":       "<DwC field name>",          # required
+            "condition":   "not_empty"                  # required
+                         | "equals"
+                         | "contains"
+                         | "greater_than"
+                         | "less_than",
+            "value":       <str | int | float>,         # required for all but not_empty
+            "description": "<human-readable note>"      # optional
+        }
+    """
+    for rule in rules:
+        field = rule.get('field', '')
+        condition = rule.get('condition', '')
+        threshold = rule.get('value')
+        raw = (row.get(field) or '').strip()
+
+        matched = False
+        if condition == 'not_empty':
+            matched = bool(raw)
+        elif condition == 'equals':
+            matched = raw == str(threshold)
+        elif condition == 'contains':
+            matched = str(threshold) in raw
+        elif condition in ('greater_than', 'less_than'):
+            try:
+                numeric = float(raw)
+                if condition == 'greater_than':
+                    matched = numeric > float(threshold)
+                else:
+                    matched = numeric < float(threshold)
+            except (TypeError, ValueError):
+                pass
+
+        if matched:
+            desc = rule.get('description') or f"field '{field}' matched condition '{condition}'"
+            return True, f"exclusion rule hit — {desc} (value={raw!r})"
+
+    return False, ''
+
+
 def chunked(seq, size):
     for i in range(0, len(seq), size):
         yield seq[i:i + size]
@@ -307,6 +358,7 @@ def process_gbif_row(
     habitat=None,
     origin=None,
     excluded_project_ids=None,
+    exclusion_rules=None,
     doi='',
 ) -> Tuple[Optional["BiologicalCollectionRecord"], bool]:
     """Synchronise a GBIF occurrence with *BiologicalCollectionRecord*.
@@ -321,6 +373,9 @@ def process_gbif_row(
     :param harvest_session: Current `HarvestSession` or *None* when called ad‑hoc
     :param habitat: Optional supplementary information
     :param origin: Optional supplementary information
+    :param exclusion_rules: List of rule dicts from
+        ``SiteSetting.gbif_exclusion_rules_effective``; records matching any
+        rule are skipped (see ``check_exclusion_rules``).
 
     :return: tuple
         ``(record_or_none, processed)`` where ``record_or_none`` is a new
@@ -334,6 +389,14 @@ def process_gbif_row(
     if proj and proj in excluded_project_ids:
         log(f"Excluded by tenant setting: projectId='{proj}', skipping...")
         return None, False
+
+    # Apply field-level exclusion rules (e.g. informationWithheld)
+    if exclusion_rules:
+        matched, reason = check_exclusion_rules(row, exclusion_rules)
+        if matched:
+            upstream_id = row.get(UPSTREAM_ID_KEY, '<unknown>')
+            log(f"Skipping {upstream_id}: {reason}")
+            return None, False
 
     # Check harvest session canceled?
     if harvest_session:
@@ -752,6 +815,7 @@ def process_gbif_response(
                 excluded_project_ids = set(
                     preferences.SiteSetting.gbif_excluded_project_ids_effective or []
                 )
+                exclusion_rules = preferences.SiteSetting.gbif_exclusion_rules_effective
 
                 for idx, row in enumerate(reader, start=1):
                     new_record, accepted = process_gbif_row(
@@ -765,6 +829,7 @@ def process_gbif_response(
                         habitat=habitat,
                         origin=origin,
                         excluded_project_ids=excluded_project_ids,
+                        exclusion_rules=exclusion_rules,
                         doi=doi_url,
                     )
 
