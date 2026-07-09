@@ -169,14 +169,12 @@ class BioCollectionSummary(APIView):
         response_data['accepted_taxonomy_name'] = accepted_taxonomy_name
 
         # Build full taxonomy rank hierarchy.
-        # For synonym/doubtful taxa, prefer the accepted taxonomy's parent chain
-        # so the hierarchy reflects the accepted placement.
-        is_synonym_or_doubtful = (
-            taxonomic_status.upper() == 'DOUBTFUL' or
-            'SYNONYM' in taxonomic_status.upper()
-        )
+        # For synonym taxa, prefer the accepted taxonomy's parent chain
+        # so the hierarchy reflects the accepted placement. Doubtful taxa keep
+        # their own parent chain like accepted taxa.
+        is_synonym = 'SYNONYM' in taxonomic_status.upper()
         hierarchy_source = taxonomy
-        if is_synonym_or_doubtful and taxonomy.accepted_taxonomy:
+        if is_synonym and taxonomy.accepted_taxonomy:
             hierarchy_source = taxonomy.accepted_taxonomy
 
         taxonomy_rank = {

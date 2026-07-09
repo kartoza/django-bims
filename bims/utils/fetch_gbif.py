@@ -508,12 +508,11 @@ def fetch_all_species_from_gbif(
     scientific_name = taxonomy.scientific_name
 
     gbif_status_lower = (species_data.get('taxonomicStatus') or '').strip().lower()
-    is_synonym_or_doubtful = 'synonym' in gbif_status_lower or gbif_status_lower == 'doubtful'
 
     if parent and not is_synonym:
         taxonomy.parent = parent
         taxonomy.save()
-    elif not is_synonym_or_doubtful:
+    elif not is_synonym:
         # For infraspecific ranks (variety, subspecies, form), use speciesKey as parent if available
         # because parentKey in GBIF often points to genus instead of species for these ranks
         rank_lower = (taxonomy.rank or '').lower()
@@ -545,7 +544,7 @@ def fetch_all_species_from_gbif(
                 taxonomy.parent = parent_taxonomy
                 taxonomy.save()
 
-    if not is_synonym_or_doubtful:
+    if not is_synonym:
         max_tries = 20
         tries = 0
         cursor = taxonomy
@@ -588,7 +587,7 @@ def fetch_all_species_from_gbif(
 
     # Check if there is an accepted key
     if (
-            (is_synonym or is_synonym_or_doubtful) and
+            is_synonym and
             not preserve_taxonomic_status and
             species_data and
             'acceptedKey' in species_data and

@@ -97,7 +97,7 @@ class TestGetConservationStatusGlobal(FastTenantTestCase):
     def test_synonym_without_accepted_taxonomy_uses_own_iucn(self, mock_iucn, mock_loc):
         """
         A synonym with no accepted_taxonomy falls through to obj.taxonomy.iucn_status.
-        The guard `taxon.is_synonym_or_doubtful and taxon.accepted_taxonomy` is False
+        The guard `taxon.is_synonym and taxon.accepted_taxonomy` is False
         when accepted_taxonomy is None, so the AttributeError on 'accepted_taxon' is
         never reached.
         """

@@ -359,7 +359,7 @@ class BioCollectionOneRowSerializer(
         if (
             taxon and
             not taxon.iucn_status and
-            taxon.is_synonym_or_doubtful and
+            taxon.is_synonym and
             taxon.accepted_taxonomy
         ):
             taxon = taxon.accepted_taxonomy

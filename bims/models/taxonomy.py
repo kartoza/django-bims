@@ -488,19 +488,16 @@ class AbstractTaxonomy(AbstractValidation):
         target_rank = rank.name if isinstance(rank, TaxonomicRank) else rank
         _rank = self.rank
 
-        status = (self.taxonomic_status or '').upper()
-        is_synonym_or_doubtful = (
-            status == 'DOUBTFUL' or 'SYNONYM' in status
-        )
+        is_synonym = self.is_synonym
         rank_differs = target_rank and self.rank and self.rank != target_rank
 
-        if is_synonym_or_doubtful and rank_differs:
+        if is_synonym and rank_differs:
             canonical_rank_name = self._get_rank_name_from_canonical(target_rank)
             if canonical_rank_name:
                 return canonical_rank_name
 
         if (
-                is_synonym_or_doubtful and rank_differs and
+                is_synonym and rank_differs and
                 self.accepted_taxonomy
         ):
             _taxon = self.accepted_taxonomy
@@ -536,8 +533,15 @@ class AbstractTaxonomy(AbstractValidation):
         return ''
 
     @property
+    def is_synonym(self):
+        return 'SYNONYM' in (self.taxonomic_status or '').upper()
+
+    @property
     def is_synonym_or_doubtful(self):
-        return self.taxonomic_status == 'DOUBTFUL' or 'SYNONYM' in self.taxonomic_status
+        # Retained for backwards compatibility. Doubtful taxa are now treated
+        # like accepted taxa (they keep their own parent hierarchy and do not
+        # require an accepted taxon), so callers should prefer `is_synonym`.
+        return self.is_synonym
 
     @property
     def class_name(self):
