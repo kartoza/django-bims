@@ -15,7 +15,10 @@ from bims.scripts.import_gbif_occurrences import (
     check_exclusion_rules,
     process_gbif_row,
 )
-from bims.tests.model_factories import TaxonomyF, UserF, SourceReferenceDatabaseF, TaxonGroupF
+from bims.tests.model_factories import (
+    TaxonomyF, UserF, SourceReferenceDatabaseF, TaxonGroupF,
+    BiologicalCollectionRecordF,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -322,6 +325,54 @@ class TestProcessGbifRowExclusionRules(FastTenantTestCase):
         record, processed = self._call(row, SiteSetting.GBIF_DEFAULT_EXCLUSION_RULES)
 
         self.assertTrue(processed)
+
+    # --- previously harvested record is removed when rule matches ------------
+
+    @mock.patch("bims.scripts.import_gbif_occurrences.create_dataset_from_gbif", _mock_create_dataset)
+    def test_existing_record_deleted_when_exclusion_rule_matches(self, _mock_ctx):
+        """A record that was previously harvested must be removed when it now matches an exclusion rule."""
+        upstream_id = "delete-on-exclude-1"
+        existing = BiologicalCollectionRecordF.create(
+            upstream_id=upstream_id,
+            taxonomy=self.taxonomy,
+            owner=self.owner,
+        )
+        self.assertTrue(
+            BiologicalCollectionRecord.objects.filter(upstream_id=upstream_id).exists()
+        )
+
+        row = _base_row(
+            gbifID=upstream_id,
+            informationWithheld="Coordinate uncertainty increased to 29039m",
+        )
+        rules = [{"field": "informationWithheld", "condition": "not_empty"}]
+        record, processed = self._call(row, rules)
+
+        self.assertIsNone(record)
+        self.assertFalse(processed)
+        self.assertFalse(
+            BiologicalCollectionRecord.objects.filter(upstream_id=upstream_id).exists()
+        )
+        self.assertTrue(
+            any("delete-on-exclude-1" in str(m) and "Removed" in str(m) for m in self.log_messages)
+        )
+
+    @mock.patch("bims.scripts.import_gbif_occurrences.create_dataset_from_gbif", _mock_create_dataset)
+    def test_no_existing_record_still_skipped_cleanly(self, _mock_ctx):
+        """When no prior record exists and an exclusion rule matches, the skip is still clean."""
+        upstream_id = "skip-no-prior-record-1"
+        row = _base_row(
+            gbifID=upstream_id,
+            informationWithheld="Coordinate uncertainty increased to 29039m",
+        )
+        rules = [{"field": "informationWithheld", "condition": "not_empty"}]
+        record, processed = self._call(row, rules)
+
+        self.assertIsNone(record)
+        self.assertFalse(processed)
+        self.assertFalse(
+            BiologicalCollectionRecord.objects.filter(upstream_id=upstream_id).exists()
+        )
 
     # --- no rules applied when exclusion_rules is None or empty --------------
 

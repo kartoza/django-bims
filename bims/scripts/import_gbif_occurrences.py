@@ -396,6 +396,11 @@ def process_gbif_row(
         if matched:
             upstream_id = row.get(UPSTREAM_ID_KEY, '<unknown>')
             log(f"Skipping {upstream_id}: {reason}")
+            deleted, _ = BiologicalCollectionRecord.objects.filter(
+                upstream_id=upstream_id
+            ).delete()
+            if deleted:
+                log(f"Removed previously harvested record for {upstream_id} (now excluded)")
             return None, False
 
     # Check harvest session canceled?
