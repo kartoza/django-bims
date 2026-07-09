@@ -237,9 +237,13 @@ class SiteVisitBaseView(View):
         taxon_group_name = ''
         if self.taxon_group():
             taxon_group_name = self.taxon_group().name
+        already_used_measure_ids = self.collection_records.filter(
+            sampling_effort_link__isnull=False
+        ).values_list('sampling_effort_link_id', flat=True)
         sampling_effort_measures = SamplingEffortMeasure.objects.filter(
             Q(specific_module__name=taxon_group_name) |
-            Q(specific_module__isnull=True)
+            Q(specific_module__isnull=True) |
+            Q(id__in=already_used_measure_ids)
         )
         context['sampling_effort_measures'] = SamplingEffortMeasureSerializer(
             sampling_effort_measures,
