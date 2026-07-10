@@ -39,6 +39,7 @@ define([
         previousZoom: 0,
         sidePanelView: null,
         initZoom: 8,
+        userHasZoomed: false,
         numInFlightTiles: 0,
         scaleLineControl: null,
         mapIsReady: false,
@@ -95,6 +96,7 @@ define([
             Shared.Dispatcher.on('map:drawPoint', this.drawPoint, this);
             Shared.Dispatcher.on('map:clearPoint', this.clearPoint, this);
             Shared.Dispatcher.on('map:zoomToExtent', this.zoomToExtent, this);
+            Shared.Dispatcher.on('map:forceZoomToExtent', this.forceZoomToExtent, this);
             Shared.Dispatcher.on('map:reloadXHR', this.reloadXHR, this);
             Shared.Dispatcher.on('map:showPopup', this.showPopup, this);
             Shared.Dispatcher.on('map:closePopup', this.hidePopup, this);
@@ -196,7 +198,10 @@ define([
         clearPoint: function () {
             this.pointVectorSource.clear();
         },
-        zoomToExtent: function (coordinates, shouldTransform=true, updateZoom=true) {
+        zoomToExtent: function (coordinates, shouldTransform=true, updateZoom=true, force=false) {
+            if (this.userHasZoomed && !force) {
+                return false;
+            }
             if (this.isBoundaryEnabled) {
                 this.fetchingRecords();
                 return false;
@@ -219,6 +224,14 @@ define([
                     this.map.getView().setZoom(8);
                 }
             }
+        },
+        forceZoomToExtent: function (coordinates, shouldTransform, updateZoom) {
+            this.zoomToExtent(
+                coordinates,
+                shouldTransform !== undefined ? shouldTransform : true,
+                updateZoom !== undefined ? updateZoom : true,
+                true
+            );
         },
         setPolygonDrawn: function (polygon) {
            this.polygonDrawn = polygon
@@ -805,6 +818,14 @@ define([
 
             self.layers.addLayersToMap(self.map);
             this.initExtent = this.getCurrentBbox();
+
+            // Detect user-initiated map interaction to preserve their zoom level
+            this.map.on('pointerdrag', function() {
+                self.userHasZoomed = true;
+            });
+            this.map.getViewport().addEventListener('wheel', function() {
+                self.userHasZoomed = true;
+            }, { passive: true });
         },
         removeLayer: function (layer) {
             this.map.removeLayer(layer);

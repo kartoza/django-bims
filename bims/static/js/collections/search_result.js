@@ -190,6 +190,21 @@ define([
             totalSearchResults.addClass('total-search-results');
             totalSearchResults.html(numberWithCommas(this.totalRecords) + ' records');
 
+            if (self.status === 'finished' && self.extent && self.extent.length === 4) {
+                let capturedExtent = self.extent.slice();
+                let zoomBtn = $('<button type="button" class="zoom-to-search-extent btn btn-sm btn-primary d-inline-flex align-items-center badge-button"><i class="fa fa-expand"></i></button>');
+                zoomBtn.on('click', function() {
+                    Shared.Dispatcher.trigger('map:forceZoomToExtent', capturedExtent, true, false);
+                });
+                zoomBtn.popover({
+                    trigger: 'hover focus',
+                    placement: 'top',
+                    container: 'body',
+                    content: 'Fit to map'
+                });
+                totalSearchResults.append(zoomBtn);
+            }
+
             var searchResultHeader = $('<div>');
             searchResultHeader.append(searchResultTitleDiv);
             searchResultHeader.append(totalSearchResults);
