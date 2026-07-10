@@ -100,6 +100,11 @@ git+https://github.com/celery/django-celery-beat@bd429063cbb227c00905e7693c38895
 
 GeoAlchemy2==0.15.1
 geopandas==0.14.4
+pyarrow==15.0.2
+duckdb==1.2.2
+mapbox-vector-tile==2.1.0
+geohash2==1.1
+h3==4.1.0
 
 drf-nested-routers==0.93.5
 drf-yasg==1.21.15

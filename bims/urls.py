@@ -21,6 +21,9 @@ from bims.views.tracking import dashboard
 from bims.views.landing_page import landing_page_view
 
 from bims.api_views.get_feature_info import GetFeatureInfo
+from bims.api_views.location_site_geojson import LocationSiteGeoJsonView, SearchViewSiteIdsView
+from bims.api_views.location_site_tiles import LocationSiteTileView
+from bims.api_views.location_site_hex_tiles import LocationSiteHexView
 from bims.api_views.database_record import DatabaseRecordsList
 from bims.views.links import LinksCategoryView
 from bims.views.activate_user import activate_user
@@ -141,6 +144,18 @@ urlpatterns = [
     re_path(r'^get_feature/$',
             GetFeatureInfo.as_view(),
             name='get-feature'),
+    re_path(r'^api/location-sites/geojson/$',
+            LocationSiteGeoJsonView.as_view(),
+            name='location-sites-geojson'),
+    re_path(r'^api/search/site-ids/$',
+            SearchViewSiteIdsView.as_view(),
+            name='search-site-ids'),
+    path('api/location-sites/tiles/<int:z>/<int:x>/<int:y>/',
+         LocationSiteTileView.as_view(),
+         name='location-sites-tiles'),
+    path('api/location-sites/hex/',
+         LocationSiteHexView.as_view(),
+         name='location-sites-hex-view'),
     re_path(r'^download-taxa-list/$',
             download_taxa_list,
             name='taxa-list-download'),

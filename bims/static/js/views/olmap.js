@@ -273,84 +273,26 @@ define([
             let layer = this.layers.layers['Sites'];
             let siteVisible = layer['layer'].getVisible();
 
-            // If default bims site layer is visible then check whether user click on the
-            // site point or not
             if (siteVisible) {
-                let view = this.map.getView();
-                let queryLayer = layer['layer'].getSource().getParams()['LAYERS'];
-                let layerSource = layer['layer'].getSource().getFeatureInfoUrl(
-                    e.coordinate,
-                    view.getResolution(),
-                    view.getProjection(),
-                    {'INFO_FORMAT': 'application/json'}
-                );
-                layerSource += '&QUERY_LAYERS=' + queryLayer;
-                $.ajax({
-                    type: 'POST',
-                    url: '/get_feature/',
-                    data: {
-                        'layerSource': layerSource
+                let siteId = null;
+                self.map.forEachFeatureAtPixel(
+                    e.pixel,
+                    function (feature) {
+                        siteId = feature.get('site_id');
+                        return true; // stop after first hit
                     },
-                    success: function (result) {
-                        const data = result['feature_data'];
-                        let objectData = {};
-                        if (data.constructor === Object) {
-                            objectData = data;
-                        } else {
-                            try {
-                                objectData = JSON.parse(data);
-                            } catch (e) {
-                                objectData = {
-                                    'features': []
-                                };
-                                console.log(e)
-                            }
-                        }
-                        let features = objectData['features'];
-                        if (features.length === 0) {
-                            self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
-                            return;
-                        }
-                        let count = features[0]['properties']['count'];
-                        if (count > 1) {
-                            self.zoomToCoordinates(
-                                e.coordinate,
-                                self.getCurrentZoom() + 2
-                            );
-                        } else if (count === 1) {
-                            // Check if the feature is a single location site point
-                            if (features[0]['id'].includes('location_site_view')) {
-                                // Get location site id
-                                let siteId = '';
-                                if (features[0]['id'].indexOf('fid') > -1) {
-                                    siteId = features[0]['properties']['site_id'];
-                                } else {
-                                    siteId = features[0]['id'].split('.')[1];
-                                }
-                                Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
-                            }
-                            let initialRadius = 5;
-                            self.getSiteByCoordinate(lat, lon, initialRadius, function () {
-                                self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat, true);
-                            });
-                        } else {
-                            // Check if the feature is single location site marker
-                            if (features[0]['id'].includes('location_site_view')) {
-                                // Get location site id
-                                 // Get location site id
-                                let siteId = '';
-                                if (features[0]['id'].indexOf('fid') > -1) {
-                                    siteId = features[0]['properties']['site_id'];
-                                } else {
-                                    siteId = features[0]['id'].split('.')[1];
-                                }
-                                Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
-                            } else {
-                                self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
-                            }
-                        }
-                    }
-                });
+                    { layerFilter: function (l) { return l === layer['layer']; } }
+                );
+
+                if (siteId) {
+                    Shared.Dispatcher.trigger('siteDetail:show', siteId, '');
+                    let initialRadius = 5;
+                    self.getSiteByCoordinate(lat, lon, initialRadius, function () {
+                        self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat, true);
+                    });
+                } else {
+                    self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
+                }
             } else {
                 self.showFeature(self.map.getFeaturesAtPixel(e.pixel), lon, lat);
             }
@@ -805,6 +747,23 @@ define([
 
             self.layers.addLayersToMap(self.map);
             this.initExtent = this.getCurrentBbox();
+
+            // Zoom threshold: below this show hex heatmap, at/above show points.
+            var HEX_MAX_ZOOM = 10;
+
+            function applyZoomMode() {
+                var zoom = self.map.getView().getZoom();
+                var showHex = zoom < HEX_MAX_ZOOM;
+                self.layers.toggleHexLayer(showHex);
+            }
+
+            // Initial state.
+            applyZoomMode();
+
+            // Switch layers and reload hex on every pan/zoom.
+            self.map.on('moveend', function () {
+                applyZoomMode();
+            });
         },
         removeLayer: function (layer) {
             this.map.removeLayer(layer);
@@ -935,31 +894,46 @@ define([
             }
             this.zoomToCoordinates(ol.proj.fromLonLat(center), this.initZoom);
         },
-        updateBiodiversityLayerParams: function (query) {
-            query = query.replaceAll(',', '\\,');
-            query = query.replaceAll(';', '\\;');
-            let newParams = {
-                layers: locationSiteGeoserverLayer,
-                format: 'image/png',
-                viewparams: 'where:' + tenant + '."' + query + '"'
-            };
-            this.layers.biodiversitySource.updateParams(newParams);
+        updateBiodiversityLayerParams: function (viewName) {
+            if (!viewName) {
+                this.resetSitesLayer();
+                return;
+            }
+            var self = this;
+            $.ajax({
+                type: 'GET',
+                url: searchSiteIdsUrl + '?view=' + encodeURIComponent(viewName),
+                success: function (result) {
+                    self._applyVisibleSiteIds(new Set(result['site_ids']), viewName);
+                },
+                error: function () {
+                    // If the view isn't ready yet keep current display.
+                }
+            });
         },
         clearAllLayers: function () {
-            let newParams = {
-                layers: locationSiteGeoserverLayer,
-                format: 'image/png',
-                viewparams: 'where:' + emptyWMSSiteParameter
-            };
-            this.layers.biodiversitySource.updateParams(newParams);
+            this._applyVisibleSiteIds(new Set(), null);
         },
         resetSitesLayer: function () {
-            let newParams = {
-                layers: locationSiteGeoserverLayer,
-                format: 'image/png',
-                viewparams: 'where:' + defaultWMSSiteParameters
-            };
-            this.layers.biodiversitySource.updateParams(newParams);
+            this._applyVisibleSiteIds(null, null);
+        },
+        _applyVisibleSiteIds: function (siteIdSet, viewName) {
+            // siteIdSet === null → show all; empty Set → hide all; Set with IDs → show subset.
+            // The VectorTile layer style function reads _visibleSiteIds directly,
+            // so we just update it and trigger a re-render.
+            this.layers._visibleSiteIds = siteIdSet;
+            this.layers.biodiversityTileLayer.changed();
+            // Keep the hex layer in sync with the same search filter.
+            if (siteIdSet === null) {
+                this.layers._hexViewName = null;
+            } else if (siteIdSet.size === 0) {
+                this.layers._hexViewName = '__empty__';
+            } else {
+                this.layers._hexViewName = viewName || null;
+            }
+            if (this.layers.hexLayer && this.layers.hexLayer.getVisible()) {
+                this.layers.loadHex();
+            }
         },
         toggleMapInteraction: function (enabled) {
             this.mapInteractionEnabled = enabled;

@@ -180,36 +180,139 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             map.addLayer(self.highlightVector);
 
             // ---------------------------------
-            // BIODIVERSITY LAYERS
+            // BIODIVERSITY LAYERS  (DuckDB/GeoParquet → MVT → VectorTile)
             // ---------------------------------
-            var biodiversityLayersOptions = {
-                url: '/bims_proxy/' + geoserverPublicUrl + 'wms',
-                params: {
-                    LAYERS: locationSiteGeoserverLayer,
-                    FORMAT: 'image/png8',
-                    viewparams: 'where:' + defaultWMSSiteParameters
-                },
-                ratio: 1,
-                serverType: 'geoserver',
-                transition: 0
-            };
-            self.biodiversitySource = new ol.source.TileWMS(biodiversityLayersOptions);
-            self.biodiversityTileLayer = new ol.layer.Tile({
-                source: self.biodiversitySource
+
+            self._visibleSiteIds = null; // null = show all; Set = show subset
+
+            var sitePointStyle = new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 6,
+                    fill: new ol.style.Fill({ color: '#d9534f' }),
+                    stroke: new ol.style.Stroke({ color: '#fff', width: 1.5 })
+                })
             });
+
+            self.biodiversitySource = new ol.source.VectorTile({
+                format: new ol.format.MVT(),
+                url: locationSiteTileUrl,
+                tileGrid: ol.tilegrid.createXYZ({ maxZoom: 20 })
+            });
+
+            self.biodiversityTileLayer = new ol.layer.VectorTile({
+                source: self.biodiversitySource,
+                style: function (feature) {
+                    if (self._visibleSiteIds !== null &&
+                            !self._visibleSiteIds.has(feature.get('site_id'))) {
+                        return null;
+                    }
+                    return sitePointStyle;
+                }
+            });
+
+            // Points layer hidden by default — hex is the default view.
+            self.biodiversityTileLayer.setVisible(false);
 
             let biodiversityLayerData = {
                 'title': 'Sites',
                 'wms_layer_name': 'Sites',
-                'default_visibility': true
+                'default_visibility': false
             }
             self.initLayer(
                 self.biodiversityTileLayer,
                 biodiversityLayerData,
             );
 
+            // ---------------------------------
+            // HEX HEATMAP LAYER  (default)
+            // ---------------------------------
+
+            self.ZOOM_TO_H3_RES = {
+                0:0, 1:1, 2:1, 3:2, 4:3, 5:3,
+                6:4, 7:4, 8:5, 9:5, 10:6, 11:6,
+                12:7, 13:7, 14:8, 15:8
+            };
+
+            // Single-view hex source
+            self.hexSource = new ol.source.Vector();
+            self._hexFormat = new ol.format.GeoJSON({
+                dataProjection: 'EPSG:4326',
+                featureProjection: 'EPSG:3857'
+            });
+            self._hexLoading = false;
+            // null = no search filter; '__empty__' = hide all; string = search view name.
+            self._hexViewName = null;
+
+            self.loadHex = function () {
+                if (!self.hexLayer || !self.hexLayer.getVisible()) return;
+                if (self._hexViewName === '__empty__') {
+                    self.hexSource.clear(true);
+                    return;
+                }
+                var size = map.getSize();
+                if (!size) return;
+                var extent = map.getView().calculateExtent(size);
+                var ll = ol.proj.transform(
+                    [extent[0], extent[1]], 'EPSG:3857', 'EPSG:4326');
+                var ur = ol.proj.transform(
+                    [extent[2], extent[3]], 'EPSG:3857', 'EPSG:4326');
+                var zoom = Math.round(map.getView().getZoom());
+                var bbox = ll[0].toFixed(6) + ',' + ll[1].toFixed(6) + ',' +
+                           ur[0].toFixed(6) + ',' + ur[1].toFixed(6);
+                var url = locationSiteHexViewUrl + '?bbox=' + bbox + '&zoom=' + zoom;
+                if (self._hexViewName) {
+                    url += '&view=' + encodeURIComponent(self._hexViewName);
+                }
+                self._hexLoading = true;
+                fetch(url)
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        self._hexLoading = false;
+                        self.hexSource.clear(true);
+                        self.hexSource.addFeatures(self._hexFormat.readFeatures(data));
+                    })
+                    .catch(function (e) {
+                        self._hexLoading = false;
+                        console.error('Hex load failed:', e);
+                    });
+            };
+
+            self.hexLayer = new ol.layer.Vector({
+                source: self.hexSource,
+                visible: true,
+                style: function (feature) {
+                    var count = feature.get('count') || 1;
+                    // Log-scale normalisation — 200 counts = full saturation.
+                    var t = Math.min(Math.log(count) / Math.log(200), 1);
+                    // Yellow (#ffff00) → dark orange (#cc4400).
+                    var r = Math.round(255 - t * 51);   // 255 → 204
+                    var g = Math.round(255 - t * 187);  // 255 → 68
+                    var b = 0;
+                    var a = (0.5 + t * 0.45).toFixed(2); // 0.5 → 0.95
+                    return new ol.style.Style({
+                        fill: new ol.style.Fill({
+                            color: 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')'
+                        }),
+                        stroke: new ol.style.Stroke({ color: 'rgba(230,167,19,1)', width: 0.75 })
+                    });
+                }
+            });
+
+            map.addLayer(self.hexLayer);
+
             if (!self.initialLoadBiodiversityLayersToMap) {
                 self.initialLoadBiodiversityLayersToMap = true;
+            }
+        },
+        toggleHexLayer: function (enable) {
+            var self = this;
+            if (enable) {
+                self.biodiversityTileLayer.setVisible(false);
+                self.hexLayer.setVisible(true);
+                self.loadHex();
+            } else {
+                self.hexLayer.setVisible(false);
+                self.biodiversityTileLayer.setVisible(true);
             }
         },
         convertStyles: function (styles, name) {
@@ -430,15 +533,18 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                             $legendElement = this.getLegendElement(layerName);
                             this.legends[layerName] = $legendElement;
                         } else {
-                            this.renderVectorTileLegend(
-                                layerName,
-                                layerName,
-                                layer.layer,
-                                false,
-                                layer.layer.values_.STYLES.layers
-                            );
-                            $legendElement = this.getLegendElement(layerName);
-                            this.legends[layerName] = $legendElement;
+                            const _styles = layer.layer.values_ && layer.layer.values_.STYLES;
+                            if (_styles && _styles.layers) {
+                                this.renderVectorTileLegend(
+                                    layerName,
+                                    layerName,
+                                    layer.layer,
+                                    false,
+                                    _styles.layers
+                                );
+                                $legendElement = this.getLegendElement(layerName);
+                                this.legends[layerName] = $legendElement;
+                            }
                         }
                     } catch (e) {
                         console.error(e)
@@ -1099,6 +1205,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                                     }
                                 }
                             })
+                        } else if (layer['layer'] instanceof ol.layer.VectorTile ||
+                                   layer['layer'] instanceof ol.layer.Vector) {
+                            // VectorTile/Vector layers (e.g. Sites from GeoParquet) are
+                            // handled separately in olmap.js – skip here.
+                            return true;
                         } else {
                             const queryLayer = layer['layer'].getSource().getParams()['layers'];
                             if (queryLayer.indexOf('location_site_view') > -1) {
