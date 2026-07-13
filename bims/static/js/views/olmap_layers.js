@@ -1281,7 +1281,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             let content = '';
             $.each(featuresInfo, function (key_feature, feature) {
                 var layerName = feature['layerName'];
-                let contentId = `info-${key_feature.replace(':', '-')}`;
+                let contentId = `info-${key_feature.replace(':', '-').replace(/ /g,"_")}`;
                 tabs += '<li ' +
                     'role="presentation" class="info-wrapper-tab"  ' +
                     'title="' + layerName + '" ' +
@@ -1317,7 +1317,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                 let layerName = feature['layerName'];
                 let document = feature['document'];
                 let documentTitle = feature['documentTitle'] ? feature['documentTitle'] : 'document';
-                let contentId = `info-${key_feature.replace(':', '-')}`;
+                let contentId = `info-${key_feature.replace(':', '-').replace(/ /g,"_")}`;
                 if (document) {
                     let downloadDoc = $(`<br/><a href="${document}" class="btn btn-xs secondary-accent-background" download>Download ${documentTitle}</a>`);
                     $(`#${contentId}`).prepend(downloadDoc);
@@ -1336,6 +1336,32 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                         that.showWetlandDashboard('' + coordinate);
                     });
                     $(`#${contentId}`).prepend(wetlandDashboardButton);
+                }
+                if (Shared.SpatialFilterLayers) {
+                    let spatialFilterEntry = null;
+                    $.each(Shared.SpatialFilterLayers, function (layerName, entry) {
+                        let strippedName = layerName.indexOf(':') > -1 ? layerName.split(':')[1] : layerName;
+                        if (layerName === key_feature || strippedName === key_feature) {
+                            spatialFilterEntry = entry;
+                            return false;
+                        }
+                    });
+                    if (spatialFilterEntry && spatialFilterEntry.layer_identifier) {
+                        let lowerIdentifier = spatialFilterEntry.layer_identifier.toLowerCase();
+                        let lowerProperties = {};
+                        $.each(feature['properties'], function (k, v) {
+                            lowerProperties[k.toLowerCase()] = v;
+                        });
+                        let featureValue = lowerProperties[lowerIdentifier];
+                        if (featureValue !== undefined && featureValue !== null && featureValue !== '') {
+                            let spatialFilterButton = $('<button class="btn btn-xs btn-default">Add as spatial filter</button>');
+                            spatialFilterButton.click(function () {
+                                Shared.Dispatcher.trigger('spatialFilter:selectFeature', spatialFilterEntry.key, featureValue);
+                                Shared.Dispatcher.trigger('map:closePopup');
+                            });
+                            $(`#${contentId}`).prepend(spatialFilterButton);
+                        }
+                    }
                 }
             });
             if ($('.nav-tabs').innerHeight() > $(infoWrapperTab[0]).innerHeight()) {

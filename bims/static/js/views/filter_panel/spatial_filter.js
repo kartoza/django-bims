@@ -37,6 +37,38 @@ define([
             options = options || {};
             this.advancedSpatialFilterView = options.advancedSpatialFilterView || null;
             Shared.Dispatcher.on('spatialFilter:clearSelected', this.clearAllSelected, this);
+            Shared.Dispatcher.on('spatialFilter:selectFeature', this.selectFeatureAsFilter, this);
+        },
+        selectFeatureAsFilter: function (key, value) {
+            var self = this;
+            if (this.advancedMode && this.advancedSpatialFilterView) {
+                this.advancedSpatialFilterView.addFeatureValue(key, value);
+                Shared.Dispatcher.trigger('search:doSearch');
+                return;
+            }
+            var filterValue = 'value,' + key + ',' + value;
+            this.addSelectedValue(key, filterValue);
+            this.addSelectedSpatialFilterLayer(key, value);
+
+            var $select = self.$el.find('[id="' + key + '-autocomplete"]');
+            if ($select.length > 0) {
+                if ($select.find('option[value="' + value + '"]').length === 0) {
+                    $select.append(new Option(value, value, true, true));
+                }
+                var currentVals = $select.val() || [];
+                if (currentVals.indexOf(value) === -1) {
+                    currentVals = currentVals.concat([value]);
+                }
+                $select.val(currentVals).trigger('change', { programmatic: true });
+            } else {
+                var $checkbox = self.$el.find('input[value="' + filterValue + '"]');
+                if ($checkbox.length > 0) {
+                    $checkbox.prop('checked', true);
+                }
+            }
+            this.updateChecked();
+            this.syncBoundaryItemHighlights();
+            Shared.Dispatcher.trigger('search:doSearch');
         },
         render: function () {
             var self = this;
@@ -196,6 +228,23 @@ define([
             let self = this;
             let $container = self.$el.find('.spatial-filter-container');
 
+            Shared.SpatialFilterLayers = {};
+            $.each(data, function (index, spatialData) {
+                if (!spatialData.hasOwnProperty('children')) {
+                    return true;
+                }
+                $.each(spatialData['children'], function (_, child) {
+                    if (child.name) {
+                        Shared.SpatialFilterLayers[child.name] = {
+                            key: child.key,
+                            layer_identifier: child.layer_identifier,
+                            name: child.name
+                        };
+                    }
+                });
+            });
+            console.log(Shared.SpatialFilterLayers)
+
             $.each(data, function (index, spatialData) {
                 if (spatialData.hasOwnProperty('value') &&
                     spatialData['value'].length < 1) {
@@ -212,6 +261,7 @@ define([
                 header.after(self.renderSpatialChildren(spatialData['children']));
                 header.click();
             });
+            self.syncBoundaryItemHighlights();
         },
         renderSpatialChildren: function (spatialData) {
             let tree = $('<div class="col-lg-12 filter-content">');
@@ -274,6 +324,9 @@ define([
                     this.updateChecked();
                 }
                 var $item = $('<div class="boundary-item"></div>');
+                // if (_isChecked && !data[i]['autocomplete']) {
+                //     $item.parent().parent().addClass('filter-panel-selected');
+                // }
                 if (!data[i]['autocomplete']) {
                     $item.append('<input class="boundary-item-input" type="checkbox" ' +
                         'data-level="' + level + '" name="' + dataName + '" ' +
@@ -537,6 +590,7 @@ define([
                 $wrapper.children().find('input:checkbox:checked').prop('checked', false);
             }
             this.updateChecked();
+            this.syncBoundaryItemHighlights();
         },
         addSelectedValue: function (targetName, value) {
             if (!this.selectedSpatialFilters.includes(value)) {
@@ -572,6 +626,30 @@ define([
                     _children.toggle();
                 }
             }
+        },
+        syncBoundaryItemHighlights: function () {
+            this.$el.find('.filter-content > .boundary-item').each(function () {
+                var $item = $(this);
+                var hasChecked = $item.find('.boundary-item-input:checked').length > 0;
+                if (!hasChecked) {
+                    hasChecked = $item.find('.spatial-filter-autocomplete option:selected').length > 0;
+                }
+                $item.toggleClass('filter-panel-selected', hasChecked);
+            });
+            this.$el.find('.spatial-scale-sub-panel').each(function () {
+                var $panel = $(this);
+                var $content = $panel.next('.filter-content');
+                var hasSelected = $content.find('.boundary-item.filter-panel-selected').length > 0;
+                if (!hasSelected) {
+                    $content.find('.spatial-filter-autocomplete').each(function () {
+                        if ($(this).find(':selected').length > 0) {
+                            hasSelected = true;
+                            return false;
+                        }
+                    });
+                }
+                $panel.toggleClass('filter-panel-selected', hasSelected);
+            });
         },
         updateChecked: function () {
             var hasFilters = false;
@@ -693,6 +771,7 @@ define([
             this.riverCatchmentContainer.closest('.row').find('input:checkbox:checked').prop('checked', false);
             this.applyScaleFilterButton.prop('disabled', true);
             this.clearScaleFilterButton.prop('disabled', true);
+            this.$el.find('.boundary-item, .spatial-scale-sub-panel').removeClass('filter-panel-selected');
         },
         clearSelected: function (e) {
             this.applyFilterButton.prop('disabled', true);

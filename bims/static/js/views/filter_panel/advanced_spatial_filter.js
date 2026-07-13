@@ -650,6 +650,55 @@ define([
             this.addGroup();
         },
 
+        addFeatureValue: function (key, value) {
+            var self = this;
+            if (!this.dataLoaded) return;
+
+            // Reverse-lookup field name from key
+            var fieldName = null;
+            $.each(this.FIELD_KEYS, function (field, k) {
+                if (k === key) {
+                    fieldName = field;
+                    return false;
+                }
+            });
+            if (!fieldName) return;
+
+            // Find an existing clause for this field
+            var existingClause = null;
+            for (var i = 0; i < this.groups.length; i++) {
+                for (var j = 0; j < this.groups[i].clauses.length; j++) {
+                    if (this.groups[i].clauses[j].field === fieldName) {
+                        existingClause = this.groups[i].clauses[j];
+                        break;
+                    }
+                }
+                if (existingClause) break;
+            }
+
+            if (existingClause) {
+                if (existingClause.values.indexOf(value) === -1) {
+                    existingClause.values.push(value);
+                }
+                var $clauseEl = self.$el.find('.adv-clause[data-cid="' + existingClause.id + '"]');
+                var $select = $clauseEl.find('select:not(.adv-field-select)');
+                if ($select.length > 0) {
+                    if ($select.find('option[value="' + value + '"]').length === 0) {
+                        $select.append(new Option(value, value, true, true));
+                    }
+                    var currentVals = $select.val() || [];
+                    if (currentVals.indexOf(value) === -1) {
+                        currentVals = currentVals.concat([value]);
+                    }
+                    $select.val(currentVals).trigger('change', { programmatic: true });
+                }
+                self.refreshPreview();
+            } else {
+                this.addGroup({ clauses: [{ field: fieldName, values: [value] }] });
+            }
+            this.refreshAllFieldDisables();
+        },
+
         /**
          * Returns selected filter layers and their metadata for boundary display.
          * Format: { layers: { key: [values] }, meta: { key: { layer_name, wms_url, ... } } }
