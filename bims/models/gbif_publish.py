@@ -333,7 +333,8 @@ class GbifPublishContact(models.Model):
         verbose_name="Email address",
         help_text=(
             "Contact email address. "
-            "Leave blank to use the linked user's email."
+            "Auto-populated from the linked user when the contact is first created. "
+            "Clear this field to remove the email from GBIF."
         ),
     )
     online_url = models.URLField(
@@ -389,7 +390,7 @@ class GbifPublishContact(models.Model):
 
     @property
     def resolved_email(self):
-        return self.electronic_mail_address or self._user_attr("email")
+        return self.electronic_mail_address
 
 
 @receiver(post_save, sender=GbifPublishContact)
