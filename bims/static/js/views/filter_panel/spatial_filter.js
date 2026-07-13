@@ -243,7 +243,6 @@ define([
                     }
                 });
             });
-            console.log(Shared.SpatialFilterLayers)
 
             $.each(data, function (index, spatialData) {
                 if (spatialData.hasOwnProperty('value') &&
@@ -324,9 +323,6 @@ define([
                     this.updateChecked();
                 }
                 var $item = $('<div class="boundary-item"></div>');
-                // if (_isChecked && !data[i]['autocomplete']) {
-                //     $item.parent().parent().addClass('filter-panel-selected');
-                // }
                 if (!data[i]['autocomplete']) {
                     $item.append('<input class="boundary-item-input" type="checkbox" ' +
                         'data-level="' + level + '" name="' + dataName + '" ' +
