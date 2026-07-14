@@ -36,6 +36,7 @@ from bims.tasks.harvest_bims_species import (
     _compute_taxon_checksum,
     _find_or_create_taxonomy,
     _parse_tag_list,
+    _remove_stale_taxa,
     harvest_bims_species,
 )
 from bims.tests.model_factories import TaxonGroupF, UserF
@@ -423,7 +424,8 @@ class TestHarvestBimsSpeciesTask(FastTenantTestCase):
              mock.patch(_PATCH_CONNECT), \
              mock.patch(_PATCH_PREFS) as mock_prefs, \
              mock.patch(_PATCH_GET_ALL_TAXA, return_value=iter(taxa)), \
-             mock.patch(_PATCH_GET_TAXON_BY_ID, side_effect=_side_get_taxon):
+             mock.patch(_PATCH_GET_TAXON_BY_ID, side_effect=_side_get_taxon), \
+             mock.patch(_PATCH_GET_GROUPS, return_value=[]):
             mock_prefs.SiteSetting.auto_validate_taxa_on_upload = auto_validate
             harvest_bims_species(session.id, schema_name=self.schema_name)
 
@@ -599,6 +601,7 @@ class TestHarvestBimsSpeciesTask(FastTenantTestCase):
              mock.patch(_PATCH_PREFS) as mock_prefs, \
              mock.patch(_PATCH_GET_ALL_TAXA, return_value=iter(taxa)), \
              mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None), \
+             mock.patch(_PATCH_GET_GROUPS, return_value=[]), \
              mock.patch('django.contrib.sites.models.Site.objects.get_current') as mock_get_current_site:
             from django.contrib.sites.models import Site
             mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
@@ -685,7 +688,8 @@ class TestHarvestBimsSpeciesTask(FastTenantTestCase):
              mock.patch(_PATCH_CONNECT), \
              mock.patch(_PATCH_PREFS) as mock_prefs, \
              mock.patch(_PATCH_GET_ALL_TAXA, side_effect=_canceling_get_all), \
-             mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None):
+             mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None), \
+             mock.patch(_PATCH_GET_GROUPS, return_value=[]):
             mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
             harvest_bims_species(session.id, schema_name=self.schema_name)
 
@@ -1045,6 +1049,7 @@ class TestHarvestBimsReadOnly(FastTenantTestCase):
              mock.patch(_PATCH_PREFS) as mock_prefs, \
              mock.patch(_PATCH_GET_ALL_TAXA, return_value=iter(taxa)), \
              mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None), \
+             mock.patch(_PATCH_GET_GROUPS, return_value=[]), \
              mock.patch('django.contrib.sites.models.Site.objects.get_current') as mock_site:
             from django.contrib.sites.models import Site
             mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
@@ -1761,7 +1766,8 @@ class TestChecksumSkipAndTimestamp(FastTenantTestCase):
              mock.patch(_PATCH_CONNECT), \
              mock.patch('preferences.preferences', prefs_mock), \
              mock.patch(_PATCH_GET_ALL_TAXA, return_value=taxa_list), \
-             mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None):
+             mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None), \
+             mock.patch(_PATCH_GET_GROUPS, return_value=[]):
             harvest_bims_species(session.id, self.schema_name)
 
         session.refresh_from_db()
@@ -1798,9 +1804,10 @@ class TestChecksumSkipAndTimestamp(FastTenantTestCase):
         membership_after = TaxonGroupTaxonomy.objects.get(
             taxongroup=group, upstream_taxon_id='1',
         )
-        # Checksum unchanged, last_synced_at unchanged (no update happened)
+        # Checksum unchanged after skip
         self.assertEqual(membership_after.upstream_checksum, cs_before)
-        self.assertEqual(membership_after.last_synced_at, ts_before)
+        # last_synced_at is refreshed even on skip so stale-detection works
+        self.assertGreaterEqual(membership_after.last_synced_at, ts_before)
         # Session status reflects 0 processed (only skipped)
         self.assertIn('0', session2.status)
 
@@ -1855,3 +1862,177 @@ class TestChecksumSkipAndTimestamp(FastTenantTestCase):
             taxongroup=group, upstream_taxon_id='42',
         )
         self.assertEqual(membership.upstream_checksum, _compute_taxon_checksum(td))
+
+
+class TestRemoveStaleTaxa(FastTenantTestCase):
+    """
+    Verify _remove_stale_taxa behaviour after a read-only group harvest.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.schema_name = connection.schema_name
+
+    def _run_task(self, taxa_list, target_group, base_url='http://remote.bims/'):
+        session = HarvestSession.objects.create(
+            module_group=target_group,
+            additional_data={
+                'base_url': base_url,
+                'remote_group_id': 1,
+                'import_mode': 'existing',
+            },
+        )
+        prefs_mock = mock.MagicMock()
+        prefs_mock.SiteSetting.auto_validate_taxa_on_upload = False
+
+        with mock.patch(_PATCH_DISCONNECT), \
+             mock.patch(_PATCH_CONNECT), \
+             mock.patch('preferences.preferences', prefs_mock), \
+             mock.patch(_PATCH_GET_ALL_TAXA, return_value=taxa_list), \
+             mock.patch(_PATCH_GET_TAXON_BY_ID, return_value=None), \
+             mock.patch(_PATCH_GET_GROUPS, return_value=[]):
+            harvest_bims_species(session.id, self.schema_name)
+
+        session.refresh_from_db()
+        return session
+
+    def _make_stale_membership(self, group, taxonomy, days_ago=2):
+        """Create a TaxonGroupTaxonomy with last_synced_at in the past."""
+        from django.utils import timezone
+        import datetime
+        membership, _ = TaxonGroupTaxonomy.objects.get_or_create(
+            taxongroup=group,
+            taxonomy=taxonomy,
+            defaults={'upstream_taxon_id': str(taxonomy.pk)},
+        )
+        stale_time = timezone.now() - datetime.timedelta(days=days_ago)
+        TaxonGroupTaxonomy.objects.filter(pk=membership.pk).update(
+            last_synced_at=stale_time
+        )
+        return membership
+
+    def test_stale_taxon_removed_and_deleted_when_orphaned(self):
+        """A stale taxon with no other groups and no occurrences is deleted."""
+        from bims.tests.model_factories import TaxonGroupF
+        group = TaxonGroupF(is_readonly=True)
+        taxon = Taxonomy.objects.create(
+            canonical_name='Stale species',
+            scientific_name='Stale species',
+            rank='SPECIES',
+        )
+        self._make_stale_membership(group, taxon)
+
+        from django.utils import timezone
+        _remove_stale_taxa(group, timezone.now())
+
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(taxongroup=group, taxonomy=taxon).exists()
+        )
+        self.assertFalse(Taxonomy.objects.filter(pk=taxon.pk).exists())
+
+    def test_stale_taxon_unlinked_but_kept_when_in_other_group(self):
+        """A stale taxon that belongs to another group is unlinked but not deleted."""
+        from bims.tests.model_factories import TaxonGroupF
+        group = TaxonGroupF(is_readonly=True)
+        other_group = TaxonGroupF()
+        taxon = Taxonomy.objects.create(
+            canonical_name='Shared species',
+            scientific_name='Shared species',
+            rank='SPECIES',
+        )
+        self._make_stale_membership(group, taxon)
+        other_group.taxonomies.add(taxon)
+
+        from django.utils import timezone
+        _remove_stale_taxa(group, timezone.now())
+
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(taxongroup=group, taxonomy=taxon).exists()
+        )
+        self.assertTrue(Taxonomy.objects.filter(pk=taxon.pk).exists())
+
+    def test_stale_taxon_unlinked_but_kept_when_has_occurrences(self):
+        """A stale taxon with occurrence records is unlinked but not deleted."""
+        from bims.models import BiologicalCollectionRecord
+        from bims.tests.model_factories import TaxonGroupF, BiologicalCollectionRecordF
+        group = TaxonGroupF(is_readonly=True)
+        taxon = Taxonomy.objects.create(
+            canonical_name='Observed species',
+            scientific_name='Observed species',
+            rank='SPECIES',
+        )
+        self._make_stale_membership(group, taxon)
+        BiologicalCollectionRecordF(taxonomy=taxon)
+
+        from django.utils import timezone
+        _remove_stale_taxa(group, timezone.now())
+
+        self.assertFalse(
+            TaxonGroupTaxonomy.objects.filter(taxongroup=group, taxonomy=taxon).exists()
+        )
+        self.assertTrue(Taxonomy.objects.filter(pk=taxon.pk).exists())
+
+    def test_manually_added_taxon_not_removed(self):
+        """A taxon with last_synced_at=None (manually added) is left alone."""
+        from bims.tests.model_factories import TaxonGroupF
+        group = TaxonGroupF(is_readonly=True)
+        taxon = Taxonomy.objects.create(
+            canonical_name='Manual species',
+            scientific_name='Manual species',
+            rank='SPECIES',
+        )
+        TaxonGroupTaxonomy.objects.create(
+            taxongroup=group,
+            taxonomy=taxon,
+            last_synced_at=None,
+        )
+
+        from django.utils import timezone
+        _remove_stale_taxa(group, timezone.now())
+
+        self.assertTrue(
+            TaxonGroupTaxonomy.objects.filter(taxongroup=group, taxonomy=taxon).exists()
+        )
+        self.assertTrue(Taxonomy.objects.filter(pk=taxon.pk).exists())
+
+    def test_taxon_with_pending_proposal_skipped(self):
+        """A stale taxon with a pending update proposal is not removed."""
+        from bims.models import TaxonomyUpdateProposal
+        from bims.tests.model_factories import TaxonGroupF
+        group = TaxonGroupF(is_readonly=True)
+        taxon = Taxonomy.objects.create(
+            canonical_name='Proposed species',
+            scientific_name='Proposed species',
+            rank='SPECIES',
+        )
+        self._make_stale_membership(group, taxon)
+        TaxonomyUpdateProposal.objects.create(
+            original_taxonomy=taxon,
+            taxon_group=group,
+            status='pending',
+        )
+
+        from django.utils import timezone
+        _remove_stale_taxa(group, timezone.now())
+
+        self.assertTrue(
+            TaxonGroupTaxonomy.objects.filter(taxongroup=group, taxonomy=taxon).exists()
+        )
+
+    def test_fresh_taxon_not_removed(self):
+        """A taxon touched during the current harvest is not flagged as stale."""
+        from django.utils import timezone
+        from bims.tests.model_factories import TaxonGroupF
+        group = TaxonGroupF(is_readonly=True)
+        td = _taxon(99, 'Fresh species', rank='SPECIES')
+
+        harvest_start = timezone.now()
+        self._run_task([td], group)
+        _remove_stale_taxa(group, harvest_start)
+
+        self.assertTrue(
+            TaxonGroupTaxonomy.objects.filter(
+                taxongroup=group, upstream_taxon_id='99'
+            ).exists()
+        )

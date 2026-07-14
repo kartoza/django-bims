@@ -41,6 +41,7 @@
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ next }}">
 
+        {% if readonly_blocked_by %}<fieldset disabled>{% endif %}
         <div class="body-form container">
 
             {% if readonly_blocked_by %}
@@ -457,6 +458,7 @@
                 </div>
             </div>
 
+            {% if not readonly_blocked_by %}
             <div class="form-group submit-holder">
                 {% if update %}
                     {% if allow_to_edit %}
@@ -485,7 +487,9 @@
                     </div>
                 {% endif %}
             </div>
+            {% endif %}
         </div>
+        {% if readonly_blocked_by %}</fieldset>{% endif %}
     </form>
 
 {% endblock %}

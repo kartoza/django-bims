@@ -178,7 +178,7 @@ export const taxaSidebar = (() => {
     function buildDashboardTitle(name, isReadonly, upstreamUrl) {
         let html = `<h2>${name}`;
         if (isReadonly && upstreamUrl) {
-            html += ` <span class="badge badge-info" style="font-size:12pt; vertical-align:middle;"><i class="fa fa-refresh" aria-hidden="true"></i> BIMS Harvest</span>`;
+            html += ` <span class="text-muted" style="font-size:12pt; font-weight:normal; vertical-align:middle;"><i class="fa fa-refresh" aria-hidden="true"></i> BIMS Harvest</span>`;
         }
         html += `</h2>`;
         if (isReadonly && upstreamUrl) {

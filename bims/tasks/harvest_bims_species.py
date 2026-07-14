@@ -599,6 +599,8 @@ def harvest_bims_species(session_id: int, schema_name: str):
 
         from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 
+        harvest_start_time = timezone.now()
+
         for taxon_data in get_all_taxa(base_url, remote_group_id):
             if HarvestSession.objects.filter(id=session_id, canceled=True).exists():
                 _log("Harvest canceled by user")
@@ -636,6 +638,11 @@ def harvest_bims_species(session_id: int, schema_name: str):
                         f"[SKIP] {canonical_name} ({rank}) — upstream unchanged "
                         f"(checksum={checksum[:8]}…)"
                     )
+                    # Still refresh last_synced_at so stale-detection does not
+                    # flag this taxon as deleted upstream on the next cleanup pass.
+                    TaxonGroupTaxonomy.objects.filter(
+                        id=existing_membership.id
+                    ).update(last_synced_at=timezone.now())
                     total_skipped += 1
                     continue
 
@@ -702,14 +709,16 @@ def harvest_bims_species(session_id: int, schema_name: str):
                 f"Harvest complete — {total_processed} taxa processed, "
                 f"{total_skipped} skipped"
             )
+
+            if target_group.is_readonly:
+                _remove_stale_taxa(target_group, harvest_start_time, _log)
+                _ensure_bims_monthly_schedule(target_group, base_url, remote_group_id, remote_group_name, _log)
+
             HarvestSession.objects.filter(id=session_id).update(
                 status=f"Finished ({total_processed} taxa)",
                 finished=True,
                 additional_data=final_additional_data,
             )
-
-            if target_group.is_readonly:
-                _ensure_bims_monthly_schedule(target_group, base_url, remote_group_id, remote_group_name, _log)
         else:
             HarvestSession.objects.filter(id=session_id).update(
                 status=f"Canceled ({total_processed} taxa before cancel)",
@@ -717,6 +726,84 @@ def harvest_bims_species(session_id: int, schema_name: str):
             )
 
         connect_bims_signals()
+
+
+def _remove_stale_taxa(target_group, harvest_start_time, _log=None):
+    """
+    Remove taxa from *target_group* that were not touched during the harvest
+    run that started at *harvest_start_time*.  A taxon is considered deleted
+    upstream when its TaxonGroupTaxonomy.last_synced_at predates the run start
+    and the record was originally created by a harvest (last_synced_at is not
+    null - null means manually added, which we leave alone).
+
+    After unlinking from the group the underlying Taxonomy record is deleted
+    only when it has no other group memberships AND no occurrence records.
+    """
+    from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
+    from bims.models.taxonomy import Taxonomy
+    from bims.models import BiologicalCollectionRecord, TaxonomyUpdateProposal
+
+    def _emit(msg):
+        if _log:
+            _log(msg)
+        else:
+            logger.info(msg)
+
+    stale_memberships = TaxonGroupTaxonomy.objects.filter(
+        taxongroup=target_group,
+        last_synced_at__isnull=False,
+        last_synced_at__lt=harvest_start_time,
+    ).select_related('taxonomy')
+
+    if not stale_memberships.exists():
+        _emit("[STALE] No stale taxa detected.")
+        return
+
+    total_unlinked = 0
+    total_deleted = 0
+    total_skipped = 0
+
+    for membership in stale_memberships:
+        taxonomy = membership.taxonomy
+
+        # Skip if there is a pending proposal - leave it for manual review.
+        if TaxonomyUpdateProposal.objects.filter(
+            original_taxonomy=taxonomy,
+            status='pending',
+        ).exists():
+            _emit(
+                f"[STALE] Skipping {taxonomy.canonical_name} (id={taxonomy.pk}) "
+                f"— has a pending update proposal"
+            )
+            total_skipped += 1
+            continue
+
+        _emit(
+            f"[STALE] Removing {taxonomy.canonical_name} (id={taxonomy.pk}) "
+            f"from group '{target_group.name}' — not seen in upstream harvest"
+        )
+        target_group.taxonomies.remove(taxonomy)
+        total_unlinked += 1
+
+        still_in_other_groups = TaxonGroupTaxonomy.objects.filter(
+            taxonomy=taxonomy
+        ).exists()
+        has_occurrences = BiologicalCollectionRecord.objects.filter(
+            taxonomy=taxonomy
+        ).exists()
+
+        if not still_in_other_groups and not has_occurrences:
+            _emit(
+                f"[STALE] Deleting {taxonomy.canonical_name} (id={taxonomy.pk}) "
+                f"— no remaining group memberships and no occurrences"
+            )
+            taxonomy.delete()
+            total_deleted += 1
+
+    _emit(
+        f"[STALE] Cleanup complete — {total_unlinked} unlinked, "
+        f"{total_deleted} deleted, {total_skipped} skipped (pending proposals)"
+    )
 
 
 def _ensure_bims_monthly_schedule(target_group, base_url, remote_group_id, remote_group_name, _log=None):
