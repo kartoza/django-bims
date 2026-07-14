@@ -515,6 +515,14 @@ export const taxaManagement = (() => {
         }
     }
 
+    function calcScrollY() {
+        const dashboardBody = document.querySelector('.dashboard-body');
+        if (dashboardBody) {
+            return Math.max(window.innerHeight - dashboardBody.getBoundingClientRect().top - 170, 200) + 'px';
+        }
+        return 'calc(100vh - 325px)';
+    }
+
     const getTaxaList = (url) => {
         $('.footer-warning').html('');
         taxaUrlList = url;
@@ -631,7 +639,7 @@ export const taxaManagement = (() => {
                 "start": 0,
                 "end": 1
             },
-            scrollY: 'calc(100vh - 325px)',
+            scrollY: calcScrollY(),
             "scrollCollapse": true,
             "initComplete": function(settings, json) {
                 if (!tableInitialized) {
@@ -855,6 +863,7 @@ export const taxaManagement = (() => {
         }
 
         $(window).resize(function () {
+            $('.dt-scroll-body').css('height', calcScrollY());
             table.columns.adjust().draw();
         });
 
