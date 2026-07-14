@@ -178,6 +178,7 @@ ul.pagination li.current a {
 
 .dashboard-title {
     border-bottom: none;
+    margin-top: 15px;
 }
 
 .ui-state-default {
@@ -263,6 +264,10 @@ ul.pagination li.current a {
 .side-panel {
     height: 100%;
     overflow-y: auto;
+}
+
+.list-content {
+    overflow: hidden;
 }
 .min-width-50 {
     min-width: 50px;
@@ -522,4 +527,12 @@ table {
 
 .min-width-80 {
   min-width: 80px;
+}
+
+
+.db-hr {
+    max-width: 100% !important;
+    border-color: #e6c762;
+    margin-top: 7px;
+    margin-bottom: 7px;
 }

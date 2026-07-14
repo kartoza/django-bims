@@ -197,13 +197,13 @@ export const taxaSidebar = (() => {
         }
         $('.ui-state-default').removeClass('selected');
         $elm.addClass('selected');
-        if (updateTaxonGroup) {
-            updateTaxonGroup($elm.data('id'));
-        }
         selectedTaxonGroup = $elm.data('id');
         const isReadonly = $elm.data('is-readonly') === true || $elm.data('is-readonly') === 'true';
         const upstreamUrl = $elm.data('upstream-url') || '';
         $('.dashboard-title').html(buildDashboardTitle($elm.data('name'), isReadonly, upstreamUrl));
+        if (updateTaxonGroup) {
+            updateTaxonGroup($elm.data('id'));
+        }
         currentSelectedTaxonGroup = selectedTaxonGroup;
     }
 
