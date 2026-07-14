@@ -54,7 +54,7 @@ class HarvestCollectionView(
                 with open(harvest_session.log_file.path, 'rb') as f:
                     session_data['log'] = b''.join(
                         list(deque(f, 50))).decode('utf-8')
-            except ValueError:
+            except (ValueError, FileNotFoundError):
                 pass
             context['upload_session'] = session_data
 
