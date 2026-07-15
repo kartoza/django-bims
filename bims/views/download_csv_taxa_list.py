@@ -20,6 +20,8 @@ from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.download_taxa_list import (
     download_taxa_list as download_taxa_list_task
 )
+from bims.utils.taxonomy import canonical_with_subgenus
+
 
 SANPARKS_PROJECT_KEY = 'sanparks'
 NATIONAL_NEMBA_LABEL = 'National NEMBA Status'
@@ -56,7 +58,12 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
     scientific_name_and_authority = serializers.SerializerMethodField()
 
     def get_scientific_name_and_authority(self, obj: Taxonomy):
-        return obj.scientific_name
+        taxon = self.get_taxon(obj)
+        sci = obj.scientific_name or ''
+        if taxon and taxon not in sci:
+            author = obj.author or ''
+            return f'{taxon} {author}'.strip() if author else taxon
+        return sci
 
     def get_accepted_taxon(self, obj: Taxonomy):
         if obj.accepted_taxonomy:
@@ -69,8 +76,12 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
     def get_taxon_rank(self, obj):
         return obj.rank.capitalize()
 
-    def get_taxon(self, obj):
-        return obj.canonical_name
+    def get_taxon(self, obj: Taxonomy):
+        return canonical_with_subgenus(
+            obj.canonical_name,
+            obj.genus_name,
+            obj.sub_genus_name,
+        )
 
     def get_common_name(self, obj):
         vernacular_names = list(

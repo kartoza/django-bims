@@ -188,7 +188,15 @@ class ChecklistPDFSerializer(ChecklistBaseSerializer):
         return bio.count()
 
     def get_scientific_name(self, obj: Taxonomy):
-        return self.clean_text(obj.scientific_name)
+        from bims.utils.taxonomy import canonical_with_subgenus
+        canonical = canonical_with_subgenus(
+            obj.canonical_name, obj.genus_name, obj.sub_genus_name
+        )
+        sci = obj.scientific_name or ''
+        if canonical and canonical not in sci:
+            author = obj.author or ''
+            sci = f'{canonical} {author}'.strip() if author else canonical
+        return self.clean_text(sci)
 
     def get_common_name(self, obj: Taxonomy):
         vernacular_names = list(
