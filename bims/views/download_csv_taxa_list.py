@@ -77,10 +77,13 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
         return obj.rank.capitalize()
 
     def get_taxon(self, obj: Taxonomy):
+        subgenus_str = obj.sub_genus_name or (
+            obj.subgenus.canonical_name if obj.subgenus_id else ''
+        )
         return canonical_with_subgenus(
             obj.canonical_name,
             obj.genus_name,
-            obj.sub_genus_name,
+            subgenus_str,
         )
 
     def get_common_name(self, obj):
