@@ -23,6 +23,10 @@ def canonical_with_subgenus(canonical: str, genus: str, subgenus: str) -> str:
 
     genus_cap = genus[:1].upper() + genus[1:].lower()
 
+    # Bare subgenus name as canonical (subgenus-rank taxon) — no epithet.
+    if canonical.lower() == sg_name.lower():
+        return f'{genus_cap} ({sg_name})'
+
     # Strip genus prefix and any existing parenthetical tokens.
     tokens = canonical.split()
     non_paren = [t for t in tokens if not (t.startswith('(') and t.endswith(')'))]

@@ -189,8 +189,11 @@ class ChecklistPDFSerializer(ChecklistBaseSerializer):
 
     def get_scientific_name(self, obj: Taxonomy):
         from bims.utils.taxonomy import canonical_with_subgenus
+        subgenus_str = obj.sub_genus_name or (
+            obj.subgenus.canonical_name if obj.subgenus_id else ''
+        )
         canonical = canonical_with_subgenus(
-            obj.canonical_name, obj.genus_name, obj.sub_genus_name
+            obj.canonical_name, obj.genus_name, subgenus_str
         )
         sci = obj.scientific_name or ''
         if canonical and canonical not in sci:
