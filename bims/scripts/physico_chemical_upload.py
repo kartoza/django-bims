@@ -27,7 +27,8 @@ class PhysicalChemicalProcess(OccurrenceProcessor):
     survey = None
 
     def chemical_records(
-            self, record, location_site, date, source_reference=None):
+            self, record, location_site, date, source_reference=None,
+            custodian=''):
         """Process chemical data"""
         for chem_key in self.physico_chemical_units:
             chem_value = DataCSVUpload.row_value(record, chem_key).strip()
@@ -54,6 +55,7 @@ class PhysicalChemicalProcess(OccurrenceProcessor):
                 survey=self.survey
             )
             chem_record.value = chem_value
+            chem_record.custodian = custodian.strip() if custodian else ''
             chem_record.source_reference = source_reference
             chem_record.save()
 
@@ -113,6 +115,8 @@ class PhysicalChemicalProcess(OccurrenceProcessor):
 
         # -- Processing collectors
         custodian = DataCSVUpload.row_value(row, CUSTODIAN)
+        if not custodian:
+            custodian = DataCSVUpload.row_value(row, CUSTODIAN_2)
         collectors = create_users_from_string(
             DataCSVUpload.row_value(row, COLLECTOR_OR_OWNER))
         if not collectors:
@@ -129,13 +133,15 @@ class PhysicalChemicalProcess(OccurrenceProcessor):
             if not location_site.creator:
                 location_site.creator = collectors[0]
             location_site.save()
-            if custodian:
-                for _collector in collectors:
-                    _collector.organization = DataCSVUpload.row_value(
-                        row, CUSTODIAN)
-                    _collector.save()
 
         # -- Get or create a survey
+        self.survey = None
+        uploader = (
+            self.upload_session.uploader
+            if self.upload_session and self.upload_session.uploader
+            else collectors[0]
+        )
+
         if uuid_value:
             self.survey = Survey.objects.filter(
                 Q(uuid=uuid_value) |
@@ -147,14 +153,19 @@ class PhysicalChemicalProcess(OccurrenceProcessor):
                 location_site,
                 sampling_date,
                 collector=collectors[0],
+                uploader=uploader,
             )
+        if self.survey and uuid_value and str(self.survey.uuid) != uuid_value:
+            self.survey.uuid = uuid_value
+            self.survey.save(update_fields=['uuid'])
 
         # -- Processing chemical records
         chemical_record_updated = self.chemical_records(
             row,
             location_site,
             sampling_date,
-            source_reference
+            source_reference,
+            custodian
         )
 
         if not chemical_record_updated:

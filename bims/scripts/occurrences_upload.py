@@ -231,8 +231,16 @@ class OccurrenceProcessor(object):
         # Define possible date formats
         date_formats = [
             "%Y-%m-%d",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%dT%H:%M:%S",
             "%Y/%m/%d",
+            "%Y/%m/%d %H:%M:%S",
             "%d/%m/%Y",
+            "%d/%m/%Y %H:%M:%S",
+            "%m/%d/%Y",
+            "%m/%d/%Y %H:%M:%S",
+            "%m/%d/%y",
+            "%m/%d/%y %H:%M:%S",
         ]
 
         # Attempt to parse the date string using the defined formats
@@ -254,6 +262,7 @@ class OccurrenceProcessor(object):
         collector,
         sampling_effort='',
         sampling_effort_link=None,
+        uploader=None,
     ):
         """Process survey data.
 
@@ -263,7 +272,6 @@ class OccurrenceProcessor(object):
         base_filter = dict(
             site=location_site,
             date=sampling_date,
-            collector_user=collector,
             owner=collector,
             validated=True,
         )
@@ -293,6 +301,11 @@ class OccurrenceProcessor(object):
                 f"(sampling_effort={sampling_effort!r}, "
                 f"sampling_effort_link={sampling_effort_link})"
             )
+
+        collector_user = uploader if uploader else collector
+        if self.survey.collector_user != collector_user:
+            self.survey.collector_user = collector_user
+            self.survey.save(update_fields=['collector_user'])
 
         for survey_data_key in SURVEY_DATA:
             if survey_data_key in record and DataCSVUpload.row_value(record, survey_data_key):
@@ -474,8 +487,8 @@ class OccurrenceProcessor(object):
         location_site_name = ""
         if DataCSVUpload.row_value(record, LOCATION_SITE):
             location_site_name = DataCSVUpload.row_value(record, LOCATION_SITE)
-        elif wetland_name:
-            location_site_name = wetland_name
+        elif wetland_name or (user_wetland_name and ecosystem_type and ecosystem_type.lower() == 'wetland'):
+            location_site_name = wetland_name or user_wetland_name
         elif park_name:
             location_site_name = park_name
         elif section_name:
@@ -497,26 +510,35 @@ class OccurrenceProcessor(object):
         # Find existing location site by lat and lon (starts-with)
         if not location_site:
             if len(str(latitude)) > 5 and len(str(longitude)) > 5:
-                location_site = LocationSite.objects.filter(
+                coord_qs = LocationSite.objects.filter(
                     latitude__startswith=latitude,
                     longitude__startswith=longitude,
                     ecosystem_type=ecosystem_type
-                ).first()
+                )
+                if legacy_site_code:
+                    coord_qs = coord_qs.filter(legacy_site_code=legacy_site_code)
+                location_site = coord_qs.first()
                 if location_site:
                     self._set_row_ctx(site=location_site.site_code)
                     self._log(logging.DEBUG, "Matched existing site by coordinate prefix")
 
         if not location_site:
-            location_site = LocationSite.objects.filter(
+            geo_qs = LocationSite.objects.filter(
                 geometry_point=record_point,
                 ecosystem_type=ecosystem_type
-            ).first()
+            )
+            if legacy_site_code:
+                geo_qs = geo_qs.filter(legacy_site_code=legacy_site_code)
+            location_site = geo_qs.first()
             if not location_site:
-                location_site, status = LocationSite.objects.get_or_create(
+                create_kwargs = dict(
                     geometry_point=record_point,
                     ecosystem_type=ecosystem_type,
                     location_type=location_type
                 )
+                if legacy_site_code:
+                    create_kwargs['legacy_site_code'] = legacy_site_code
+                location_site, status = LocationSite.objects.get_or_create(**create_kwargs)
                 self._log(logging.INFO, f"{'Created' if status else 'Selected'} site id={location_site.id}")
 
         # Update fields
@@ -681,6 +703,10 @@ class OccurrenceProcessor(object):
                 survey=self.survey
             )
             chem_record.value = chem_value
+            custodian = DataCSVUpload.row_value(record, CUSTODIAN)
+            if not custodian:
+                custodian = DataCSVUpload.row_value(record, CUSTODIAN_2)
+            chem_record.custodian = custodian.strip() if custodian else ''
             chem_record.save()
 
     def taxonomy(self, record):
@@ -854,7 +880,12 @@ class OccurrenceProcessor(object):
             optional_data["collector"] = DataCSVUpload.row_value(row, COLLECTOR_OR_OWNER)
             if len(collectors) > 0:
                 collector = collectors[0]
-                optional_data["collector_user"] = collectors[0]
+                uploader = (
+                    self.upload_session.uploader
+                    if self.upload_session and self.upload_session.uploader
+                    else collectors[0]
+                )
+                optional_data["collector_user"] = uploader
                 optional_data["owner"] = collectors[0]
                 # Add owner and creator to location site if missing
                 if not location_site.owner:
@@ -899,6 +930,11 @@ class OccurrenceProcessor(object):
                 collector=collectors[0],
                 sampling_effort=sampling_effort,
                 sampling_effort_link=sampling_effort_link,
+                uploader=(
+                    self.upload_session.uploader
+                    if self.upload_session and self.upload_session.uploader
+                    else None
+                ),
             )
 
             # -- Apply end embargo date to the survey

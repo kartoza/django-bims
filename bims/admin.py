@@ -2264,6 +2264,7 @@ class ChemicalRecordAdmin(admin.ModelAdmin):
         'value',
         'chem',
         'date',
+        'custodian',
         'get_site_code'
     )
     raw_id_fields = (
@@ -2276,6 +2277,7 @@ class ChemicalRecordAdmin(admin.ModelAdmin):
         'chem',
     )
     search_fields = (
+        'custodian',
         'location_site__site_code',
         'survey__site__site_code'
     )
