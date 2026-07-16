@@ -620,7 +620,29 @@ class TestTaxaUpload(FastTenantTestCase):
 class TestSubgenusUpload(FastTenantTestCase):
     """Tests for the subgenus upload feature added in the subgenus_validation branch."""
 
+    # Canonical names created by taxa_upload_subgenus.csv (and their derived parents).
+    # Cleaned up in setUp/tearDown so --keepdb runs don't accumulate duplicates.
+    _CSV_CANONICAL_NAMES = [
+        'Aedes (Stegomyia) aegypti',
+        'Aedes (Stegomyia) albopictus',
+        'Aedes vexans',
+        'Aedes (Stegomyia)',
+        'Stegomyia',
+        'Aedes',
+        'Culicidae',
+        'Diptera',
+        'Insecta',
+        'Arthropoda',
+        'Animalia',
+    ]
+
+    def _delete_csv_taxa(self):
+        Taxonomy.objects.filter(
+            canonical_name__in=self._CSV_CANONICAL_NAMES
+        ).delete()
+
     def setUp(self):
+        self._delete_csv_taxa()
         self.client = TenantClient(self.tenant)
         self.taxon_group = TaxonGroupF.create()
         self.owner = UserF.create(first_name='tester')
@@ -630,6 +652,9 @@ class TestSubgenusUpload(FastTenantTestCase):
                 origin_key=key,
                 defaults={'category': key}
             )
+
+    def tearDown(self):
+        self._delete_csv_taxa()
 
     def _make_upload_session(self, csv_filename):
         with open(os.path.join(test_data_directory, csv_filename), 'rb') as f:

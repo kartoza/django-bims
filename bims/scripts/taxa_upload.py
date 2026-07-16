@@ -669,7 +669,7 @@ class TaxaProcessor(object):
                 else:
                     taxon = None
             else:
-                taxon, _ = Taxonomy.objects.get_or_create(
+                taxon, _created = Taxonomy.objects.get_or_create(
                     canonical_name=taxon_name,
                     scientific_name=scientific_name,
                     legacy_canonical_name=taxon_name,
@@ -694,6 +694,12 @@ class TaxaProcessor(object):
             if genus_name and genus_name.lower() not in taxon_name.lower():
                 taxon_name = f'{genus_name} {taxon_name}'
 
+        if _safe_upper(current_rank) == 'SUBGENUS':
+            genus_name = _safe_strip(self.get_row_value(row, GENUS))
+            if genus_name and not taxon_name.startswith(genus_name):
+                genus_cap = genus_name[:1].upper() + genus_name[1:].lower()
+                taxon_name = f'{genus_cap} ({taxon_name})'
+
         if current_rank == VARIETY:
             genus_name = _safe_strip(self.get_row_value(row, GENUS))
             species_name = _safe_strip(self.get_row_value(row, SPECIES))
@@ -708,7 +714,6 @@ class TaxaProcessor(object):
             _safe_upper(current_rank),
             row=row
         )
-
         # If we already have a parent or reached KINGDOM, stop.
         if taxon.parent or _safe_upper(taxon.rank) == 'KINGDOM':
             return taxon
@@ -811,12 +816,18 @@ class TaxaProcessor(object):
                 taxon_name = f'{taxon_name} {sub_species_name}'
 
         if csv_taxon:
+            # For species-like ranks, use the subgenus-aware composed form so
+            # that _choose_taxon_display_name prefers "Genus (Sub) epithet"
+            # over the plain csv_taxon when a SubGenus column is present.
+            composed_taxon = (
+                self._compose_species_name(row) if is_species else taxon_name
+            )
             taxon_name = self._choose_taxon_display_name(
                 row=row,
                 rank=rank,
                 taxonomic_status=taxonomic_status,
                 csv_taxon=csv_taxon,
-                composed_taxon=taxon_name
+                composed_taxon=composed_taxon
             )
 
         if not taxon_name:
@@ -1172,14 +1183,13 @@ class TaxaProcessor(object):
                     # Synonyms should not have a parent
                     parent = None
                 new_taxon = True
-                taxonomy, _ = Taxonomy.objects.get_or_create(
+                taxonomy, _created2 = Taxonomy.objects.get_or_create(
                     scientific_name=scientific_name,
                     canonical_name=taxon_name,
                     rank=TaxonomicRank[_safe_upper(rank)].name,
                     parent=parent,
                     taxonomic_status=taxonomic_status.upper()
                 )
-
             if is_species and subgenus:
                 genus_for_sg = _safe_strip(self.get_row_value(row, GENUS))
                 subgenus_canonical = (
@@ -1200,7 +1210,7 @@ class TaxaProcessor(object):
                         canonical_name=genus_for_sg,
                         rank=TaxonomicRank.GENUS.name,
                     ).first() if genus_for_sg else None
-                    subgenus_taxon, _ = Taxonomy.objects.get_or_create(
+                    subgenus_taxon, _created3 = Taxonomy.objects.get_or_create(
                         canonical_name=subgenus_canonical,
                         rank=TaxonomicRank.SUBGENUS.name,
                         defaults={
