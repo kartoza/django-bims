@@ -55,7 +55,7 @@ class TestGetDatasetOccurrences(TestCase):
 
         # Create a taxonomy object
         self.taxonomy = TaxonomyF.create(
-            scientific_name='Test Species',
+            scientific_name='Test Common Name Species',
             canonical_name='Test Common Name',
             rank='SPECIES',
             vernacular_names=(vernacular_name,)
@@ -167,7 +167,7 @@ class TestGetDatasetOccurrences(TestCase):
             many=False)
         serializer_data = serializer.data
         scientific_name = serializer_data['scientific_name']
-        self.assertEqual(scientific_name, 'Test Species')
+        self.assertEqual(scientific_name, 'Test Common Name Species')
         self.assertIn('Test Citation', serializer_data['sources'])
         self.assertIn('Dataset 1', serializer_data['sources'])
         self.assertIn('123e4567-e89b-12d3-a456-426614174003', serializer_data['sources'])
@@ -182,7 +182,7 @@ class TestGetDatasetOccurrences(TestCase):
             many=False)
         serializer_data = serializer.data
         scientific_name = serializer_data['scientific_name']
-        self.assertEqual(scientific_name, 'Test Species')
+        self.assertEqual(scientific_name, 'Test Common Name Species')
         self.assertIn('Test Citation', serializer_data['sources'])
         self.assertTrue(Dataset.objects.filter(
             citation='Test Citation'

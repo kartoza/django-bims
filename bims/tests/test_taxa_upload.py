@@ -620,7 +620,29 @@ class TestTaxaUpload(FastTenantTestCase):
 class TestSubgenusUpload(FastTenantTestCase):
     """Tests for the subgenus upload feature added in the subgenus_validation branch."""
 
+    # Canonical names created by taxa_upload_subgenus.csv (and their derived parents).
+    # Cleaned up in setUp/tearDown so --keepdb runs don't accumulate duplicates.
+    _CSV_CANONICAL_NAMES = [
+        'Aedes (Stegomyia) aegypti',
+        'Aedes (Stegomyia) albopictus',
+        'Aedes vexans',
+        'Aedes (Stegomyia)',
+        'Stegomyia',
+        'Aedes',
+        'Culicidae',
+        'Diptera',
+        'Insecta',
+        'Arthropoda',
+        'Animalia',
+    ]
+
+    def _delete_csv_taxa(self):
+        Taxonomy.objects.filter(
+            canonical_name__in=self._CSV_CANONICAL_NAMES
+        ).delete()
+
     def setUp(self):
+        self._delete_csv_taxa()
         self.client = TenantClient(self.tenant)
         self.taxon_group = TaxonGroupF.create()
         self.owner = UserF.create(first_name='tester')
@@ -630,6 +652,9 @@ class TestSubgenusUpload(FastTenantTestCase):
                 origin_key=key,
                 defaults={'category': key}
             )
+
+    def tearDown(self):
+        self._delete_csv_taxa()
 
     def _make_upload_session(self, csv_filename):
         with open(os.path.join(test_data_directory, csv_filename), 'rb') as f:
@@ -656,19 +681,21 @@ class TestSubgenusUpload(FastTenantTestCase):
         taxa_csv_upload.upload_session = upload_session
         taxa_csv_upload.start('utf-8-sig')
 
-        # The SUBGENUS-rank taxonomy should have been created.
+        # The SUBGENUS-rank taxonomy should have been created with the
+        # "Genus (SubgenusName)" canonical form.
         self.assertTrue(
             Taxonomy.objects.filter(
-                canonical_name='Stegomyia',
+                canonical_name='Aedes (Stegomyia)',
                 rank='SUBGENUS',
             ).exists(),
-            'Expected a SUBGENUS-ranked taxonomy named Stegomyia.'
+            'Expected a SUBGENUS-ranked taxonomy named "Aedes (Stegomyia)".'
         )
 
-        stegomyia = Taxonomy.objects.get(canonical_name='Stegomyia', rank='SUBGENUS')
+        stegomyia = Taxonomy.objects.get(canonical_name='Aedes (Stegomyia)', rank='SUBGENUS')
 
-        # Species that carry SubGenus=Stegomyia must have subgenus FK set.
-        for name in ('Aedes aegypti', 'Aedes albopictus'):
+        # Species that carry SubGenus=Stegomyia must have canonical names in
+        # "Genus (SubGenusName) specific_epithet" form and subgenus FK set.
+        for name in ('Aedes (Stegomyia) aegypti', 'Aedes (Stegomyia) albopictus'):
             taxon = Taxonomy.objects.filter(
                 canonical_name__iexact=name,
                 rank='SPECIES',
@@ -676,7 +703,7 @@ class TestSubgenusUpload(FastTenantTestCase):
             self.assertIsNotNone(taxon, f'Expected SPECIES taxon for {name!r}.')
             self.assertEqual(
                 taxon.subgenus_id, stegomyia.pk,
-                f'{name} should have subgenus=Stegomyia, got {taxon.subgenus}.'
+                f'{name} should have subgenus="Aedes (Stegomyia)", got {taxon.subgenus}.'
             )
 
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
@@ -739,13 +766,13 @@ class TestSubgenusUpload(FastTenantTestCase):
 
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
-    def test_same_name_different_subgenus_creates_separate_taxa(
+    def test_same_epithet_different_subgenus_creates_separate_taxa(
         self, mock_gbif, mock_finish
     ):
         """
-        Two species rows that share the same canonical name but have different
-        subgenus values should result in two distinct Taxonomy records, each
-        linked to their respective subgenus.
+        Two species rows that share the same specific epithet but have different
+        subgenus values produce distinct Taxonomy records with different canonical
+        names in "Genus (Subgenus) epithet" form, each linked to the right subgenus.
         """
         mock_finish.return_value = None
         mock_gbif.return_value = None
@@ -760,9 +787,10 @@ class TestSubgenusUpload(FastTenantTestCase):
             canonical_name='Neoculex',
             rank='SUBGENUS',
         )
-        # Pre-create an existing species already linked to subgenus_a.
+        # Pre-create an existing species already linked to subgenus_a with the
+        # new canonical form.
         existing_species = TaxonomyF.create(
-            canonical_name='Culex pipiens',
+            canonical_name='Culex (Culex) pipiens',
             rank='SPECIES',
             subgenus=subgenus_a,
         )
@@ -789,21 +817,23 @@ class TestSubgenusUpload(FastTenantTestCase):
             mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
             processor.process_data(row_b, taxon_group)
 
-        # There should now be two SPECIES taxa with the same canonical name.
-        qs = Taxonomy.objects.filter(canonical_name='Culex pipiens', rank='SPECIES')
-        self.assertEqual(
-            qs.count(), 2,
-            f'Expected 2 separate taxa for "Culex pipiens", found {qs.count()}.'
-        )
+        # Parser produces "Genus (Subgenus) epithet" canonical names, so the
+        # two taxa have different canonical names (not the same bare epithet).
+        taxon_culex = Taxonomy.objects.filter(
+            canonical_name='Culex (Culex) pipiens', rank='SPECIES'
+        ).first()
+        taxon_neoculex = Taxonomy.objects.filter(
+            canonical_name='Culex (Neoculex) pipiens', rank='SPECIES'
+        ).first()
+        self.assertIsNotNone(taxon_culex, 'Expected SPECIES "Culex (Culex) pipiens".')
+        self.assertIsNotNone(taxon_neoculex, 'Expected SPECIES "Culex (Neoculex) pipiens".')
+        self.assertEqual(taxon_culex.subgenus, subgenus_a)
+        self.assertEqual(taxon_neoculex.subgenus, subgenus_b)
 
-        names = set(qs.values_list('subgenus__canonical_name', flat=True))
-        self.assertIn('Culex', names, 'One taxon should be linked to Culex subgenus.')
-        self.assertIn('Neoculex', names, 'One taxon should be linked to Neoculex subgenus.')
-
-    def test_choose_taxon_display_name_returns_subgenus_column_for_subgenus_rank(self):
+    def test_choose_taxon_display_name_formats_subgenus_as_genus_parenthetical(self):
         """
-        _choose_taxon_display_name should return the value from the SubGenus
-        column (not the Taxon column) when the rank is SubGenus.
+        _choose_taxon_display_name should return "Genus (SubgenusName)" when the
+        rank is SubGenus and both Genus and SubGenus columns are present.
         """
         processor = TaxaProcessor()
         processor.all_keys = {
@@ -825,7 +855,103 @@ class TestSubgenusUpload(FastTenantTestCase):
             csv_taxon='',
             composed_taxon='',
         )
-        self.assertEqual(result, 'Stegomyia')
+        self.assertEqual(result, 'Aedes (Stegomyia)')
+
+    def test_compose_species_name_includes_subgenus(self):
+        """
+        _compose_species_name should return "Genus (Subgenus) epithet" when
+        the SubGenus column is present.
+        """
+        processor = TaxaProcessor()
+        processor.all_keys = {}
+
+        row = {
+            'Genus': 'Thraulus',
+            'SubGenus': 'Masharikella',
+            'Species': 'iteris',
+            'Taxon': '',
+        }
+
+        result = processor._compose_species_name(row)
+        self.assertEqual(result, 'Thraulus (Masharikella) iteris')
+
+    def test_compose_species_name_strips_existing_subgenus_parenthetical(self):
+        """
+        When the Species/Taxon field already contains a subgenus parenthetical,
+        _compose_species_name should strip it and use the SubGenus column value.
+        """
+        processor = TaxaProcessor()
+        processor.all_keys = {}
+
+        row = {
+            'Genus': 'Thraulus',
+            'SubGenus': 'Masharikella',
+            'Species': 'Thraulus (Masharikella) iteris',
+            'Taxon': '',
+        }
+
+        result = processor._compose_species_name(row)
+        self.assertEqual(result, 'Thraulus (Masharikella) iteris')
+
+    def test_parser_subgenus_canonical_and_scientific_name(self):
+        """
+        Uploading a SubGenus-ranked row should produce canonical_name in
+        "Genus (SubgenusName)" form and scientific_name with the author appended.
+        """
+        processor = TaxaProcessor()
+        processor.all_keys = {}
+
+        row = {
+            'Taxon Rank': 'SubGenus',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Insecta',
+            'Order': 'Ephemeroptera',
+            'Family': 'Leptophlebiidae',
+            'Genus': 'Thraulus',
+            'SubGenus': 'Masharikella',
+            'Taxon': 'Masharikella',
+            'Taxonomic status': 'accepted',
+            'On GBIF': 'No',
+            'Author(s)': 'Peters, Gillies & Edmunds, 1964',
+        }
+
+        taxon_name = processor._choose_taxon_display_name(
+            row=row,
+            rank='SubGenus',
+            taxonomic_status='accepted',
+            csv_taxon='Masharikella',
+            composed_taxon='Masharikella',
+        )
+        self.assertEqual(taxon_name, 'Thraulus (Masharikella)')
+
+    def test_parser_species_with_subgenus_canonical_and_scientific_name(self):
+        """
+        Uploading a Species row with a SubGenus column produces canonical_name in
+        "Genus (Subgenus) epithet" form and scientific_name with the author.
+        """
+        processor = TaxaProcessor()
+        processor.all_keys = {}
+
+        row = {
+            'Genus': 'Thraulus',
+            'SubGenus': 'Masharikella',
+            'Species': 'iteris',
+            'Taxon': 'Thraulus iteris',
+        }
+
+        canonical = processor._compose_species_name(row)
+        self.assertEqual(canonical, 'Thraulus (Masharikella) iteris')
+
+        # Verify _choose_taxon_display_name also resolves to the correct form.
+        display = processor._choose_taxon_display_name(
+            row=row,
+            rank='Species',
+            taxonomic_status='accepted',
+            csv_taxon='Thraulus iteris',
+            composed_taxon=canonical,
+        )
+        self.assertEqual(display, 'Thraulus (Masharikella) iteris')
 
     @mock.patch('bims.scripts.taxa_upload.get_species')
     @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')

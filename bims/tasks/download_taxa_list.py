@@ -27,6 +27,7 @@ from bims.scripts.species_keys import (
     TRIBE, FAMILY, ORDER, PHYLUM, KINGDOM, AUTHORS
 )
 from bims.utils.domain import get_current_domain
+from bims.utils.taxonomy import canonical_with_subgenus
 
 logger = logging.getLogger(__name__)
 
@@ -597,6 +598,11 @@ def download_taxa_list(
 def _snapshot_row_to_dict(row):
     on_gbif = 'Yes' if row.gbif_key else 'No'
     gbif_link = f'https://www.gbif.org/species/{row.gbif_key}' if row.gbif_key else '-'
+    taxon = canonical_with_subgenus(row.canonical_name, row.genus, row.subgenus)
+    scientific_name = row.scientific_name or ''
+    if row.subgenus and taxon not in scientific_name:
+        authorship = row.authorship or ''
+        scientific_name = f'{taxon} {authorship}'.strip() if authorship else taxon
     return {
         'taxon_rank': row.rank.capitalize() if row.rank else '',
         'kingdom': row.kingdom,
@@ -613,8 +619,8 @@ def _snapshot_row_to_dict(row):
         'subspecies': row.subspecies,
         'variety': row.variety,
         'species_group': row.species_group,
-        'taxon': row.canonical_name,
-        'scientific_name_and_authority': row.scientific_name,
+        'taxon': taxon,
+        'scientific_name_and_authority': scientific_name,
         'author': row.authorship,
         'taxonomic_status': row.taxonomic_status,
         'accepted_taxon': row.accepted_taxon,
@@ -661,12 +667,20 @@ def write_snapshot_pdf(snapshots, version, output_file, order_by=None):
         story.append(Paragraph(f'<i>{group_name}</i>', checklist_style.group))
         story.append(Spacer(1, 10))
         for s in species_list:
-            sp_line = f'<i>{s.scientific_name}</i>'
+            taxon_name = canonical_with_subgenus(s.canonical_name, s.genus, s.subgenus)
+            sci_name = s.scientific_name or ''
+            if taxon_name and taxon_name not in sci_name:
+                sci_name = taxon_name
+            sp_line = f'<i>{sci_name}</i>'
             if s.authorship:
                 sp_line += f' {s.authorship}'
             story.append(Paragraph(sp_line, checklist_style.species))
             for syn in synonym_map.get(s.checklist_id, []):
-                syn_line = f'= <i>{syn.scientific_name}</i>'
+                syn_taxon = canonical_with_subgenus(syn.canonical_name, syn.genus, syn.subgenus)
+                syn_sci = syn.scientific_name or ''
+                if syn_taxon and syn_taxon not in syn_sci:
+                    syn_sci = syn_taxon
+                syn_line = f'= <i>{syn_sci}</i>'
                 if syn.authorship:
                     syn_line += f' {syn.authorship}'
                 story.append(Paragraph(syn_line, checklist_style.synonym))

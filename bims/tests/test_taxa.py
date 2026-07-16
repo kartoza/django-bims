@@ -11,6 +11,7 @@ from bims.utils.fetch_gbif import merge_taxa_data
 from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonGroup, IUCNStatus, TaxonExtraAttribute
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.views.download_csv_taxa_list import TaxaCSVSerializer
+from bims.utils.taxonomy import canonical_with_subgenus
 from bims.admin import TaxonomyAdminForm
 
 
@@ -184,6 +185,117 @@ class TaxaCSVSerializerTest(TestCase):
 
         self.assertEqual(taxon_data['genus'], 'Enteromius')
         self.assertEqual(csv_data['genus'], 'Enteromius')
+
+    def test_taxon_with_subgenus_includes_parenthetical_in_download(self):
+        """
+        get_taxon should return "Genus (Subgenus) epithet" and
+        get_scientific_name_and_authority should include it with the author.
+        """
+        genus = Taxonomy.objects.create(
+            canonical_name='Thraulus', scientific_name='Thraulus', rank='GENUS',
+        )
+        subgenus = Taxonomy.objects.create(
+            canonical_name='Thraulus (Masharikella)',
+            scientific_name='Thraulus (Masharikella)',
+            rank='SUBGENUS',
+            parent=genus,
+        )
+        species = Taxonomy.objects.create(
+            canonical_name='Thraulus (Masharikella) iteris',
+            scientific_name='Thraulus (Masharikella) iteris Sartori & Salles, 2025',
+            rank='SPECIES',
+            parent=genus,
+            subgenus=subgenus,
+            author='Sartori & Salles, 2025',
+        )
+
+        serializer = TaxaCSVSerializer(instance=species)
+        data = serializer.data
+
+        self.assertEqual(data['taxon'], 'Thraulus (Masharikella) iteris')
+        self.assertIn('Thraulus (Masharikella) iteris', data['scientific_name_and_authority'])
+
+    def test_legacy_species_with_subgenus_fk_gets_parenthetical_in_download(self):
+        """
+        A species whose canonical_name lacks the subgenus parenthetical (legacy
+        data uploaded before the fix) should still get the correct taxon name
+        in the download output via the subgenus FK.
+        """
+        genus = Taxonomy.objects.create(
+            canonical_name='Aedes', scientific_name='Aedes', rank='GENUS',
+        )
+        subgenus = Taxonomy.objects.create(
+            canonical_name='Stegomyia',
+            scientific_name='Stegomyia',
+            rank='SUBGENUS',
+            parent=genus,
+        )
+        species = Taxonomy.objects.create(
+            canonical_name='Aedes aegypti',
+            scientific_name='Aedes aegypti Linnaeus 1762',
+            rank='SPECIES',
+            parent=genus,
+            subgenus=subgenus,
+            author='Linnaeus 1762',
+        )
+
+        serializer = TaxaCSVSerializer(instance=species)
+        data = serializer.data
+
+        self.assertEqual(data['taxon'], 'Aedes (Stegomyia) aegypti')
+        self.assertIn('Aedes (Stegomyia) aegypti', data['scientific_name_and_authority'])
+        self.assertIn('Linnaeus 1762', data['scientific_name_and_authority'])
+
+
+class TestCanonicalWithSubgenus(TestCase):
+    """Unit tests for the canonical_with_subgenus download utility."""
+
+    def test_species_without_subgenus_unchanged(self):
+        self.assertEqual(
+            canonical_with_subgenus('Homo sapiens', 'Homo', ''),
+            'Homo sapiens',
+        )
+
+    def test_species_already_has_parenthetical_unchanged(self):
+        self.assertEqual(
+            canonical_with_subgenus(
+                'Aedes (Stegomyia) aegypti', 'Aedes', 'Stegomyia'),
+            'Aedes (Stegomyia) aegypti',
+        )
+
+    def test_species_bare_subgenus_inserted(self):
+        self.assertEqual(
+            canonical_with_subgenus('Aedes aegypti', 'Aedes', 'Stegomyia'),
+            'Aedes (Stegomyia) aegypti',
+        )
+
+    def test_subgenus_rank_bare_name_gets_genus_prefix(self):
+        self.assertEqual(
+            canonical_with_subgenus('Stegomyia', 'Aedes', 'Stegomyia'),
+            'Aedes (Stegomyia)',
+        )
+
+    def test_subgenus_value_in_genus_parenthetical_form(self):
+        """Subgenus stored as 'Aedes (Stegomyia)' — extract bare name correctly."""
+        self.assertEqual(
+            canonical_with_subgenus(
+                'Aedes aegypti', 'Aedes', 'Aedes (Stegomyia)'),
+            'Aedes (Stegomyia) aegypti',
+        )
+
+    def test_missing_genus_returns_canonical_unchanged(self):
+        self.assertEqual(
+            canonical_with_subgenus('Aedes aegypti', '', 'Stegomyia'),
+            'Aedes aegypti',
+        )
+
+    def test_thraulus_masharikella_iteris(self):
+        """Reproduce the exact example from the issue."""
+        self.assertEqual(
+            canonical_with_subgenus(
+                'Thraulus iteris', 'Thraulus', 'Masharikella'),
+            'Thraulus (Masharikella) iteris',
+        )
 
 
 class TestClearTaxaNotAssociatedInTaxonGroup(FastTenantTestCase):
