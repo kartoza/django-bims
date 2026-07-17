@@ -467,7 +467,11 @@
                     <tr>
                         <td scope="row"
                             class="taxon-name">
-                            {{ collection_record.taxonomy.canonical_name }}
+                            {% if collection_record.source_collection == 'gbif' %}
+                                <a target="_blank" href="https://gbif.org/occurrence/{{ collection_record.upstream_id }}">{{ collection_record.taxonomy.canonical_name }}</a>
+                            {% else %}
+                                {{ collection_record.taxonomy.canonical_name }}
+                            {% endif %}
                             <input class="collection-id" type="hidden"
                                    value="{{ collection_record.id }}">
                         </td>
