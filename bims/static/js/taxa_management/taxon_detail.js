@@ -55,8 +55,7 @@ export const taxonDetail = (() => {
 
     function shouldUseAcceptedHierarchy(data) {
         const status = normalizeStatus(data?.taxonomic_status);
-        const isSynonymOrDoubtful = status === 'DOUBTFUL' || status.includes('SYNONYM');
-        return Boolean(isSynonymOrDoubtful && data?.accepted_taxonomy);
+        return Boolean(status.includes('SYNONYM') && data?.accepted_taxonomy);
     }
 
     function getHierarchySource(data) {
