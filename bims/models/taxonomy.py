@@ -1051,7 +1051,9 @@ def taxonomy_pre_save_handler(sender, instance: Taxonomy, **kwargs):
         canonical_name = instance.canonical_name
         genus_name = instance.parent.canonical_name if instance.parent else ''
         if len(canonical_name.split(' ')) < 2 and genus_name:
-            instance.scientific_name = f'{genus_name} ({canonical_name})'
+            formatted = f'{genus_name} ({canonical_name})'
+            instance.canonical_name = formatted
+            instance.scientific_name = formatted
             if instance.author:
                 instance.scientific_name += f' {instance.author}'
 

@@ -9,6 +9,8 @@ available, resolves the parent straight from GBIF.
 
 import sys
 
+from bims.scripts.species_keys import RANK_INDEX, RANK_HIERARCHY, PARENT_RANKS
+
 try:
     from django_tenants.utils import get_tenant_model, schema_context
 except ImportError:  # pragma: no cover - tenant support optional
@@ -119,43 +121,90 @@ class Command(BaseCommand):
         )
 
         fixed = 0
-        skipped_no_key = 0
         skipped_no_parent = 0
 
         for taxon in qs.iterator():
+            parent = None
+            parent_name = None
+            parent_rank = ''
+            parent_key = None
+
             if not taxon.gbif_key:
-                skipped_no_key += 1
                 self.stdout.write(
-                    f"  - {taxon.canonical_name} (ID {taxon.pk}): no GBIF key, skipping."
+                    f"  - {taxon.canonical_name} (ID {taxon.pk}): no GBIF key."
                 )
+
+            # Find parent using additional_data
+            if taxon.additional_data:
+                self.stdout.write(
+                    f"  - {taxon.canonical_name} Find parent using additional_data"
+                )
+                parent_name = ''
+                current_rank = taxon.rank
+                parent_rank = PARENT_RANKS[current_rank.upper()]
+                if parent_rank:
+                    parent_name = taxon.additional_data.get(parent_rank.capitalize(), '')
+                    if parent_rank.upper() == 'SPECIES':
+                        # add genus name to parent_name
+                        genus_name = taxon.additional_data.get('Genus', '')
+                        if genus_name not in parent_name:
+                            parent_name = f'{genus_name} {parent_name}'
+
+            if not taxon.gbif_key and not parent_name:
+                skipped_no_parent += 1
                 continue
 
-            parent_key = self._resolve_parent_key(taxon)
-            if not parent_key:
-                skipped_no_parent += 1
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"  - {taxon.canonical_name} (ID {taxon.pk}): "
-                        f"no parent key found on GBIF (key {taxon.gbif_key})."
+            if taxon.gbif_key:
+                parent_key = self._resolve_parent_key(taxon)
+                if not parent_key:
+                    skipped_no_parent += 1
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  - {taxon.canonical_name} (ID {taxon.pk}): "
+                            f"no parent key found on GBIF (key {taxon.gbif_key})."
+                        )
                     )
-                )
-                continue
+                    continue
 
             if dry_run:
-                fixed += 1
-                self.stdout.write(
-                    f"  [dry-run] {taxon.canonical_name} (ID {taxon.pk}) "
-                    f"-> parent GBIF key {parent_key}"
-                )
+                if parent_key:
+                    self.stdout.write(
+                        f"  [dry-run] {taxon.canonical_name} (ID {taxon.pk}) "
+                        f"-> parent GBIF key {parent_key}"
+                    )
+                    fixed += 1
+                elif parent_name:
+                    self.stdout.write(
+                        f"  [dry-run] {taxon.canonical_name} (ID {taxon.pk}) "
+                        f"-> parent {parent_name}"
+                    )
+                    fixed += 1
                 continue
 
-            parent = self._fetch_parent(parent_key)
+            if not parent:
+                if parent_key:
+                    parent = self._fetch_parent(parent_key)
+                elif parent_name:
+                    parent = Taxonomy.objects.filter(
+                        canonical_name__iexact=parent_name,
+                        rank__iexact=parent_rank
+                    ).first()
+                    if not parent:
+                        self.stdout.write(
+                            f"  - {taxon.canonical_name} Fetch parent by name {parent_name} ({parent_rank})"
+                        )
+                        parent = self._fetch_parent(
+                            parent_key=None,
+                            parent_name=parent_name,
+                            rank=parent_rank
+                        )
+
             if not parent:
                 skipped_no_parent += 1
                 self.stdout.write(
                     self.style.WARNING(
                         f"  - {taxon.canonical_name} (ID {taxon.pk}): "
-                        f"could not fetch parent {parent_key} from GBIF."
+                        f"could not find parent."
                     )
                 )
                 continue
@@ -176,8 +225,7 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f"{prefix} {fixed} doubtful taxa. "
-                f"Skipped {skipped_no_key} without a GBIF key and "
-                f"{skipped_no_parent} with no resolvable parent."
+                f"Skipped {skipped_no_parent} with no resolvable parent."
             )
         )
 
@@ -200,14 +248,23 @@ class Command(BaseCommand):
 
         return parent_key
 
-    def _fetch_parent(self, parent_key):
+    def _fetch_parent(self, parent_key, parent_name=None, rank=None):
         """Materialize and return the parent Taxonomy for a GBIF key."""
         from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 
-        return fetch_all_species_from_gbif(
-            gbif_key=parent_key,
-            fetch_children=False,
-        )
+        if parent_key:
+            return fetch_all_species_from_gbif(
+                gbif_key=parent_key,
+                fetch_children=False,
+            )
+        elif parent_name:
+            return fetch_all_species_from_gbif(
+                species=parent_name,
+                fetch_children=False,
+                taxonomic_rank=rank
+            )
+
+        return None
 
     def _get_tenant(self, schema_name):
         TenantModel = get_tenant_model()

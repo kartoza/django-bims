@@ -118,13 +118,15 @@ class TaxaProcessor(object):
 
     def _compose_species_name(self, row) -> str:
         """
-        Return a canonical binomial/trinomial.
+        Return a canonical binomial/trinomial, including subgenus parenthetical when present.
 
         • If the species cell already starts with the genus, normalize capitalization.
         • Otherwise prepend the genus.
         • Always force epithets (everything after the genus) to lower-case.
+        • When a SubGenus column value is present, inserts it as "(SubGenusName)" after the genus.
         """
         genus = _safe_strip(self.get_row_value(row, GENUS))
+        subgenus = _safe_strip(self.get_row_value(row, SUBGENUS))
         species = _safe_strip(self.get_row_value(row, SPECIES))
 
         if not species:
@@ -133,17 +135,24 @@ class TaxaProcessor(object):
         if not genus or not species:
             return species or genus
 
-        parts = species.split()
-        epithets = ' '.join(p.lower() for p in parts[1:]) if len(parts) > 1 else ''
-        # If species already includes genus (case-insensitive), normalize capitalization.
-        if species.lower().startswith(genus.lower() + ' '):
-            genus_cap = genus[:1].upper() + genus[1:].lower()
-            rest = species.split(' ', 1)[1] if ' ' in species else ''
-            rest_norm = ' '.join(w.lower() for w in rest.split())
-            return f'{genus_cap} {rest_norm}'.strip()
-
         genus_cap = genus[:1].upper() + genus[1:].lower()
+
+        parts = species.split()
+        non_paren = [p for p in parts if not (p.startswith('(') and p.endswith(')'))]
+        if non_paren and non_paren[0].lower() == genus.lower():
+            epithet_tokens = [w.lower() for w in non_paren[1:]]
+        else:
+            epithet_tokens = [w.lower() for w in non_paren]
+        epithet = ' '.join(epithet_tokens)
+
+        if subgenus:
+            return f'{genus_cap} ({subgenus}) {epithet}'.strip()
+
+        if species.lower().startswith(genus.lower() + ' '):
+            rest = species.split(' ', 1)[1] if ' ' in species else ''
+            return f'{genus_cap} {" ".join(w.lower() for w in rest.split())}'.strip()
         species_lc = parts[0].lower()
+        epithets = ' '.join(p.lower() for p in parts[1:]) if len(parts) > 1 else ''
         tail = f' {epithets}' if epithets else ''
         return f'{genus_cap} {species_lc}{tail}'.strip()
 
@@ -151,6 +160,7 @@ class TaxaProcessor(object):
         """
         Ensure Genus prefix is present and normalize casing:
         Genus Capitalized, epithets lower-case.
+        Parenthetical subgenus tokens (e.g. "(Stegomyia)") are preserved as-is.
         """
         name = (name or '').strip()
         if not name:
@@ -160,16 +170,19 @@ class TaxaProcessor(object):
         if not parts:
             return name
 
+        def _normalize_token(t: str) -> str:
+            return t if (t.startswith('(') and t.endswith(')')) else t.lower()
+
         if genus:
             genus_cap = genus[:1].upper() + genus[1:].lower()
             if name.lower().startswith(genus.lower() + ' '):
-                rest = ' '.join(w.lower() for w in parts[1:])
+                rest = ' '.join(_normalize_token(w) for w in parts[1:])
                 return f'{genus_cap} {rest}'.strip()
-            rest = ' '.join(w.lower() for w in parts)
+            rest = ' '.join(_normalize_token(w) for w in parts)
             return f'{genus_cap} {rest}'.strip()
 
         head = parts[0][:1].upper() + parts[0][1:].lower()
-        tail = ' '.join(w.lower() for w in parts[1:])
+        tail = ' '.join(_normalize_token(w) for w in parts[1:])
         return f'{head} {tail}'.strip()
 
     def _choose_taxon_display_name(self, row, rank: str, taxonomic_status: str,
@@ -189,6 +202,10 @@ class TaxaProcessor(object):
 
         if is_subgenus:
             subgenus_name = _safe_strip(self.get_row_value(row, SUBGENUS))
+            genus_name = _safe_strip(self.get_row_value(row, GENUS))
+            if subgenus_name and genus_name:
+                genus_cap = genus_name[:1].upper() + genus_name[1:].lower()
+                return f'{genus_cap} ({subgenus_name})'
             return subgenus_name or composed_taxon
 
         if _canon(csv_taxon) == _canon(composed_taxon):
@@ -652,7 +669,7 @@ class TaxaProcessor(object):
                 else:
                     taxon = None
             else:
-                taxon, _ = Taxonomy.objects.get_or_create(
+                taxon, _created = Taxonomy.objects.get_or_create(
                     canonical_name=taxon_name,
                     scientific_name=scientific_name,
                     legacy_canonical_name=taxon_name,
@@ -677,6 +694,12 @@ class TaxaProcessor(object):
             if genus_name and genus_name.lower() not in taxon_name.lower():
                 taxon_name = f'{genus_name} {taxon_name}'
 
+        if _safe_upper(current_rank) == 'SUBGENUS':
+            genus_name = _safe_strip(self.get_row_value(row, GENUS))
+            if genus_name and not taxon_name.startswith(genus_name):
+                genus_cap = genus_name[:1].upper() + genus_name[1:].lower()
+                taxon_name = f'{genus_cap} ({taxon_name})'
+
         if current_rank == VARIETY:
             genus_name = _safe_strip(self.get_row_value(row, GENUS))
             species_name = _safe_strip(self.get_row_value(row, SPECIES))
@@ -691,7 +714,6 @@ class TaxaProcessor(object):
             _safe_upper(current_rank),
             row=row
         )
-
         # If we already have a parent or reached KINGDOM, stop.
         if taxon.parent or _safe_upper(taxon.rank) == 'KINGDOM':
             return taxon
@@ -794,12 +816,18 @@ class TaxaProcessor(object):
                 taxon_name = f'{taxon_name} {sub_species_name}'
 
         if csv_taxon:
+            # For species-like ranks, use the subgenus-aware composed form so
+            # that _choose_taxon_display_name prefers "Genus (Sub) epithet"
+            # over the plain csv_taxon when a SubGenus column is present.
+            composed_taxon = (
+                self._compose_species_name(row) if is_species else taxon_name
+            )
             taxon_name = self._choose_taxon_display_name(
                 row=row,
                 rank=rank,
                 taxonomic_status=taxonomic_status,
                 csv_taxon=csv_taxon,
-                composed_taxon=taxon_name
+                composed_taxon=composed_taxon
             )
 
         if not taxon_name:
@@ -1155,33 +1183,40 @@ class TaxaProcessor(object):
                     # Synonyms should not have a parent
                     parent = None
                 new_taxon = True
-                taxonomy, _ = Taxonomy.objects.get_or_create(
+                taxonomy, _created2 = Taxonomy.objects.get_or_create(
                     scientific_name=scientific_name,
                     canonical_name=taxon_name,
                     rank=TaxonomicRank[_safe_upper(rank)].name,
                     parent=parent,
                     taxonomic_status=taxonomic_status.upper()
                 )
-
             if is_species and subgenus:
+                genus_for_sg = _safe_strip(self.get_row_value(row, GENUS))
+                subgenus_canonical = (
+                    f'{genus_for_sg[:1].upper() + genus_for_sg[1:].lower()} ({subgenus})'
+                    if genus_for_sg else subgenus
+                )
                 subgenus_taxon = Taxonomy.objects.filter(
-                    canonical_name=subgenus,
+                    canonical_name=subgenus_canonical,
                     rank=TaxonomicRank.SUBGENUS.name
                 )
                 if not subgenus_taxon.exists():
-                    # Create one
-                    genus = _safe_strip(self.get_row_value(row, GENUS))
-                    genus_obj = Taxonomy.objects.none()
-                    if genus:
-                        genus_obj = Taxonomy.objects.filter(
-                            canonical_name=genus,
-                            rank=TaxonomicRank.GENUS.name,
-                        ).first()
-                    subgenus_taxon, _ = Taxonomy.objects.get_or_create(
-                        scientific_name=subgenus,
+                    subgenus_taxon = Taxonomy.objects.filter(
                         canonical_name=subgenus,
+                        rank=TaxonomicRank.SUBGENUS.name
+                    )
+                if not subgenus_taxon.exists():
+                    genus_obj = Taxonomy.objects.filter(
+                        canonical_name=genus_for_sg,
+                        rank=TaxonomicRank.GENUS.name,
+                    ).first() if genus_for_sg else None
+                    subgenus_taxon, _created3 = Taxonomy.objects.get_or_create(
+                        canonical_name=subgenus_canonical,
                         rank=TaxonomicRank.SUBGENUS.name,
-                        parent=genus_obj
+                        defaults={
+                            'scientific_name': subgenus_canonical,
+                            'parent': genus_obj,
+                        }
                     )
                 else:
                     subgenus_taxon = subgenus_taxon.first()
