@@ -131,7 +131,7 @@
         <% if (is_pesticide_dashboard_enabled) { %>
         <div class="row" style="padding: 10px;">
             <div class="col-sm-12">
-                <button class="fbis-button-small sp-pesticide-dashboard" style="width: 100%; height: 30px">Pesticide Dashboard</button>
+                <button class="fbis-button-small <% if (typeof pesticide_exist !== 'undefined' && !pesticide_exist) { %> disabled <% } else { %> sp-pesticide-dashboard <% } %>" style="width: 100%; height: 30px">Pesticide Dashboard</button>
             </div>
         </div>
         <% } %>
