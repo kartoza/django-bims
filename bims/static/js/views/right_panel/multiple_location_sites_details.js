@@ -99,6 +99,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                   is_pesticide_dashboard_enabled: is_pesticide_dashboard_enabled,
                   sass_exist: data.sass_exist,
                   physico_chemical_exist: false,
+                  pesticide_exist: false,
                   add_data: false,
                   water_temperature_exist: false,
                   climate_exist: false
