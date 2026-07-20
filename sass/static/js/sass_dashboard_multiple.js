@@ -59,13 +59,11 @@ function drawMap(data) {
         features: iconFeatures
     });
     let iconStyle = new ol.style.Style({
-        image: new ol.style.Icon(({
-            anchor: [0.5, 46],
-            anchorXUnits: 'fraction',
-            anchorYUnits: 'pixels',
-            opacity: 0.75,
-            src: '/static/img/map-marker.png'
-        }))
+        image: new ol.style.Circle({
+            radius: 6,
+            fill: new ol.style.Fill({ color: '#00a99d' }),
+            stroke: new ol.style.Stroke({ color: '#ffffff', width: 1 })
+        })
     });
     let vectorLayer = new ol.layer.Vector({
         source: vectorSource,
@@ -686,6 +684,10 @@ function renderAll(data) {
     renderBiotopeRatingsChart(data);
     renderDataSources(data);
     renderEcologicalChart(data);
+
+    let assessments = data['sass_score_chart_data']['number_assessments'] || [];
+    let total = assessments.reduce(function (sum, n) { return sum + n; }, 0);
+    $('#total-assessments').text(total + ' assessment' + (total !== 1 ? 's' : ''));
 }
 
 function removeParam(sourceURL, key) {
