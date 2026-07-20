@@ -1181,9 +1181,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
             });
         },
         downloadFilteredLayerData: function (layerFilter, layerId, layerName, $button) {
-            let _layerFilter = layerFilter;
-            if (layerFilter.endsWith('.0')) {
-                _layerFilter = layerFilter.replace('.0', '')
+            let _layerFilter = String(layerFilter);
+            if (_layerFilter.endsWith('.0')) {
+                _layerFilter = _layerFilter.replace('.0', '')
             }
             $.get(`/api/download-layer-data/${layerId}/${_layerFilter}/`, function(response) {
                 const data = response['data'];
@@ -1364,6 +1364,9 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                                 Shared.Dispatcher.trigger('map:closePopup');
                             });
                             $(`#${contentId}`).prepend(spatialFilterButton);
+                            if (layerAttr) {
+                                spatialFilterButton.after($('<br/>'));
+                            }
                         }
                     }
                 }
