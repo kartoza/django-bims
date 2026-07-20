@@ -145,7 +145,11 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                 'layerTitle': layerTitle,
                 'category': layerCategory,
                 'source': layerSource,
-                'enableStylesSelection': enableStylesSelection
+                'enableStylesSelection': enableStylesSelection,
+                'layerAttr': layerData['layer_csv_attribute'] || null,
+                'layerId': layerData['id'] || null,
+                'document': layerData['document'] || null,
+                'documentTitle': layerData['document_title'] || null
             };
             if (!defaultVisibility) {
                 layer.setVisible(false);
@@ -1091,10 +1095,10 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                                         featuresInfo[layer_key] = {
                                             'layerName': layer['layerTitle'],
                                             'properties': properties,
-                                            'layerAttr': null,
-                                            'layerId': null,
-                                            'document': null,
-                                            'documentTitle': null
+                                            'layerAttr': layer['layerAttr'],
+                                            'layerId': layer['layerId'],
+                                            'document': layer['document'],
+                                            'documentTitle': layer['documentTitle']
                                         };
                                     }
                                 }
