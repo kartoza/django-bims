@@ -174,10 +174,14 @@ class SassDashboardMultipleSitesApiView(APIView):
 
     @timing
     def get_taxa_per_biotope_data(self):
-        latest_site_visits = self.site_visit_taxa.order_by(
-            'site',
-            '-site_visit__site_visit_date'
-        ).distinct('site').values('site_visit')
+        # Materialize to a list so Django uses IN (...) instead of a correlated
+        # DISTINCT ON subquery, which PostgreSQL cannot optimize efficiently.
+        latest_site_visits = list(
+            self.site_visit_taxa.order_by(
+                'site',
+                '-site_visit__site_visit_date'
+            ).distinct('site').values_list('site_visit', flat=True)
+        )
         sass_taxon_data = (
             self.site_visit_taxa.filter(
                 site_visit__in=latest_site_visits,
