@@ -160,6 +160,7 @@ class SiteVisit(AbstractAdditionalData):
 
 @receiver(post_save, sender=SiteVisit)
 def site_visit_post_save_handler(**kwargs):
+    from django.db import connection
     from sass.tasks.site_visit_ecological_condition import (
         site_visit_ecological_condition_task
     )
@@ -167,4 +168,7 @@ def site_visit_post_save_handler(**kwargs):
         site_visit = kwargs['instance']
     except KeyError:
         return
-    site_visit_ecological_condition_task.delay(site_visit.id)
+    site_visit_ecological_condition_task.delay(
+        site_visit.id,
+        connection.schema_name
+    )
