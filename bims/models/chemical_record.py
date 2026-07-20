@@ -32,6 +32,15 @@ class ChemicalRecord(models.Model):
         blank=True
     )
 
+    custodian = models.CharField(
+        default='',
+        help_text='An identifier for the institution having custody of the '
+                  'information referred to in the record.',
+        max_length=200,
+        verbose_name='Custodian',
+        blank=True
+    )
+
     location_site = models.ForeignKey(
         LocationSite,
         models.CASCADE,
