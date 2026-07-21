@@ -79,6 +79,11 @@ def clear_gbif_deleted_occurrences(
     Check GBIF-sourced occurrences against GBIF and report/delete the ones that
     have been removed upstream.
 
+    Records that still exist upstream have their modified_date bumped to now,
+    so they rotate out of the stale window and are not re-checked on the next
+    run (regardless of dry_run). Records deleted upstream are left as-is so, on
+    a dry run, they keep being reported until they are actually removed.
+
     :param dry_run: If True, do not delete anything; only report. A CSV of the
         affected records is emailed to superusers.
     :param stale_days: Only check occurrences whose modified_date is older than
@@ -109,13 +114,29 @@ def clear_gbif_deleted_occurrences(
     if limit:
         qs = qs[:limit]
 
+    def _mark_checked(ids):
+        """
+        Bump modified_date on records that still exist upstream so they rotate
+        out of the stale window and are not re-checked every run. Uses update()
+        to bypass save() (no side effects, no auto-restamp).
+        """
+        if ids:
+            BiologicalCollectionRecord.objects.filter(id__in=ids).update(
+                modified_date=timezone.now())
+
     total_checked = 0
     deleted_ids = []
+    alive_ids = []
     csv_rows = []
     sample = []
     for record in qs.iterator():
         total_checked += 1
         if not _occurrence_deleted(session, record.upstream_id, timeout):
+            # Still exists upstream: record it as freshly checked.
+            alive_ids.append(record.id)
+            if len(alive_ids) >= 5000:
+                _mark_checked(alive_ids)
+                alive_ids = []
             continue
         deleted_ids.append(record.id)
         name = (
@@ -132,6 +153,8 @@ def clear_gbif_deleted_occurrences(
         if len(sample) < 25:
             sample.append(
                 f"{record.id}: {name or '-'} (gbifID={record.upstream_id})")
+
+    _mark_checked(alive_ids)
 
     to_delete = len(deleted_ids)
     deleted = 0
