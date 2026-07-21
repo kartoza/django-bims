@@ -152,6 +152,27 @@
             clearTaxaBtn.style.marginTop = '15px';
             clearTaxaBtn.style.setProperty('font-size', '9pt', 'important');
 
+            const clearGbifDeletedBtn = document.createElement('a');
+            clearGbifDeletedBtn.href = '#';
+            clearGbifDeletedBtn.className = 'grp-button grp-primary';
+            clearGbifDeletedBtn.textContent = 'Clear GBIF deleted occurrences';
+            clearGbifDeletedBtn.style.marginLeft = '10px';
+            clearGbifDeletedBtn.style.marginTop = '0px';
+            clearGbifDeletedBtn.style.setProperty('font-size', '9pt', 'important');
+
+            const staleDaysLabel = document.createElement('label');
+            staleDaysLabel.style.display = 'block';
+            staleDaysLabel.style.marginLeft = '10px';
+            staleDaysLabel.title = 'Only check occurrences not modified in the last N days';
+            staleDaysLabel.appendChild(document.createTextNode('GBIF stale days '));
+
+            const staleDaysInput = document.createElement('input');
+            staleDaysInput.type = 'number';
+            staleDaysInput.min = '0';
+            staleDaysInput.value = '30';
+            staleDaysInput.style.width = '60px';
+            staleDaysLabel.appendChild(staleDaysInput);
+
             const dryRunInput = document.createElement('input');
             dryRunInput.type = 'checkbox';
             dryRunInput.id = 'outside-boundary-dry-run';
@@ -167,6 +188,8 @@
             outsideWrapper.appendChild(removeOutsideBtn);
             outsideWrapper.appendChild(dryRunLabel);
             outsideWrapper.appendChild(clearTaxaBtn);
+            outsideWrapper.appendChild(clearGbifDeletedBtn);
+            outsideWrapper.appendChild(staleDaysLabel);
             targetElement.appendChild(outsideWrapper);
 
             removeOutsideBtn.addEventListener('click', function (event) {
@@ -230,6 +253,43 @@
                 .then(response => {
                     if (response.ok) return response.json();
                     throw new Error("Failed to enqueue outside-boundary cleanup");
+                })
+                .then(data => {
+                    alert(data.message || "Cleanup task started.");
+                    window.location.href = "/admin/";
+                })
+                .catch(error => {
+                    console.error("Error starting cleanup:", error);
+                    alert("An unexpected error occurred. Please try again.");
+                });
+            });
+
+            clearGbifDeletedBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+
+                const dryRun = !!dryRunInput.checked;
+                const staleDays = parseInt(staleDaysInput.value, 10) || 0;
+                const confirmMsg = dryRun
+                    ? "Run a DRY RUN? No data will be deleted; a CSV report of affected records will be emailed to superusers."
+                    : "This will permanently delete GBIF-sourced occurrences that have been removed upstream in GBIF. Proceed?";
+
+                if (!confirm(confirmMsg)) return;
+
+                fetch("{% url 'clear_gbif_deleted_occurrences' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({
+                        dry_run: dryRun,
+                        stale_days: staleDays
+                    })
+                })
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error("Failed to enqueue GBIF deleted-occurrence cleanup");
                 })
                 .then(data => {
                     alert(data.message || "Cleanup task started.");

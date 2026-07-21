@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
 from django.db import connection
 
@@ -13,17 +13,36 @@ def get_domain_name() -> str:
     return dom.domain if dom else tenant_name
 
 
-def mail_superusers(subject: str, body: str):
-    superusers = (
+def mail_superusers(subject: str, body: str, attachment=None):
+    """
+    Email all superusers.
+
+    :param attachment: Optional ``(filename, content, mimetype)`` tuple to
+        attach to the message (e.g. a CSV report).
+    """
+    superusers = list(
         get_user_model()
         .objects.filter(is_superuser=True, email__isnull=False)
         .values_list("email", flat=True)
     )
-    if superusers:
+    if not superusers:
+        return
+
+    from_email = getattr(settings, "DEFAULT_FROM_EMAIL", None)
+    if attachment:
+        email = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=from_email,
+            to=superusers,
+        )
+        email.attach(*attachment)
+        email.send(fail_silently=True)
+    else:
         send_mail(
             subject=subject,
             message=body,
-            from_email=getattr(settings, "DEFAULT_FROM_EMAIL", None),
-            recipient_list=list(superusers),
+            from_email=from_email,
+            recipient_list=superusers,
             fail_silently=True,
         )
