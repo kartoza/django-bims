@@ -48,7 +48,8 @@ from bims.api_views.taxon import (
     TaxaList,
     TaxaGroupSummary,
     TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
-    HarvestIUCNStatus, ApproveTaxonGroupProposalsView, ClearTaxaNotAssociatedInTaxonGroup
+    HarvestIUCNStatus, ApproveTaxonGroupProposalsView, ClearTaxaNotAssociatedInTaxonGroup,
+    ClearGbifDeletedOccurrences
 )
 from bims.api_views.dataset import DatasetAutocompleteAPIView
 from bims.api_views.cluster import ClusterList
@@ -528,6 +529,9 @@ urlpatterns = [
     path('clear-taxa-not-associated-in-taxon_group/',
          ClearTaxaNotAssociatedInTaxonGroup.as_view(),
          name='clear_taxa_not_associated_in_taxon_group'),
+    path('clear-gbif-deleted-occurrences/',
+         ClearGbifDeletedOccurrences.as_view(),
+         name='clear_gbif_deleted_occurrences'),
     path('harvest-iucn-status/',
          HarvestIUCNStatus.as_view(),
          name='harvest_iucn_status'),

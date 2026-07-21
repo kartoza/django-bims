@@ -15,6 +15,7 @@ from django.conf import settings
 from django.contrib.gis.db import models
 from django.contrib.gis.geos import Point, MultiPolygon, GEOSGeometry
 from django.contrib.gis.measure import D
+from django.utils import timezone
 
 from bims.utils.gbif_download import (
     submit_download, get_ready_download_url, is_canceled, download_archive,
@@ -502,6 +503,7 @@ def process_gbif_row(
             create_dataset_from_gbif(dataset_key)
 
     # Additional data
+    fetched_at = timezone.now()
     additional_data = {
         'fetch_from_gbif': True,
         'date_fetched': datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -698,6 +700,8 @@ def process_gbif_row(
             coordinate_uncertainty_in_meters=coord_uncertainty,
             coordinate_precision=coord_precision,
             doi=doi,
+            created_date=fetched_at,
+            modified_date=fetched_at,
         )
 
         if has_recorded_date_invalid:

@@ -344,6 +344,23 @@ class BiologicalCollectionRecord(AbstractValidation):
         null=True
     )
 
+    created_date = models.DateTimeField(
+        help_text='When this record was first created locally.',
+        null=True,
+        blank=True,
+    )
+
+    modified_date = models.DateTimeField(
+        help_text=(
+            'When this record was last modified locally (e.g. harvested or '
+            'edited). Used to prioritise which records to re-check against '
+            'upstream sources such as GBIF.'
+        ),
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     abundance_number = models.FloatField(
         blank=True,
         null=True
@@ -547,6 +564,16 @@ class BiologicalCollectionRecord(AbstractValidation):
             raise ValueError(
                 f"abundance_number must be greater than zero, got {self.abundance_number!r}"
             )
+
+        now = timezone.now()
+        if self.created_date is None:
+            self.created_date = now
+        self.modified_date = now
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            update_fields.update({'created_date', 'modified_date'})
+            kwargs['update_fields'] = update_fields
 
         max_allowed = 10
         attempt = 0
