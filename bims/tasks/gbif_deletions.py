@@ -58,14 +58,9 @@ CSV_FIELDNAMES = [
     'local_id', 'name', 'gbif_id', 'dataset_key', 'modified_date',
 ]
 
-
-def _build_csv(rows):
-    """Return the CSV report of affected records as a UTF-8 string."""
-    buffer = io.StringIO()
-    writer = csv.DictWriter(buffer, fieldnames=CSV_FIELDNAMES)
-    writer.writeheader()
-    writer.writerows(rows)
-    return buffer.getvalue()
+# Records are checked one-by-one against GBIF, but writes (mark-checked and
+# delete) are flushed in batches so nothing large accumulates in memory.
+BATCH_SIZE = 5000
 
 
 @shared_task(name="bims.tasks.clear_gbif_deleted_occurrences", queue="update")
@@ -114,55 +109,75 @@ def clear_gbif_deleted_occurrences(
     if limit:
         qs = qs[:limit]
 
-    def _mark_checked(ids):
+    # Running totals and a capped preview, so nothing large is held in memory.
+    stats = {'checked': 0, 'to_delete': 0, 'deleted': 0}
+    sample = []
+
+    # CSV of affected records, written incrementally as batches are flushed.
+    csv_buffer = io.StringIO()
+    csv_writer = csv.DictWriter(csv_buffer, fieldnames=CSV_FIELDNAMES)
+    csv_writer.writeheader()
+
+    def _mark_checked(rows):
         """
         Bump modified_date on records that still exist upstream so they rotate
         out of the stale window and are not re-checked every run. Uses update()
         to bypass save() (no side effects, no auto-restamp).
         """
-        if ids:
-            BiologicalCollectionRecord.objects.filter(id__in=ids).update(
-                modified_date=timezone.now())
+        if rows:
+            BiologicalCollectionRecord.objects.filter(
+                id__in=[r['local_id'] for r in rows]).update(
+                    modified_date=timezone.now())
 
-    total_checked = 0
-    deleted_ids = []
-    alive_ids = []
-    csv_rows = []
-    sample = []
+    def _flush_deleted(rows):
+        """Write a batch of upstream-deleted records to the CSV report and,
+        unless dry_run, delete them locally."""
+        if not rows:
+            return
+        csv_writer.writerows(rows)
+        stats['to_delete'] += len(rows)
+        if not dry_run:
+            _, detail_map = BiologicalCollectionRecord.objects.filter(
+                id__in=[r['local_id'] for r in rows]).delete()
+            stats['deleted'] += detail_map.get(
+                'bims.BiologicalCollectionRecord', 0)
+
+    alive_batch = []
+    deleted_batch = []
     for record in qs.iterator():
-        total_checked += 1
-        if not _occurrence_deleted(session, record.upstream_id, timeout):
-            # Still exists upstream: record it as freshly checked.
-            alive_ids.append(record.id)
-            if len(alive_ids) >= 5000:
-                _mark_checked(alive_ids)
-                alive_ids = []
-            continue
-        deleted_ids.append(record.id)
+        stats['checked'] += 1
         name = (
             record.taxonomy.scientific_name
             if record.taxonomy else record.original_species_name
         )
-        csv_rows.append({
+        row = {
             'local_id': record.id,
             'name': name or '',
             'gbif_id': record.upstream_id,
             'dataset_key': record.dataset_key or '',
             'modified_date': record.modified_date or '',
-        })
+        }
+        if not _occurrence_deleted(session, record.upstream_id, timeout):
+            # Still exists upstream: record it as freshly checked.
+            alive_batch.append(row)
+            if len(alive_batch) >= BATCH_SIZE:
+                _mark_checked(alive_batch)
+                alive_batch = []
+            continue
         if len(sample) < 25:
             sample.append(
                 f"{record.id}: {name or '-'} (gbifID={record.upstream_id})")
+        deleted_batch.append(row)
+        if len(deleted_batch) >= BATCH_SIZE:
+            _flush_deleted(deleted_batch)
+            deleted_batch = []
 
-    _mark_checked(alive_ids)
+    _mark_checked(alive_batch)
+    _flush_deleted(deleted_batch)
 
-    to_delete = len(deleted_ids)
-    deleted = 0
-    if deleted_ids and not dry_run:
-        _, detail_map = BiologicalCollectionRecord.objects.filter(
-            id__in=deleted_ids).delete()
-        deleted = detail_map.get(
-            'bims.BiologicalCollectionRecord', 0)
+    to_delete = stats['to_delete']
+    deleted = stats['deleted']
+    total_checked = stats['checked']
 
     result = {
         "ok": True,
@@ -192,10 +207,10 @@ def clear_gbif_deleted_occurrences(
     # On a dry run, attach the full list of affected records as a CSV so
     # superusers can review before running the real deletion.
     attachment = None
-    if dry_run and csv_rows:
+    if dry_run and to_delete:
         attachment = (
             'gbif_deleted_occurrences.csv',
-            _build_csv(csv_rows),
+            csv_buffer.getvalue(),
             'text/csv',
         )
     mail_superusers(subject=subject, body=message, attachment=attachment)
