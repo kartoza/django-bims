@@ -43,8 +43,11 @@ def _apply_authors_and_date(source_reference, document_author, source_year):
     """Set source_date and source_authors on a source reference from CSV fields."""
     changed = False
     if source_year:
-        source_reference.source_date = date(int(source_year), 1, 1)
-        changed = True
+        try:
+            source_reference.source_date = date(int(source_year), 1, 1)
+            changed = True
+        except ValueError:
+            pass
     if changed:
         source_reference.save()
     if document_author:
