@@ -167,6 +167,38 @@ class TestCollectionUpload(FastTenantTestCase):
             source_reference
         )
 
+    def test_reference_database_retains_date_and_authors(self):
+        message, source_reference = process_source_reference(
+            document_author=self.owner.first_name,
+            reference=self.reference_title,
+            source_year='2015',
+            reference_category='database'
+        )
+        self.assertIsNotNone(source_reference)
+        self.assertIsNotNone(source_reference.source_date)
+        self.assertEqual(source_reference.source_date.year, 2015)
+        self.assertEqual(source_reference.source_authors.count(), 1)
+        self.assertEqual(
+            source_reference.source_authors.first().first_name,
+            self.owner.first_name
+        )
+
+    def test_reference_unpublished_retains_date_and_authors(self):
+        message, source_reference = process_source_reference(
+            document_author=self.owner.first_name,
+            reference='Unpublished survey data',
+            source_year='2020',
+            reference_category='unpublished data'
+        )
+        self.assertIsNotNone(source_reference)
+        self.assertIsNotNone(source_reference.source_date)
+        self.assertEqual(source_reference.source_date.year, 2020)
+        self.assertEqual(source_reference.source_authors.count(), 1)
+        self.assertEqual(
+            source_reference.source_authors.first().first_name,
+            self.owner.first_name
+        )
+
     @override_settings(GEOCONTEXT_URL="test.gecontext.com")
     @mock.patch('requests.get', mock.Mock(side_effect=mocked_location_context_data))
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
