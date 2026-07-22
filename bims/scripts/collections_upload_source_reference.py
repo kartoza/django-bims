@@ -13,6 +13,7 @@ from bims.models import (
     SourceReferenceBibliography,
     BimsDocument
 )
+from bims.models.source_reference import SourceReferenceAuthor
 
 
 def get_or_create_data_from_model(model, fields, create = True):
@@ -36,6 +37,32 @@ def get_or_create_data_from_model(model, fields, create = True):
     except model.DoesNotExist:
         return None
     return data
+
+
+def _apply_authors_and_date(source_reference, document_author, source_year):
+    """Set source_date and source_authors on a source reference from CSV fields."""
+    changed = False
+    if source_year:
+        try:
+            source_reference.source_date = date(int(source_year), 1, 1)
+            changed = True
+        except ValueError:
+            pass
+    if changed:
+        source_reference.save()
+    if document_author:
+        users = create_users_from_string(document_author)
+        for rank, user in enumerate(users, start=1):
+            author, _ = Author.objects.get_or_create(
+                first_name=user.first_name,
+                last_name=user.last_name,
+                user=user
+            )
+            SourceReferenceAuthor.objects.get_or_create(
+                source_reference=source_reference,
+                author=author,
+                defaults={'order': rank}
+            )
 
 
 def process_source_reference(
@@ -263,6 +290,8 @@ def process_source_reference(
                     note=None
                 )
             )
+            _apply_authors_and_date(
+                source_reference, document_author, source_year)
         else:
             # Unpublished data
             reference_name = reference
@@ -273,6 +302,8 @@ def process_source_reference(
                     note=reference_name
                 )
             )
+            _apply_authors_and_date(
+                source_reference, document_author, source_year)
     if (
             document and
             source_reference and
