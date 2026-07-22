@@ -75,6 +75,7 @@ from bims.views.site_visit import (
     SiteVisitDeleteView
 )
 from bims.views.taxa_management import TaxaManagementView
+from bims.views.taxa_validation import TaxaValidationView, taxa_validation_results, taxa_assign_gbif_key
 from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
 from bims.views.source_reference import (
@@ -218,6 +219,15 @@ urlpatterns = [
     re_path(r'^taxa-management/$',
             TaxaManagementView.as_view(),
             name='taxa-management'),
+    re_path(r'^taxa-validation/$',
+            TaxaValidationView.as_view(),
+            name='taxa-validation'),
+    re_path(r'^taxa-validation/results/$',
+            taxa_validation_results,
+            name='taxa-validation-results'),
+    re_path(r'^taxa-validation/assign-gbif-key/$',
+            taxa_assign_gbif_key,
+            name='taxa-validation-assign-gbif-key'),
     re_path(r'^backups-management/$',
             BackupsManagementView.as_view()),
     re_path(r'^dashboard-management/$',

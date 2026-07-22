@@ -297,6 +297,11 @@
                     <!-- Download button -->
                     <div class="float-right download-button-container"
                          style="margin-top: -47px;">
+                        {% if user.is_staff or user.is_superuser %}
+                        <a href="{% url 'taxa-validation' %}" class="btn btn-outline-warning mr-1">
+                            <i class="fa fa-check-circle" aria-hidden="true"></i>&nbsp;Validate
+                        </a>
+                        {% endif %}
                         <button id="add-taxon-btn"
                                 class="btn btn-outline-success" data-toggle="modal"
                                 style="display: none"

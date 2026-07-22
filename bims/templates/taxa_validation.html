@@ -1,0 +1,461 @@
+{% extends 'main_base.html' %}
+{% load static %}
+
+{% block subtitle %}Taxa Validation{% endblock %}
+
+{% block head %}
+    <link href="{% static "css/taxa_management.css" %}" rel="stylesheet">
+    <style>
+        .validation-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .check-card {
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: box-shadow 0.15s;
+            background: #fff;
+        }
+        .check-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+        .check-card.active { border-color: #007bff; box-shadow: 0 0 0 2px rgba(0,123,255,.25); }
+        .check-card .count { font-size: 2rem; font-weight: 700; line-height: 1; }
+        .count-ok  { color: #28a745; }
+        .count-warn { color: #dc3545; }
+        .check-card .label { font-weight: 600; margin: 4px 0 2px; }
+        .check-card .desc { font-size: 0.8rem; color: #6c757d; }
+
+        #detail-panel { display: none; }
+        #detail-panel.visible { display: block; }
+
+        .result-table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
+        .result-table th { background: #f8f9fa; position: sticky; top: 0; z-index: 1; }
+        .result-table td, .result-table th { padding: 6px 10px; border-bottom: 1px solid #e9ecef; }
+        .result-table tr:hover td { background: #f0f4ff; }
+
+        .pagination-bar { margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; }
+        .group-select { max-width: 320px; }
+        .toolbar { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+
+        /* GBIF search modal */
+        .gbif-result-item {
+            padding: 8px 12px;
+            border-bottom: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .gbif-result-item:hover { background: #e8f0fe; }
+        .gbif-result-item .name { font-weight: 600; }
+        .gbif-result-item .meta { font-size: 0.78rem; color: #6c757d; }
+        #gbif-results-list { max-height: 320px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 4px; }
+        #gbif-search-status { font-size: 0.85rem; color: #6c757d; min-height: 1.2em; }
+        .selected-gbif-row { background: #d4edda !important; }
+        .row-assigned { opacity: 0.5; pointer-events: none; }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+{{ checks_data|json_script:"taxa-checks-data" }}
+<div class="nav-space" style="height: 51px;"></div>
+<div class="container-fluid" style="padding: 1.5rem 2rem;">
+
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h4 class="mb-0">Taxa Data Quality</h4>
+        <a href="{% url 'taxa-management' %}" class="btn btn-outline-secondary btn-sm">
+            &larr; Taxa Management
+        </a>
+    </div>
+
+    <div class="toolbar">
+        <div>
+            <label class="mb-0 mr-2 font-weight-bold" for="group-select">Taxon Group</label>
+            <select id="group-select" class="form-control form-control-sm group-select d-inline-block">
+                <option value="">All groups</option>
+                {% for tg in taxon_groups %}
+                    <option value="{{ tg.id }}" {% if selected_group_id == tg.id|stringformat:"s" %}selected{% endif %}>
+                        {{ tg.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button id="refresh-btn" class="btn btn-primary btn-sm" style="margin-top: 22px;">
+            <i class="fa fa-refresh"></i> Refresh counts
+        </button>
+    </div>
+
+    <div class="validation-summary">
+        {% for check, count in checks_with_counts %}
+        <div class="check-card" data-key="{{ check.key }}" onclick="loadDetail('{{ check.key }}')">
+            <div class="count {% if count == 0 %}count-ok{% else %}count-warn{% endif %}">
+                {{ count }}
+            </div>
+            <div class="label">{{ check.label }}</div>
+            <div class="desc">{{ check.description }}</div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <div id="detail-panel" class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <span id="detail-title" class="font-weight-bold"></span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="closeDetail()">Close</button>
+        </div>
+        <div class="card-body p-0">
+            <div id="detail-loading" class="p-3 text-muted" style="display:none;">Loading...</div>
+            <div id="detail-table-wrap" style="overflow-x: auto; max-height: 480px; overflow-y: auto;">
+                <table class="result-table">
+                    <thead id="detail-thead">
+                        <tr>
+                            <th>#</th>
+                            <th>Canonical name</th>
+                            <th>Rank</th>
+                            <th>Status</th>
+                            <th>Parent</th>
+                            <th>Parent rank</th>
+                            <th>Accepted taxon</th>
+                            <th>Accepted status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="detail-tbody"></tbody>
+                </table>
+            </div>
+            <div class="pagination-bar px-3 pb-3">
+                <button id="prev-btn" class="btn btn-outline-secondary btn-sm" onclick="prevPage()" disabled>&laquo; Prev</button>
+                <span id="page-info" class="text-muted" style="font-size:0.85rem;"></span>
+                <button id="next-btn" class="btn btn-outline-secondary btn-sm" onclick="nextPage()" disabled>Next &raquo;</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- GBIF key assignment modal -->
+<div class="modal fade" id="gbif-modal" tabindex="-1" role="dialog" aria-labelledby="gbif-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="gbif-modal-title">Assign GBIF Key</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-2" id="gbif-modal-taxon-name" style="font-size:0.9rem;"></p>
+                <div class="input-group mb-2">
+                    <input type="text" id="gbif-search-input" class="form-control"
+                           placeholder="Search GBIF (defaults to canonical name)">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-primary" onclick="doGbifSearch()">Search</button>
+                    </div>
+                </div>
+                <div id="gbif-search-status" class="mb-2"></div>
+                <div id="gbif-results-list"></div>
+            </div>
+            <div class="modal-footer">
+                <span id="gbif-selected-label" class="text-muted mr-auto" style="font-size:0.85rem;"></span>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="gbif-assign-btn" disabled onclick="assignGbifKey()">
+                    Assign key
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const PAGE_SIZE = 50;
+    const CHECKS_META = JSON.parse(document.getElementById('taxa-checks-data').textContent);
+    let currentCheck = null;
+    let currentOffset = 0;
+    let currentTotal = 0;
+
+    // GBIF modal state
+    let gbifTargetTaxonId = null;
+    let gbifTargetRowEl = null;
+    let gbifSelectedKey = null;
+    let gbifSearchTimer = null;
+
+    function groupId() {
+        return document.getElementById('group-select').value || '';
+    }
+
+    function apiUrl(check, offset) {
+        let url = `/taxa-validation/results/?check=${check}&offset=${offset}&limit=${PAGE_SIZE}`;
+        const g = groupId();
+        if (g) url += `&taxonGroup=${g}`;
+        return url;
+    }
+
+    function loadDetail(checkKey) {
+        currentCheck = checkKey;
+        currentOffset = 0;
+
+        document.querySelectorAll('.check-card').forEach(c => c.classList.remove('active'));
+        const card = document.querySelector(`.check-card[data-key="${checkKey}"]`);
+        if (card) card.classList.add('active');
+
+        const meta = CHECKS_META.find(c => c.key === checkKey);
+        document.getElementById('detail-title').textContent = meta ? meta.label : checkKey;
+
+        // Show/hide GBIF key column only for the missing_external_id check
+        const isMissingId = checkKey === 'missing_external_id';
+        const thead = document.getElementById('detail-thead');
+        thead.innerHTML = `<tr>
+            <th>#</th>
+            <th>Canonical name</th>
+            <th>Rank</th>
+            <th>Status</th>
+            <th>Parent</th>
+            <th>Parent rank</th>
+            <th>Accepted taxon</th>
+            <th>Accepted status</th>
+            <th></th>
+        </tr>`;
+
+        document.getElementById('detail-panel').classList.add('visible');
+        document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        fetchPage();
+    }
+
+    function closeDetail() {
+        document.getElementById('detail-panel').classList.remove('visible');
+        document.querySelectorAll('.check-card').forEach(c => c.classList.remove('active'));
+        currentCheck = null;
+    }
+
+    function fetchPage() {
+        if (!currentCheck) return;
+        document.getElementById('detail-loading').style.display = 'block';
+        document.getElementById('detail-table-wrap').style.opacity = '0.4';
+
+        fetch(apiUrl(currentCheck, currentOffset))
+            .then(r => r.json())
+            .then(data => {
+                currentTotal = data.total;
+                renderRows(data.results, data.offset);
+                updatePagination();
+                document.getElementById('detail-loading').style.display = 'none';
+                document.getElementById('detail-table-wrap').style.opacity = '1';
+            })
+            .catch(() => {
+                document.getElementById('detail-loading').style.display = 'none';
+                document.getElementById('detail-table-wrap').style.opacity = '1';
+            });
+    }
+
+    function renderRows(rows, offset) {
+        const tbody = document.getElementById('detail-tbody');
+        tbody.innerHTML = '';
+        const isMissingId = currentCheck === 'missing_external_id';
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-3">No issues found.</td></tr>';
+            return;
+        }
+        rows.forEach((r, i) => {
+            const editUrl = `/admin/bims/taxonomy/${r.id}/change/`;
+            const assignBtn = isMissingId
+                ? `<button class="btn btn-outline-success btn-sm ml-1"
+                           style="white-space:nowrap;font-size:0.75rem;padding:2px 8px;"
+                           data-taxon-id="${r.id}"
+                           data-canonical="${esc(r.canonical_name)}"
+                           onclick="openGbifModal(this)">
+                       GBIF&hellip;
+                   </button>`
+                : '';
+            tbody.innerHTML += `
+                <tr id="taxon-row-${r.id}">
+                    <td>${offset + i + 1}</td>
+                    <td><strong>${esc(r.canonical_name)}</strong></td>
+                    <td>${esc(r.rank)}</td>
+                    <td>${esc(r.taxonomic_status)}</td>
+                    <td>${esc(r.parent)}</td>
+                    <td>${esc(r.parent_rank)}</td>
+                    <td>${esc(r.accepted_taxonomy)}</td>
+                    <td>${esc(r.accepted_taxonomy_status)}</td>
+                    <td style="white-space:nowrap;">
+                        <a href="${editUrl}" target="_blank"
+                           class="btn btn-outline-primary btn-sm"
+                           style="white-space:nowrap;font-size:0.75rem;padding:2px 8px;">
+                            Edit
+                        </a>${assignBtn}
+                    </td>
+                </tr>`;
+        });
+    }
+
+    function updatePagination() {
+        const from = currentTotal === 0 ? 0 : currentOffset + 1;
+        const to = Math.min(currentOffset + PAGE_SIZE, currentTotal);
+        document.getElementById('page-info').textContent = `${from}-${to} of ${currentTotal}`;
+        document.getElementById('prev-btn').disabled = currentOffset === 0;
+        document.getElementById('next-btn').disabled = currentOffset + PAGE_SIZE >= currentTotal;
+    }
+
+    function prevPage() {
+        if (currentOffset >= PAGE_SIZE) { currentOffset -= PAGE_SIZE; fetchPage(); }
+    }
+    function nextPage() {
+        if (currentOffset + PAGE_SIZE < currentTotal) { currentOffset += PAGE_SIZE; fetchPage(); }
+    }
+
+    function esc(s) {
+        if (!s) return '<span class="text-muted">-</span>';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ---- GBIF modal ----
+
+    function openGbifModal(btnEl) {
+        const taxonId = parseInt(btnEl.dataset.taxonId, 10);
+        const canonicalName = btnEl.dataset.canonical || '';
+        gbifTargetTaxonId = taxonId;
+        gbifTargetRowEl = btnEl.closest('tr');
+        gbifSelectedKey = null;
+
+        document.getElementById('gbif-modal-taxon-name').textContent =
+            `Taxon: ${canonicalName}`;
+        document.getElementById('gbif-search-input').value = canonicalName;
+        document.getElementById('gbif-results-list').innerHTML = '';
+        document.getElementById('gbif-search-status').textContent = '';
+        document.getElementById('gbif-selected-label').textContent = '';
+        document.getElementById('gbif-assign-btn').disabled = true;
+
+        $('#gbif-modal').modal('show');
+        doGbifSearch();
+    }
+
+    function doGbifSearch() {
+        const q = document.getElementById('gbif-search-input').value.trim();
+        if (!q) return;
+
+        document.getElementById('gbif-search-status').textContent = 'Searching GBIF...';
+        document.getElementById('gbif-results-list').innerHTML = '';
+        gbifSelectedKey = null;
+        document.getElementById('gbif-assign-btn').disabled = true;
+        document.getElementById('gbif-selected-label').textContent = '';
+
+        fetch(`/api/find-taxon/?q=${encodeURIComponent(q)}&limit=20`)
+            .then(r => r.json())
+            .then(data => {
+                const results = Array.isArray(data) ? data : (data.results || []);
+                renderGbifResults(results);
+            })
+            .catch(() => {
+                document.getElementById('gbif-search-status').textContent = 'Search failed.';
+            });
+    }
+
+    function renderGbifResults(results) {
+        const list = document.getElementById('gbif-results-list');
+        const status = document.getElementById('gbif-search-status');
+
+        // Only show results that carry a real GBIF key (local-only results
+        // with gbif_key=null are not useful here).
+        const gbifResults = results.filter(r => r.key != null);
+
+        if (!gbifResults.length) {
+            status.textContent = 'No results found.';
+            list.innerHTML = '';
+            return;
+        }
+        status.textContent = `${gbifResults.length} result(s) - click one to select.`;
+        list.innerHTML = gbifResults.map(r => {
+            const key = r.key;
+            const displayName = r.canonicalName || r.scientificName || '';
+            const name = esc(displayName);
+            const sciName = esc(r.scientificName || '');
+            const rank = esc(r.rank || '');
+            const stat = esc(r.status || '');
+            const local = r.storedLocal
+                ? `<span class="badge badge-info ml-1">local</span>` : '';
+            return `<div class="gbif-result-item" data-key="${key}" data-name="${name}" onclick="selectGbifResult(this)">
+                <div class="name">${name}${local}</div>
+                <div class="meta">${sciName} &middot; ${rank} &middot; ${stat} &middot; key: ${key}</div>
+            </div>`;
+        }).join('');
+    }
+
+    function selectGbifResult(el) {
+        const key = parseInt(el.dataset.key, 10);
+        const name = el.dataset.name || '';
+        document.querySelectorAll('.gbif-result-item').forEach(i => i.style.background = '');
+        el.style.background = '#d4edda';
+        gbifSelectedKey = key;
+        document.getElementById('gbif-selected-label').textContent =
+            `Selected: ${name} (key: ${key})`;
+        document.getElementById('gbif-assign-btn').disabled = false;
+    }
+
+    function assignGbifKey() {
+        if (!gbifTargetTaxonId || !gbifSelectedKey) return;
+        const btn = document.getElementById('gbif-assign-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        fetch('/taxa-validation/assign-gbif-key/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ taxon_id: gbifTargetTaxonId, gbif_key: gbifSelectedKey }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                $('#gbif-modal').modal('hide');
+                if (gbifTargetRowEl) {
+                    gbifTargetRowEl.classList.add('row-assigned');
+                    const cells = gbifTargetRowEl.querySelectorAll('td');
+                    if (cells[1]) {
+                        cells[1].innerHTML += ` <span class="badge badge-success">GBIF ${gbifSelectedKey}</span>`;
+                    }
+                    const assignBtn = gbifTargetRowEl.querySelector('button.btn-outline-success');
+                    if (assignBtn) assignBtn.remove();
+                }
+            } else {
+                alert(data.error || 'Failed to assign key.');
+                btn.disabled = false;
+                btn.textContent = 'Assign key';
+            }
+        })
+        .catch(() => {
+            alert('Request failed.');
+            btn.disabled = false;
+            btn.textContent = 'Assign key';
+        });
+    }
+
+    function getCsrf() {
+        const el = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
+        return el ? el.trim().split('=')[1] : '';
+    }
+
+    // Search on Enter key in the search input
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('gbif-search-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter') doGbifSearch();
+        });
+    });
+
+    document.getElementById('group-select').addEventListener('change', () => {
+        const g = groupId();
+        window.location.href = g ? `/taxa-validation/?taxonGroup=${g}` : '/taxa-validation/';
+    });
+
+    document.getElementById('refresh-btn').addEventListener('click', () => {
+        const g = groupId();
+        window.location.href = g ? `/taxa-validation/?taxonGroup=${g}` : '/taxa-validation/';
+    });
+</script>
+{% endblock %}
+
+{% block foot %}
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "library/popper.js/1.11.0/popper.min.js" %}" crossorigin="anonymous"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+{% endblock %}
