@@ -521,6 +521,17 @@ class AbstractTaxonomy(AbstractValidation):
             _taxon = _parent
             _rank = _taxon.rank
             _parent = _taxon.parent if _taxon.parent else None
+            # A synonym parent may have had its parent detached. If so, jump
+            # to its accepted_taxonomy's parent to continue resolving higher
+            # ranks (e.g. for a subspecies whose direct parent is a synonym).
+            if (
+                not _parent
+                and _rank != target_rank
+                and _taxon.is_synonym
+                and _taxon.accepted_taxonomy
+                and _taxon.accepted_taxonomy.parent
+            ):
+                _parent = _taxon.accepted_taxonomy.parent
 
         if _rank == target_rank:
             if target_rank == 'SPECIES':

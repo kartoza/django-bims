@@ -247,6 +247,95 @@ class TaxaCSVSerializerTest(TestCase):
         self.assertIn('Linnaeus 1762', data['scientific_name_and_authority'])
 
 
+class TestGetTaxonRankNameThroughSynonymParent(TestCase):
+    """
+    Hierarchy resolution for a non-synonym taxon whose direct parent is a
+    synonym with a detached parent (parent=None).
+
+    This mimics the real-world case of a subspecies like
+    "Gomphonema pumilum rigidum" whose parent species "Gomphonema pumilum"
+    is a synonym and has had its parent removed by detach_synonym_parents.
+    The fix in get_taxon_rank_name falls back to the synonym's
+    accepted_taxonomy.parent chain to resolve ranks above the species.
+    """
+
+    def setUp(self):
+        self.kingdom = Taxonomy.objects.create(
+            canonical_name='Chromista', rank='KINGDOM'
+        )
+        self.phylum = Taxonomy.objects.create(
+            canonical_name='Ochrophyta', rank='PHYLUM', parent=self.kingdom
+        )
+        self.klass = Taxonomy.objects.create(
+            canonical_name='Bacillariophyceae', rank='CLASS', parent=self.phylum
+        )
+        self.order = Taxonomy.objects.create(
+            canonical_name='Cymbellales', rank='ORDER', parent=self.klass
+        )
+        self.family = Taxonomy.objects.create(
+            canonical_name='Gomphonemataceae', rank='FAMILY', parent=self.order
+        )
+        self.genus = Taxonomy.objects.create(
+            canonical_name='Gomphonema', rank='GENUS', parent=self.family
+        )
+        # The accepted species - has a complete parent chain.
+        self.accepted_species = Taxonomy.objects.create(
+            canonical_name='Gomphonema pumilum',
+            rank='SPECIES',
+            parent=self.genus,
+            taxonomic_status='ACCEPTED',
+        )
+        # The synonym species - same canonical name but marked as a synonym
+        # and parent detached (as detach_synonym_parents does).
+        self.synonym_species = Taxonomy.objects.create(
+            canonical_name='Gomphonema pumilum',
+            rank='SPECIES',
+            parent=None,
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=self.accepted_species,
+        )
+        # The subspecies is NOT a synonym; its direct parent is the synonym.
+        self.subspecies = Taxonomy.objects.create(
+            canonical_name='Gomphonema pumilum rigidum',
+            rank='SUBSPECIES',
+            parent=self.synonym_species,
+            taxonomic_status='ACCEPTED',
+        )
+
+    def test_genus_resolved_via_accepted_taxonomy_parent(self):
+        self.assertEqual(self.subspecies.genus_name, 'Gomphonema')
+
+    def test_family_resolved_via_accepted_taxonomy_parent(self):
+        self.assertEqual(self.subspecies.family_name, 'Gomphonemataceae')
+
+    def test_order_resolved_via_accepted_taxonomy_parent(self):
+        self.assertEqual(self.subspecies.order_name, 'Cymbellales')
+
+    def test_class_resolved_via_accepted_taxonomy_parent(self):
+        self.assertEqual(self.subspecies.class_name, 'Bacillariophyceae')
+
+    def test_phylum_resolved_via_accepted_taxonomy_parent(self):
+        self.assertEqual(self.subspecies.phylum_name, 'Ochrophyta')
+
+    def test_kingdom_resolved_via_accepted_taxonomy_parent(self):
+        self.assertEqual(self.subspecies.kingdom_name, 'Chromista')
+
+    def test_species_resolved_from_synonym_canonical(self):
+        self.assertEqual(self.subspecies.species_name, 'pumilum')
+
+    def test_csv_serializer_hierarchy_complete(self):
+        serializer = TaxaCSVSerializer(instance=self.subspecies)
+        data = serializer.data
+        self.assertEqual(data['genus'], 'Gomphonema')
+        self.assertEqual(data['family'], 'Gomphonemataceae')
+        self.assertEqual(data['order'], 'Cymbellales')
+        self.assertEqual(data['class_name'], 'Bacillariophyceae')
+        self.assertEqual(data['phylum'], 'Ochrophyta')
+        self.assertEqual(data['kingdom'], 'Chromista')
+        self.assertEqual(data['species'], 'pumilum')
+        self.assertEqual(data['subspecies'], 'rigidum')
+
+
 class TestCanonicalWithSubgenus(TestCase):
     """Unit tests for the canonical_with_subgenus download utility."""
 
