@@ -13,7 +13,12 @@ class LocationContextQuerySet(models.QuerySet):
             if layer:
                 key = layer.unique_id
         try:
-            context_data = self.filter(group__key=key)
+            if key:
+                context_data = self.filter(group__key=key)
+            elif layer_name:
+                context_data = self.filter(group__name__icontains=layer_name)
+            else:
+                context_data = self.none()
             if layer_identifier:
                 context_data = context_data.filter(
                     group__layer_identifier=layer_identifier)

@@ -63,11 +63,14 @@ class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
             category='A',
             colour='#00FF00',
         )
+        # Use a high percentile so any non-zero SASS score exceeds it,
+        # making the condition assignment deterministic regardless of the
+        # random sass_5_score set by SassTaxonF.
         SassEcologicalCondition.objects.create(
             ecoregion_level_1='Test Region',
             geomorphological_zone='Mountain stream',
-            sass_score_precentile=1,
-            aspt_score_precentile=1,
+            sass_score_precentile=0,
+            aspt_score_precentile=0,
             ecological_category=eco_category,
         )
 
