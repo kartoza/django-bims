@@ -323,6 +323,10 @@ def process_download_csv_taxa_list(
         )
         writer.writerow([generated_text])
 
+        subset_note = _build_subset_note(request if isinstance(request, dict) else {})
+        if subset_note:
+            writer.writerow([subset_note])
+
         # --- Citations ---
         try:
             if tg_id:
@@ -336,7 +340,7 @@ def process_download_csv_taxa_list(
                     writer.writerow([])  # spacer
                     writer.writerow(["To be cited as:"])
                     for c in citations:
-                        writer.writerow([c.formatted_citation])
+                        writer.writerow([c.formatted_citation()])
         except Exception:
             pass
 
@@ -401,7 +405,35 @@ def _get_checklist_pdf_styles() -> _Styles:
     return s
 
 
-def _build_checklist_pdf_header(title, taxon_group, styles):
+def _build_subset_note(request_dict):
+    """Return a human-readable note when the export is filtered to a subset."""
+    if not request_dict:
+        return ''
+    from bims.models.taxonomy import Taxonomy as _Taxonomy
+    parts = []
+    family = (request_dict.get('family') or '').strip()
+    if family:
+        parts.append(f'family {family}')
+    genus = (request_dict.get('genus') or '').strip()
+    if genus:
+        parts.append(f'genus {genus}')
+    taxon_name = (request_dict.get('taxon') or '').strip()
+    if taxon_name:
+        parts.append(f'taxon "{taxon_name}"')
+    parent_ids = [p for p in (request_dict.get('parent') or '').split(',') if p.strip()]
+    if parent_ids:
+        names = list(
+            _Taxonomy.objects.filter(id__in=parent_ids)
+            .values_list('canonical_name', flat=True)
+        )
+        if names:
+            parts.append(', '.join(names))
+    if not parts:
+        return ''
+    return 'Note: This export contains only taxa filtered to ' + '; '.join(parts) + '.'
+
+
+def _build_checklist_pdf_header(title, taxon_group, styles, subset_note=''):
     from bims.models import TaxonGroupCitation
 
     paragraphs = []
@@ -414,6 +446,10 @@ def _build_checklist_pdf_header(title, taxon_group, styles):
     ))
     paragraphs.append(Spacer(1, 6))
 
+    if subset_note:
+        paragraphs.append(Paragraph(subset_note, styles.citation))
+        paragraphs.append(Spacer(1, 6))
+
     citations = (
         TaxonGroupCitation.objects
         .filter(taxon_group=taxon_group)
@@ -422,7 +458,7 @@ def _build_checklist_pdf_header(title, taxon_group, styles):
     if citations.exists():
         paragraphs.append(Paragraph('To be cited as:', styles.heading))
         for c in citations:
-            paragraphs.append(Paragraph(c.formatted_citation, styles.citation))
+            paragraphs.append(Paragraph(c.formatted_citation(), styles.citation))
         paragraphs.append(Spacer(1, 6))
 
     paragraphs.append(Paragraph(
@@ -449,8 +485,9 @@ def process_download_pdf_taxa_list(
     def get_checklist_paragraphs(taxon_group, taxonomies):
         st = _get_checklist_pdf_styles()
 
+        subset_note = _build_subset_note(request if isinstance(request, dict) else {})
         paragraphs = _build_checklist_pdf_header(
-            f'{taxon_group.name} Checklist', taxon_group, st
+            f'{taxon_group.name} Checklist', taxon_group, st, subset_note=subset_note
         )
 
         order_by_dict = {}

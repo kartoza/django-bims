@@ -3257,7 +3257,7 @@ class TaxonGroupCitationAdmin(admin.ModelAdmin):
     exclude = ("created_at", "updated_at")
 
     def formatted_citation(self, obj):
-        return obj.formatted_citation
+        return obj.formatted_citation()
 
     formatted_citation.short_description = "Citation"
 
