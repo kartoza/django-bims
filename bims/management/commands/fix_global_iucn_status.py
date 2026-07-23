@@ -14,7 +14,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django_tenants.utils import get_tenant_model, tenant_context
 
 from bims.models.taxonomy import Taxonomy
-from bims.utils.iucn import get_iucn_status_by_sis_id
+from bims.utils.iucn import get_iucn_status_by_sis_id, IUCNRateLimitError
 
 logger = logging.getLogger(__name__)
 
@@ -52,8 +52,9 @@ class Command(BaseCommand):
             '--sleep',
             dest='sleep',
             type=float,
-            default=0.2,
-            help='Seconds to wait between IUCN API calls (default 0.2).',
+            default=1.0,
+            help='Seconds to wait between IUCN API calls (default 1.0). '
+                 'Increase this if you hit HTTP 429 rate limits.',
         )
         parser.add_argument(
             '--dry-run',
@@ -128,7 +129,19 @@ class Command(BaseCommand):
                 break
             processed += 1
             sis_id = taxon.iucn_redlist_id
-            iucn_status, _, iucn_url = get_iucn_status_by_sis_id(sis_id)
+            try:
+                iucn_status, _, iucn_url = get_iucn_status_by_sis_id(sis_id)
+            except IUCNRateLimitError:
+                # Persistent 429 despite retries. Stop so we do not keep
+                # hammering the API, and so throttled taxa are not silently
+                # recorded as "No status". Rerun (optionally with a larger
+                # --sleep) to continue from the remaining taxa.
+                self.stdout.write(self.style.ERROR(
+                    f"  Aborted at taxon {taxon.id} (sis={sis_id}): IUCN API "
+                    f"rate limit. Processed {processed - 1} so far. "
+                    f"Rerun with a larger --sleep to continue."
+                ))
+                break
             if sleep:
                 time.sleep(sleep)
 

@@ -1,4 +1,5 @@
 import logging
+import time
 
 import requests
 from requests.exceptions import HTTPError, SSLError
@@ -8,6 +9,10 @@ from preferences import preferences
 
 
 logger = logging.getLogger(__name__)
+
+
+class IUCNRateLimitError(Exception):
+    """Raised when the IUCN API keeps returning HTTP 429 (Too Many Requests)."""
 
 
 LEGACY_CATEGORY_MAP = {
@@ -85,15 +90,36 @@ def fetch_iucn_data_by_sis_id(sis_id):
         'Authorization': api_iucn_key
     }
 
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        return response.json()
-    except (HTTPError, SSLError,
-            requests.exceptions.JSONDecodeError,
-            requests.exceptions.RequestException) as e:
-        logger.error(f"IUCN API error: {e}")
-        return None
+    max_retries = 4
+    backoff = 2  # seconds, doubled on each 429
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers=headers)
+            if response.status_code == 429:
+                # Rate limited. Honour Retry-After if present, else backoff.
+                retry_after = response.headers.get('Retry-After')
+                try:
+                    wait = int(retry_after) if retry_after else backoff
+                except ValueError:
+                    wait = backoff
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        "IUCN API 429 for sis_id=%s, retrying in %ss "
+                        "(attempt %s/%s)", sis_id, wait, attempt + 1, max_retries
+                    )
+                    time.sleep(wait)
+                    backoff *= 2
+                    continue
+                raise IUCNRateLimitError(
+                    f"IUCN API rate limit hit for sis_id={sis_id}"
+                )
+            response.raise_for_status()
+            return response.json()
+        except (HTTPError, SSLError,
+                requests.exceptions.JSONDecodeError,
+                requests.exceptions.RequestException) as e:
+            logger.error(f"IUCN API error: {e}")
+            return None
 
 
 def get_global_iucn_status(category):
