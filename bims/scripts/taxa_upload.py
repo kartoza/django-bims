@@ -80,6 +80,21 @@ def _norm_taxon_for_similarity(s: str) -> str:
     return re.sub(r'\s+', ' ', s).strip()
 
 
+def _bare_subgenus(subgenus_val: str, genus_name: str = '') -> str:
+    """
+    Return the bare subgenus epithet from a raw column value.
+    Guards against values that already carry the genus prefix or parentheses,
+    e.g. "Thraulus (Thraulus)" or "(Thraulus)" both reduce to "Thraulus".
+    """
+    name = (subgenus_val or '').strip()
+    # Strip surrounding parens first: "(Thraulus)" -> "Thraulus"
+    name = name.strip('()')
+    # Strip leading genus prefix: "Thraulus Thraulus" -> "Thraulus"
+    if genus_name and name.lower().startswith(genus_name.lower()):
+        name = name[len(genus_name):].strip().strip('()')
+    return name
+
+
 class TaxaProcessor(object):
 
     all_keys = {}
@@ -146,6 +161,7 @@ class TaxaProcessor(object):
         epithet = ' '.join(epithet_tokens)
 
         if subgenus:
+            subgenus = _bare_subgenus(subgenus, genus)
             return f'{genus_cap} ({subgenus}) {epithet}'.strip()
 
         if species.lower().startswith(genus.lower() + ' '):
@@ -205,6 +221,7 @@ class TaxaProcessor(object):
             genus_name = _safe_strip(self.get_row_value(row, GENUS))
             if subgenus_name and genus_name:
                 genus_cap = genus_name[:1].upper() + genus_name[1:].lower()
+                subgenus_name = _bare_subgenus(subgenus_name, genus_name)
                 return f'{genus_cap} ({subgenus_name})'
             return subgenus_name or composed_taxon
 
@@ -1192,9 +1209,10 @@ class TaxaProcessor(object):
                 )
             if is_species and subgenus:
                 genus_for_sg = _safe_strip(self.get_row_value(row, GENUS))
+                bare_sg = _bare_subgenus(subgenus, genus_for_sg)
                 subgenus_canonical = (
-                    f'{genus_for_sg[:1].upper() + genus_for_sg[1:].lower()} ({subgenus})'
-                    if genus_for_sg else subgenus
+                    f'{genus_for_sg[:1].upper() + genus_for_sg[1:].lower()} ({bare_sg})'
+                    if genus_for_sg else bare_sg
                 )
                 subgenus_taxon = Taxonomy.objects.filter(
                     canonical_name=subgenus_canonical,
@@ -1202,7 +1220,7 @@ class TaxaProcessor(object):
                 )
                 if not subgenus_taxon.exists():
                     subgenus_taxon = Taxonomy.objects.filter(
-                        canonical_name=subgenus,
+                        canonical_name=bare_sg,
                         rank=TaxonomicRank.SUBGENUS.name
                     )
                 if not subgenus_taxon.exists():

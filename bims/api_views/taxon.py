@@ -357,6 +357,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
         accepted_taxonomy_id = self.request.POST.get('acceptedTaxonomyId', None)
+        subgenus_id = self.request.POST.get('subgenusId', None)
         taxonomic_status = (self.request.POST.get('taxonomicStatus') or '').strip().upper()
         is_synonym = 'SYNONYM' in taxonomic_status
         parent = None
@@ -466,6 +467,13 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 except (Taxonomy.DoesNotExist, ValueError):
                     pass
 
+            if subgenus_id:
+                try:
+                    taxonomy.subgenus = Taxonomy.objects.get(id=int(subgenus_id), rank='SUBGENUS')
+                    taxonomy.save(update_fields=['subgenus'])
+                except (Taxonomy.DoesNotExist, ValueError):
+                    pass
+
             from bims.templatetags.site import is_fada_site
             if is_fada_site() and not taxonomy.fada_id:
                 taxonomy.fada_id = f'FADA-{taxonomy.id}'
@@ -489,6 +497,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     'accepted_taxonomy',
                     'owner',
                     'parent',
+                    'subgenus',
                     'last_modified_by',
                     'origin',
                     'endemism',
@@ -506,6 +515,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     new_data=True,
                     owner=taxonomy.owner,
                     parent=taxonomy.parent,
+                    subgenus=taxonomy.subgenus,
                     accepted_taxonomy=taxonomy.accepted_taxonomy,
                     taxon_group_under_review=taxon_group,
                     author=proposal_author,
