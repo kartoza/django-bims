@@ -76,8 +76,10 @@ def import_fish_occurrences_from_gbif(
             conservation_status = fish_data[CONSERVATION_STATUS_KEY][i]
             for category in IUCNStatus.CATEGORY_CHOICES:
                 if category[1].lower() == conservation_status.lower():
+                    # Global iucn_status field: only match global statuses.
                     iucn_status = IUCNStatus.objects.filter(
-                        category=category[0]
+                        category=category[0],
+                        national=False
                     )
                     if len(iucn_status) < 1:
                         break

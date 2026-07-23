@@ -286,8 +286,12 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
     local_iucn_status = None
     if iucn_status_name:
         from bims.models.iucn_status import IUCNStatus
+        # This value populates the global iucn_status field, so only match
+        # global (national=False) statuses. National-only categories have no
+        # global equivalent and must not leak into the global field.
         local_iucn_status = IUCNStatus.objects.filter(
-            category__iexact=iucn_status_name
+            category__iexact=iucn_status_name,
+            national=False
         ).first()
 
     # ------------------------------------------------------------------
