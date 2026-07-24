@@ -1205,19 +1205,52 @@ class HarvestIUCNStatus(APIView):
     """
     Enqueue a Celery task that pulls/refreshes IUCN Red-List info
     for all taxa still missing a status (or for an optional list of IDs).
+
+    POST: starts a new harvest and returns a session_id for polling.
+    GET:  returns the status of the most recent IUCN harvest session.
     """
     permission_classes = (IsAdminUser,)
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({"error": "Permission denied."}, status=HTTP_403_FORBIDDEN)
+        from bims.models import HarvestSession
+        session = (
+            HarvestSession.objects.filter(category="iucn")
+            .order_by("-start_time")
+            .first()
+        )
+        if not session:
+            return Response({"status": None, "session_id": None}, status=HTTP_200_OK)
+        return Response({
+            "session_id": session.id,
+            "status": session.status,
+            "finished": session.finished,
+            "start_time": str(session.start_time),
+            "additional_data": session.additional_data,
+        }, status=HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_superuser:
             return Response({"error": "Permission denied."},
                             status=HTTP_403_FORBIDDEN)
 
+        from bims.models import HarvestSession
         taxa_ids = request.data.get("taxa_ids")
-        fetch_iucn_status.delay(taxa_ids or None)
+
+        session = HarvestSession.objects.create(
+            harvester=request.user,
+            category="iucn",
+            status="queued",
+        )
+
+        fetch_iucn_status.delay(taxa_ids or None, session_id=session.id)
 
         return Response(
-            {"message": "Harvesting IUCN status in the background."},
+            {
+                "message": "Harvesting IUCN status in the background.",
+                "session_id": session.id,
+            },
             status=HTTP_200_OK
         )
 

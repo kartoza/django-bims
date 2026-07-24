@@ -150,9 +150,16 @@ class HarvestSessionStatusView(APIView):
             'module_group': session.module_group.name if session.module_group else '',
             'finished': session.finished,
             'start_time': str(session.start_time),
-            'status': session.status
+            'status': session.status,
+            'additional_data': session.additional_data,
         }
-        with open(session.log_file.path, 'rb') as f:
-            session_data['log'] = b''.join(
-                list(deque(f, 50))).decode('utf-8')
+        if session.log_file and session.log_file.name:
+            try:
+                with open(session.log_file.path, 'rb') as f:
+                    session_data['log'] = b''.join(
+                        list(deque(f, 50))).decode('utf-8')
+            except (OSError, ValueError):
+                session_data['log'] = ''
+        else:
+            session_data['log'] = ''
         return Response(session_data)

@@ -1,0 +1,188 @@
+{% extends 'main_base.html' %}
+{% load static %}
+
+{% block subtitle %}
+    Harvest IUCN Status
+{% endblock %}
+
+{% block head %}
+    <link href="{% static "css/csv_uploader.css" %}" rel="stylesheet">
+    <style>
+        #log-container {
+            background-color: black !important;
+            color: white !important;
+            font-size: 10pt;
+        }
+        body {
+            background-image: none;
+        }
+    </style>
+{% endblock %}
+
+{% block body_content %}
+
+    <div class="loading">Loading&#8230;</div>
+    <div class="container">
+        <div class="jumbotron csv-uploader-wrapper">
+
+            <div class="help-block-space"></div>
+            <h3>Harvest IUCN Status</h3>
+            <p class="text-muted">
+                Fetches the latest global IUCN Red List status and assessment history
+                for all species and subspecies in the database.
+            </p>
+
+            {% if not preferences.SiteSetting.iucn_api_key %}
+                <div class="alert alert-danger" role="alert" style="margin-top: 20px;">
+                    <strong>IUCN API key not configured.</strong>
+                    Add your IUCN API key in
+                    <a href="/admin/bims/sitesetting/{{ preferences.SiteSetting.id }}/change/"
+                       class="alert-link" target="_blank" rel="noopener">Site Settings</a>
+                    before running a harvest.
+                </div>
+            {% endif %}
+
+            <div class="modal-body">
+                <form action="{{ request.path }}" method="post" id="iucn-harvest-form">
+                    {% csrf_token %}
+                    {% if not active_session %}
+                        <button
+                            class="btn btn-primary"
+                            type="submit"
+                            {% if not preferences.SiteSetting.iucn_api_key %}disabled{% endif %}
+                        >
+                            Start IUCN harvest
+                        </button>
+                    {% endif %}
+                </form>
+
+                {% if active_session %}
+                    <div class="upload-progress-container" style="margin-top: 20px;">
+                        <h5>Current harvest</h5>
+                        <div class="card">
+                            <div class="card-body">
+                                <p>Started at {{ active_session.start_time }}</p>
+                                <p class="card-text">
+                                    Status: <span class="progress-text">
+                                        {% if active_session.status %}{{ active_session.status }}{% else %}Processing{% endif %}
+                                    </span>
+                                </p>
+                                                <div class="log">
+                                    <textarea id="log-container" rows="10" style="width: 100%;" readonly>{{ active_session_log }}</textarea>
+                                </div>
+                                <button
+                                    class="btn btn-danger"
+                                    style="margin-top: 10px;"
+                                    data-toggle="modal"
+                                    data-target="#cancelModal"
+                                    data-id="{{ active_session.id }}"
+                                >Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if finished_sessions %}
+                    <div class="upload-progress-container" style="margin-top: 30px;">
+                        <h5>Previous harvests</h5>
+                        {% for session in finished_sessions %}
+                            <div class="card" style="margin-bottom: 10px;">
+                                <div class="card-body">
+                                    <p>Started at {{ session.start_time }}</p>
+                                    {% if session.canceled %}
+                                        <p style="color: red;">Canceled</p>
+                                    {% else %}
+                                        <p class="card-text">
+                                            Result: {% if session.status %}{{ session.status }}{% else %}Finished{% endif %}
+                                        </p>
+                                        {% if session.additional_data %}
+                                            <small class="text-muted">
+                                                Taxa updated: {{ session.additional_data.taxa_updated }},
+                                                Assessments created: {{ session.additional_data.assessments_created }},
+                                                Assessments updated: {{ session.additional_data.assessments_updated }},
+                                                Duration: {{ session.additional_data.duration_seconds }}s
+                                            </small>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel modal -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancel harvest</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to cancel this harvest?
+                    Any taxa processed so far will retain their updated IUCN status.
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" id="cancel-session">Cancel harvest</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block foot %}
+    <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
+    <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script>
+        const harvestSessionInProgress = {% if active_session %}true{% else %}false{% endif %};
+        const harvestSessionId = {% if active_session %}{{ active_session.id }}{% else %}0{% endif %};
+
+        function updateProgress(id) {
+            setTimeout(function () {
+                $.get('/api/harvest-status/' + id + '/').then(function (response) {
+                    if (!response['finished']) {
+                        $('.progress-text').html(response['status'] || 'Processing');
+                        let logContainer = $('#log-container');
+                        if (response['log']) {
+                            logContainer.val(response['log']);
+                            logContainer.scrollTop(logContainer[0].scrollHeight);
+                        }
+                        updateProgress(id);
+                    } else {
+                        location.reload();
+                    }
+                });
+            }, 2000);
+        }
+
+        let currentSessionId = 0;
+
+        $(function () {
+            let textarea = document.getElementById('log-container');
+            if (textarea) {
+                textarea.scrollTop = textarea.scrollHeight;
+            }
+            if (harvestSessionInProgress) {
+                updateProgress(harvestSessionId);
+            }
+
+            $('#cancel-session').click(function () {
+                let $form = $('#iucn-harvest-form');
+                $form.append('<input type="hidden" name="cancel" value="true"/>');
+                $form.append('<input type="hidden" name="canceled_session_id" value="' + currentSessionId + '"/>');
+                $form.submit();
+            });
+
+            $('#cancelModal').on('shown.bs.modal', function (event) {
+                currentSessionId = $(event.relatedTarget).data('id');
+            });
+        });
+    </script>
+{% endblock %}
