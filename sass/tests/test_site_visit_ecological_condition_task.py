@@ -11,6 +11,7 @@ from sass.models import (
 )
 from sass.tests.model_factories import SiteVisitF, SiteVisitTaxonF, SassTaxonF
 from bims.tests.model_factories import LocationContextGroupF, LocationContextF
+from bims.models.location_context import LocationContextQuerySet
 
 
 class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
@@ -106,9 +107,9 @@ class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
             'sass.scripts.site_visit_ecological_condition_generator'
             '.get_geomorphological_zone_class',
             return_value='Mountain stream',
-        ), patch(
-            'sass.scripts.site_visit_ecological_condition_generator'
-            '.get_feature_data',
+        ), patch.object(
+            LocationContextQuerySet,
+            'value_from_key',
             return_value='Test Region',
         ):
             site_visit_ecological_condition_task(site_visit.id, schema)
