@@ -9,7 +9,7 @@ from sass.models import (
     SassEcologicalCategory,
     SassEcologicalCondition,
 )
-from sass.tests.model_factories import SiteVisitF, SiteVisitTaxonF
+from sass.tests.model_factories import SiteVisitF, SiteVisitTaxonF, SassTaxonF
 from bims.tests.model_factories import LocationContextGroupF, LocationContextF
 
 
@@ -90,7 +90,10 @@ class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
             group=geo_group,
             value='Mountain stream',
         )
-        SiteVisitTaxonF.create(site_visit=site_visit)
+        SiteVisitTaxonF.create(
+            site_visit=site_visit,
+            sass_taxon=SassTaxonF.create(sass_5_score=5),
+        )
 
         self.assertFalse(
             SiteVisitEcologicalCondition.objects.filter(
@@ -103,6 +106,10 @@ class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
             'sass.scripts.site_visit_ecological_condition_generator'
             '.get_geomorphological_zone_class',
             return_value='Mountain stream',
+        ), patch(
+            'sass.scripts.site_visit_ecological_condition_generator'
+            '.get_feature_data',
+            return_value='Test Region',
         ):
             site_visit_ecological_condition_task(site_visit.id, schema)
 
