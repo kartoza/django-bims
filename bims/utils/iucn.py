@@ -60,15 +60,37 @@ def fetch_iucn_data(taxon):
         'species_name': species_name
     }
 
-    try:
-        response = requests.get(url, headers=headers, params=params)
-        response.raise_for_status()
-        return response.json()
-    except (HTTPError, SSLError,
-            requests.exceptions.JSONDecodeError,
-            requests.exceptions.RequestException) as e:
-        logger.error(f"IUCN API error: {e}")
-        return None
+    max_retries = 4
+    backoff = 2
+    for attempt in range(max_retries):
+        try:
+            response = requests.get(url, headers=headers, params=params)
+            if response.status_code == 429:
+                retry_after = response.headers.get('Retry-After')
+                try:
+                    wait = min(int(retry_after) if retry_after else backoff, 30)
+                except ValueError:
+                    wait = min(backoff, 30)
+                if attempt < max_retries - 1:
+                    logger.warning(
+                        "IUCN API 429 for %s %s, retrying in %ss (attempt %s/%s)",
+                        genus_name, species_name, wait, attempt + 1, max_retries
+                    )
+                    time.sleep(wait)
+                    backoff *= 2
+                    continue
+                raise IUCNRateLimitError(
+                    f"IUCN API rate limit hit for {genus_name} {species_name}"
+                )
+            response.raise_for_status()
+            return response.json()
+        except IUCNRateLimitError:
+            raise
+        except (HTTPError, SSLError,
+                requests.exceptions.JSONDecodeError,
+                requests.exceptions.RequestException) as e:
+            logger.error(f"IUCN API error: {e}")
+            return None
 
 
 def fetch_iucn_data_by_sis_id(sis_id):
@@ -99,9 +121,9 @@ def fetch_iucn_data_by_sis_id(sis_id):
                 # Rate limited. Honour Retry-After if present, else backoff.
                 retry_after = response.headers.get('Retry-After')
                 try:
-                    wait = int(retry_after) if retry_after else backoff
+                    wait = min(int(retry_after) if retry_after else backoff, 30)
                 except ValueError:
-                    wait = backoff
+                    wait = min(backoff, 30)
                 if attempt < max_retries - 1:
                     logger.warning(
                         "IUCN API 429 for sis_id=%s, retrying in %ss "
@@ -191,15 +213,17 @@ def get_iucn_status_by_sis_id(sis_id):
     return parse_latest_global_status(fetch_iucn_data_by_sis_id(sis_id))
 
 
-def get_iucn_assessments(taxon):
+def get_iucn_assessments(taxon, json_result=None):
     """
     Fetch IUCN assessments using genus/species name and return assessments
     plus the IUCN sis_id.
 
     :param taxon: Taxonomy instance (must have genus_name and species_name)
+    :param json_result: Pre-fetched IUCN API response dict (avoids a second API call)
     :return: tuple (assessments list, sis_id or None)
     """
-    json_result = fetch_iucn_data(taxon)
+    if json_result is None:
+        json_result = fetch_iucn_data(taxon)
     if not json_result:
         return [], None
 
