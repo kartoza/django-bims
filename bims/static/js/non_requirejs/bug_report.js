@@ -94,7 +94,13 @@ $(function () {
                 ticketLinkDiv.html(`<a href="http://github.com/${githubRepo}/issues/${ticketNumber}" target="_blank">#${ticketNumber}</a>`);
                 successFeedbackDiv.show();
             },
-            error: function () {
+            error: function (xhr) {
+                let msg = "Something went wrong and we couldn't process your request, please try again later.";
+                try {
+                    let resp = JSON.parse(xhr.responseText);
+                    if (resp && resp.message) msg = resp.message;
+                } catch (e) {}
+                errorFeedbackDiv.find('.error-feedback-message').text(msg);
                 errorFeedbackDiv.show();
             },
             complete: function(data) {

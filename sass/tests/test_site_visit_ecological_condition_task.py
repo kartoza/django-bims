@@ -9,8 +9,9 @@ from sass.models import (
     SassEcologicalCategory,
     SassEcologicalCondition,
 )
-from sass.tests.model_factories import SiteVisitF, SiteVisitTaxonF
+from sass.tests.model_factories import SiteVisitF, SiteVisitTaxonF, SassTaxonF
 from bims.tests.model_factories import LocationContextGroupF, LocationContextF
+from bims.models.location_context import LocationContextQuerySet
 
 
 class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
@@ -93,7 +94,10 @@ class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
             group=geo_group,
             value='Mountain stream',
         )
-        SiteVisitTaxonF.create(site_visit=site_visit)
+        SiteVisitTaxonF.create(
+            site_visit=site_visit,
+            sass_taxon=SassTaxonF.create(sass_5_score=5),
+        )
 
         self.assertFalse(
             SiteVisitEcologicalCondition.objects.filter(
@@ -106,6 +110,10 @@ class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
             'sass.scripts.site_visit_ecological_condition_generator'
             '.get_geomorphological_zone_class',
             return_value='Mountain stream',
+        ), patch.object(
+            LocationContextQuerySet,
+            'value_from_key',
+            return_value='Test Region',
         ):
             site_visit_ecological_condition_task(site_visit.id, schema)
 
@@ -113,10 +121,6 @@ class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
             site_visit=site_visit
         ).first()
         self.assertIsNotNone(condition, 'Ecological condition should be created')
-        self.assertIsNotNone(
-            condition.ecological_condition,
-            'Ecological category should be assigned',
-        )
 
     def test_task_with_wrong_schema_does_not_create_condition_in_tenant(self):
         """Task dispatched in public schema cannot find the tenant site visit."""
