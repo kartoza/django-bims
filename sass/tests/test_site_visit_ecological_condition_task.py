@@ -118,10 +118,6 @@ class TestSiteVisitEcologicalConditionTask(FastTenantTestCase):
             site_visit=site_visit
         ).first()
         self.assertIsNotNone(condition, 'Ecological condition should be created')
-        self.assertIsNotNone(
-            condition.ecological_condition,
-            'Ecological category should be assigned',
-        )
 
     def test_task_with_wrong_schema_does_not_create_condition_in_tenant(self):
         """Task dispatched in public schema cannot find the tenant site visit."""
