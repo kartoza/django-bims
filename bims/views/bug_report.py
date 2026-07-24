@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import List
 
 from django.views import View
@@ -14,29 +15,42 @@ from github.GithubException import GithubException, BadCredentialsException, Unk
 
 from preferences import preferences
 from bims.utils.domain import get_current_domain
+from bims.views.upload import _get_installation_token_and_repo
+
+logger = logging.getLogger(__name__)
 
 
 class BugReportView(LoginRequiredMixin, View):
-    github_access_token = ''
     github_repo = ''
 
     def post(self, request, *args, **kwargs):
-        self.github_access_token = preferences.SiteSetting.github_feedback_token
         self.github_repo = preferences.SiteSetting.github_feedback_repo
 
-        if not self.github_access_token or not self.github_repo:
-            raise Http404('Missing access token or GitHub repo name')
+        if not self.github_repo:
+            logger.error('BugReportView: github_feedback_repo is not configured')
+            return JsonResponse({'status': 'ERROR', 'message': 'Missing GitHub repo configuration'}, status=500)
 
         try:
             report = self.create_report(**request.POST.dict())
-        except TypeError:
-            raise Http404('Incorrect POST body')
-        except BadCredentialsException:
-            raise Http404('Invalid GitHub credentials')
-        except UnknownObjectException:
-            raise Http404('GitHub repository not found')
+        except TypeError as e:
+            logger.error('BugReportView: incorrect POST body: %s', e)
+            return JsonResponse({'status': 'ERROR', 'message': 'Incorrect POST body'}, status=400)
+        except BadCredentialsException as e:
+            logger.error('BugReportView: invalid GitHub credentials: %s', e)
+            return JsonResponse({'status': 'ERROR', 'message': 'Invalid GitHub credentials'}, status=500)
+        except UnknownObjectException as e:
+            logger.error('BugReportView: GitHub repository not found: %s', e)
+            return JsonResponse({'status': 'ERROR', 'message': 'GitHub repository not found'}, status=500)
+        except Http404 as e:
+            logger.error('BugReportView: GitHub App config error: %s', e)
+            return JsonResponse({'status': 'ERROR', 'message': str(e)}, status=500)
         except GithubException as ge:
-            raise Http404(f'GitHub error: {ge.data.get("message") if getattr(ge, "data", None) else str(ge)}')
+            msg = ge.data.get('message') if getattr(ge, 'data', None) else str(ge)
+            logger.error('BugReportView: GitHub error: %s', msg)
+            return JsonResponse({'status': 'ERROR', 'message': f'GitHub error: {msg}'}, status=500)
+        except Exception as e:
+            logger.exception('BugReportView: unexpected error: %s', e)
+            return JsonResponse({'status': 'ERROR', 'message': 'Unexpected error'}, status=500)
 
         self.send_email(report.number, report.title)
 
@@ -60,9 +74,9 @@ class BugReportView(LoginRequiredMixin, View):
         Create a report (issue) in the configured GitHub repo.
         :return: Issue object
         """
-        auth = Auth.Token(self.github_access_token)
-        g = Github(auth=auth)
-        repo = g.get_repo(self.github_repo, lazy=False)
+        token, repo_full = _get_installation_token_and_repo(self.github_repo)
+        g = Github(auth=Auth.Token(token))
+        repo = g.get_repo(repo_full, lazy=False)
 
         report_template = 'notifications/ticket_body.txt'
 
