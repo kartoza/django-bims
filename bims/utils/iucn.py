@@ -60,7 +60,7 @@ def fetch_iucn_data(taxon):
         'species_name': species_name
     }
 
-    max_retries = 4
+    max_retries = 8
     backoff = 2
     for attempt in range(max_retries):
         try:
@@ -68,9 +68,9 @@ def fetch_iucn_data(taxon):
             if response.status_code == 429:
                 retry_after = response.headers.get('Retry-After')
                 try:
-                    wait = min(int(retry_after) if retry_after else backoff, 30)
+                    wait = min(int(retry_after) if retry_after else backoff, 60)
                 except ValueError:
-                    wait = min(backoff, 30)
+                    wait = min(backoff, 60)
                 if attempt < max_retries - 1:
                     logger.warning(
                         "IUCN API 429 for %s %s, retrying in %ss (attempt %s/%s)",
