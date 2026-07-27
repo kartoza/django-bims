@@ -95,6 +95,7 @@ from bims.views.water_temperature import WaterTemperatureView, \
     WaterTemperatureUploadView, WaterTemperatureValidateView, \
     WaterTemperatureSiteView, WaterTemperatureEditView
 from bims.views.download_taxa_template import download_taxa_template
+from bims.views.download_water_temperature_template import download_water_temperature_template
 from bims.views.physico_chemical import PhysicoChemicalView, \
     PhysicoChemicalSiteView
 from bims.views.harvest_gbif_species import HarvestGbifSpeciesView
@@ -277,6 +278,9 @@ urlpatterns = [
     re_path(r'^download-occurrence-template/',
             download_occurrence_template,
             name='download-occurrence-template'),
+    re_path(r'^download-water-temperature-template/$',
+            download_water_temperature_template,
+            name='download-water-temperature-template'),
     re_path(r'^water-temperature-form/$',
             WaterTemperatureView.as_view(),
             name='water-temperature-form'),

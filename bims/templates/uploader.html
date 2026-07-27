@@ -64,6 +64,16 @@
                             {% trans "Download" %}
                         </a>
                     </li>
+                    {% if preferences.SiteSetting.water_temperature_upload_template %}
+                    <li class="list-group-item">
+                        <span>{% trans 'Template for "Uploading Water Temperature Data"' %}</span>
+                        <a class="btn btn-outline-secondary btn-sm"
+                           href="{{ preferences.SiteSetting.water_temperature_upload_template.url }}"
+                           download>
+                            {% trans "Download" %}
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
 

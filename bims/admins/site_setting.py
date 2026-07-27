@@ -183,8 +183,9 @@ class SiteSettingAdmin(PreferencesAdmin):
             "fields": (
                 "readme_download",
                 "taxonomic_upload_template",
-                "occurrence_upload_guidelines",  # NEW
+                "occurrence_upload_guidelines",
                 "occurrence_upload_template",
+                "water_temperature_upload_template",
                 "auto_validate_taxa_on_upload",
                 "invasion_label",
             ),
