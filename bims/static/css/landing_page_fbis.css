@@ -9,6 +9,10 @@ body {
     position: relative;
 }
 
+h1, h2, h3, h4, h5, h6 {
+    font-family: "Roboto Condensed", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
 .bg-primary {
     background-color: #526B43 !important;
 }
@@ -320,9 +324,8 @@ html, body {
 }
 
 .section-heading {
-    color: #525351;
-    font-weight: normal !important;
-    font-size: 32px;
+    font-size: 28px !important;
+    font-weight: 500;
 }
 
 .total-data {
@@ -485,8 +488,8 @@ html, body {
 }
 
 .module-name {
+    font-size: 21px;
     margin-top: 15px;
-    color: #525351;
 }
 
 .module-container {
@@ -515,15 +518,15 @@ html, body {
 
 
 .general-summary .gs-total {
-    color: var(--main-accent-color);
+    color: #525252 !important;
     font-weight: bold;
-    font-size: 20pt;
+    font-size: 23px;
     margin-top: 5px;
 }
 
 .general-summary .gs-text {
-    color: var(--main-accent-color);
-    font-size: 12pt;
+    color: #525252;
+    font-size: 19px;
 }
 
 .gs-icon {
@@ -558,9 +561,8 @@ html, body {
 }
 
 .module-info {
-    font-weight: 100;
-    font-size: 20px !important;
-    color: #18A090;
+    font-weight: 400;
+    font-size: 19px !important;
     margin-bottom: 0;
 }
 
@@ -594,6 +596,11 @@ html, body {
     margin-right: 10px;
     margin-left: 10px;
     width: 50px
+}
+
+.modules-container {
+    padding-top: 25px;
+    padding-bottom: 25px;
 }
 
 .footer-shrink {
