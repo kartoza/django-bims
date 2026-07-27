@@ -160,14 +160,17 @@
                 <label for="date"
                        class="col-sm-2 col-form-label col-form-label"></label>
                 <div class="col-sm-10">
+                    {% if preferences.SiteSetting.water_temperature_upload_template %}
+                    <div class="help-block" style="margin-bottom: 8px;">
+                        <strong>You can download the template here:</strong>
+                        <a href="{{ preferences.SiteSetting.water_temperature_upload_template.url }}" download>Download Template</a>
+                    </div>
+                    {% endif %}
                     <div class="form-group">
                         <div class="input-group input-file">
                             <input type="file" class="form-control"
                                    accept=".csv" name="water_file" id="water_file"
                                    placeholder='Choose a file...' required/>
-{#                            <div class="invalid-feedback">#}
-{#                            Please provide a xlsx file#}
-{#                        </div>#}
                         </div>
 
                     </div>
