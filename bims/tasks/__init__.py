@@ -9,6 +9,7 @@ from bims.tasks.taxa_upload import *  # noqa
 from bims.tasks.collections_upload import *  # noqa
 from bims.tasks.harvest_collections import *  # noqa
 from bims.tasks.duplicate_records import *  # noqa
+from bims.tasks.duplicate_sites import *  # noqa
 from bims.tasks.download_taxa_list import *  # noqa
 from bims.tasks.taxon_extra_attribute import *  # noqa
 from bims.tasks.clean_data import *  # noqa
@@ -31,6 +32,7 @@ from bims.tasks.gbif_publish import run_scheduled_gbif_publish
 from bims.tasks.prune_outside_boundary import prune_outside_boundary_gbif
 from bims.tasks.gbif_deletions import clear_gbif_deleted_occurrences
 from bims.tasks.module_summary import generate_module_summary
+from bims.tasks.summary_report import generate_general_summary_report
 from bims.tasks.spatial_dashboard import *  # noqa
 from bims.tasks.citation_download import *  # noqa
 

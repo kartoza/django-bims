@@ -5,224 +5,444 @@
 {% endblock %}
 
 {% block head %}
-    <!-- Custom styles for this template -->
-    <link rel="stylesheet"
-          href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
     <style>
-        .table-summary th {
-            max-width: 100px;
-            min-width: 80px;
-        }
-        .loading {
+        .summary-report {
+            font-family: 'Roboto' !important;
             width: 100%;
-            text-align: center;
+            margin: 60px 0 60px;
+            padding: 0 40px;
+            padding-bottom: 50px;
         }
-        .summary-title {
-            margin-top: 50px;
-            font-weight: bold;
-            border-bottom: 1px solid #4f4f4f;
-            padding-bottom: 10px;
+        .summary-report__header {
+            margin-bottom: 28px;
+        }
+        .summary-report__header h1 {
+            font-size: 34px;
+            font-weight: 700;
+            margin: 0;
+            color: #2b2b2b;
+        }
+        .summary-report__header p {
+            margin: 8px 0 0;
+            color: #7a7a7a;
+            font-size: 16px;
+        }
+
+        /* Section card */
+        .report-card {
+            background: #fff;
+            border: 1px solid #e9edf1;
+            border-radius: 14px;
+            box-shadow: 0 4px 18px rgba(31, 45, 61, 0.05);
+            margin-bottom: 26px;
+            overflow: hidden;
+        }
+        .report-card__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 24px;
+            cursor: pointer;
+            user-select: none;
+            border-bottom: 1px solid transparent;
+            transition: border-color .2s ease;
+        }
+        .report-card.open .report-card__header {
+            border-bottom-color: #eef1f4;
+        }
+        .report-card__header h2 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0;
+            color: #2b2b2b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .report-card__header h2 .dot {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: var(--main-accent-color);
+            display: inline-block;
+        }
+        .report-card__chevron {
+            transition: transform .25s ease;
+            color: #9aa5b1;
+        }
+        .report-card.open .report-card__chevron {
+            transform: rotate(180deg);
+        }
+        .report-card__body {
+            padding: 22px 24px 26px;
+        }
+
+        /* Stat tiles */
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 16px;
+            margin-bottom: 4px;
+        }
+        .stat-tile {
+            background: #f8fafb;
+            border: 1px solid #eef1f4;
+            border-radius: 12px;
+            padding: 18px 18px 16px;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .stat-tile:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(31, 45, 61, 0.08);
+        }
+        .stat-tile__value {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1.1;
+            color: var(--main-accent-color);
+        }
+        .stat-tile__value span[style*="red"] { color: #e14b4b !important; }
+        .stat-tile__value span[style*="orange"] { color: #e79a2b !important; }
+        .stat-tile__value span[style*="green"] { color: #2fae74 !important; }
+        .stat-tile__label {
+            margin-top: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+            color: #8a95a1;
+        }
+        .stat-tile__desc {
+            margin-top: 8px;
+            font-size: 14px;
+            line-height: 1.45;
+            color: #97a1ab;
+        }
+        .stat-tile__action {
+            margin-top: 12px;
+        }
+        .stat-tile__action .btn {
+            font-size: 14px;
+            padding: 6px 14px;
+            border-radius: 8px;
+        }
+        .stat-tile--accent {
+            background: linear-gradient(135deg, rgba(24,160,144,0.10), rgba(24,160,144,0.03));
+            border-color: rgba(24,160,144,0.25);
+        }
+
+        /* Data groups */
+        .data-group {
+            margin-top: 26px;
+        }
+        .data-group__title {
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: #5b6673;
+            margin: 0 0 12px;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            border: 1px solid #eef1f4;
+            border-radius: 12px;
+        }
+        table.report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 16px;
+            margin: 0;
+        }
+        table.report-table th,
+        table.report-table td {
+            padding: 13px 18px;
+            text-align: left;
+            white-space: nowrap;
+        }
+        table.report-table thead th {
+            background: #f4f7f9;
+            color: #55606c;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            position: sticky;
+            top: 0;
+            width: 20%;
+        }
+        table.report-table tbody tr + tr td {
+            border-top: 1px solid #eef1f4;
+        }
+        table.report-table tbody tr:hover td {
+            background: #f9fbfc;
+        }
+        table.report-table td.metric-name,
+        table.report-table th.row-head {
+            font-weight: 600;
+            color: #384049;
+        }
+        table.report-table td.metric-value {
+            font-variant-numeric: tabular-nums;
+            color: #2b2b2b;
+        }
+
+        /* Loading */
+        .card-loading {
+            display: flex;
+            justify-content: center;
+            padding: 30px 0;
         }
     </style>
 {% endblock %}
 
 {% block body_content %}
-    <div class="container" style="margin-top: 120px; margin-bottom: 50px;">
-        <div class="summary-container"></div>
-        <div class="loading" style="display: none">
-            <img src="/static/img/small-loading.svg" width="150"
-                 style="filter: brightness(104%) contrast(97%);"
-                 alt="Loading view">
+    <div class="summary-report">
+        <div class="summary-report__header">
+            <h1>Summary Report</h1>
+            <p>Overview of data quality and coverage across the platform.</p>
         </div>
+        <div class="summary-container"></div>
     </div>
 {% endblock %}
 
 {% block foot %}
 
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
-    <script src="{% static "js/libs/jquery-ui-1.12.1/jquery-ui.min.js" %}"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
-    <script src="{% static "js/utils/download_csv.js" %}"></script>
-    <script src="{% static "js/utils/table_download.js" %}"></script>
 
     <script>
-
-        const BACKGROUND_PROCESS = 'Current Background Process'
-
         const reportsApi = [
             {
                 'title': 'General Data Report',
                 'url': '/api/summary-general-report/'
-            },
-            // Update this
-            // {
-            //    'title': BACKGROUND_PROCESS,
-            //    'url': '/api/v1/celery-inspect/active/'
-            // },
-            {
-                'title': 'Location Context Report',
-                'url': '/api/location-context-report/'
             }
-        ]
+        ];
+
+        // Metrics that should stand out with an accent tile.
+        const ACCENT_METRICS = ['total_duplicate_records', 'total_removable_duplicates'];
+
+        // Metrics that offer a "Download CSV" button, mapped to their endpoint.
+        const DOWNLOAD_ENDPOINTS = {
+            'total_duplicate_records': '/api/duplicate-records/download/',
+            'total_duplicated_sites': '/api/duplicate-sites/download/'
+        };
+
+        // Short descriptions shown under each total in the reports.
+        const METRIC_DESCRIPTIONS = {
+            'total_sites': 'All location sites recorded across the platform.',
+            'total_duplicated_sites': 'Sites that share the same site code with another site.',
+            'total_records': 'All biological collection records in the database.',
+            'total_duplicate_records': 'Validated records from the default source that share the same key fields.',
+            'total_duplicate_groups': 'Distinct sets of records identified as duplicates of each other.',
+            'total_removable_duplicates': 'Redundant copies that can be removed, keeping one record per group.',
+            'total_modules': 'Active species modules configured on the platform.',
+            'total_species': 'Distinct taxa assigned to at least one module.',
+            'total_sites_without_location_context': 'Sites missing any location context data.',
+            'total_sites_with_incomplete_location_context': 'Sites missing one or more location context groups.'
+        };
 
         function toTitleCase(str) {
-            return str.replace(
-                /\w\S*/g,
-                function (txt) {
-                    return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-                }
-            );
+            return str.replace(/\w\S*/g, function (txt) {
+                return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+            });
+        }
+
+        function humanize(key) {
+            return toTitleCase(String(key).replace(/_/g, ' '));
         }
 
         function numberWithCommas(x) {
-            if (!isNaN(x)) {
-                return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+            if (typeof x === 'number' || (!isNaN(x) && x !== '' && x !== null)) {
+                return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             }
-            return x;
+            return x; // Leave HTML / non-numeric strings untouched.
         }
 
-        const objectToTable = (data, parent = 0, totalColumn = 2) => {
+        const isObject = (v) => typeof v === 'object' && v !== null;
 
-            // Calculate total column
-            if (parent === 0) {
-                let _data = data;
-                let maxTry = 20;
-                let currentTry = 1;
-                while (typeof _data === 'object' && _data !== null && currentTry < maxTry) {
-                    currentTry += 1;
-                    totalColumn += 1;
-                    let _newData = null;
-                    $.each(_data, function(key, value) {
-                        if (typeof value === 'object' && value !== null) {
-                            _newData = value;
-                            return true;
-                        }
-                    });
-                    if (_newData) {
-                        _data = _newData;
-                    } else {
-                        _data = null;
-                    }
-                }
+        // A stat tile for a single scalar (or pre-rendered HTML) metric.
+        function renderStatTile(key, value) {
+            const accent = ACCENT_METRICS.indexOf(key) !== -1 ? ' stat-tile--accent' : '';
+            const tile = $(`<div class="stat-tile${accent}"></div>`);
+            tile.append(`<div class="stat-tile__value">${numberWithCommas(value)}</div>`);
+            tile.append(`<div class="stat-tile__label">${humanize(key)}</div>`);
+            if (METRIC_DESCRIPTIONS[key]) {
+                tile.append(`<div class="stat-tile__desc">${METRIC_DESCRIPTIONS[key]}</div>`);
             }
+            if (DOWNLOAD_ENDPOINTS[key]) {
+                const action = $(
+                    `<div class="stat-tile__action">
+                        <button class="btn btn-info" type="button">
+                            <i class="fa fa-download"></i> Download CSV
+                        </button>
+                     </div>`
+                );
+                const url = DOWNLOAD_ENDPOINTS[key];
+                action.find('button').on('click', (e) => {
+                    startDuplicateDownload($(e.currentTarget), url);
+                });
+                tile.append(action);
+            }
+            return tile;
+        }
 
-            const tbody = $('<span>');
-            $.each(data, function(key, value) {
-                const tr = $('<tr></tr>');
-                if (parent > 0) {
-                    for (let i = 0; i < parent; i++) {
-                        tr.append(`<td></td>`);
-                    }
-                    tr.append(`<td>${toTitleCase(key.replace(/_/g, ' '))}</td>`);
+        // Two-column table for a flat { key: value } object.
+        function renderKeyValueTable(obj) {
+            const rows = Object.keys(obj).map((k) =>
+                `<tr>
+                    <td class="metric-name">${humanize(k)}</td>
+                    <td class="metric-value">${numberWithCommas(obj[k])}</td>
+                 </tr>`
+            ).join('');
+            return `<div class="table-wrap">
+                <table class="report-table">
+                    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+        }
+
+        // Matrix table for a nested { row: { column: value } } object.
+        function renderMatrixTable(obj) {
+            const columns = [];
+            $.each(obj, function (_, inner) {
+                $.each(inner, function (col) {
+                    if (columns.indexOf(col) === -1) columns.push(col);
+                });
+            });
+            const head = `<tr><th class="row-head">Item</th>${
+                columns.map((c) => `<th>${humanize(c)}</th>`).join('')
+            }</tr>`;
+            const body = Object.keys(obj).map((rowKey) => {
+                const cells = columns.map((c) => {
+                    const v = obj[rowKey][c];
+                    return `<td class="metric-value">${v === undefined ? '-' : numberWithCommas(v)}</td>`;
+                }).join('');
+                return `<tr><td class="row-head">${humanize(rowKey)}</td>${cells}</tr>`;
+            }).join('');
+            return `<div class="table-wrap">
+                <table class="report-table">
+                    <thead>${head}</thead>
+                    <tbody>${body}</tbody>
+                </table>
+            </div>`;
+        }
+
+        function renderGroup(key, value) {
+            const group = $('<div class="data-group"></div>');
+            group.append(`<div class="data-group__title">${humanize(key)}</div>`);
+            const nested = Object.keys(value).some((k) => isObject(value[k]));
+            group.append(nested ? renderMatrixTable(value) : renderKeyValueTable(value));
+            return group;
+        }
+
+        function renderReport(body, data) {
+            const scalars = {};
+            const groups = {};
+            $.each(data, function (key, value) {
+                if (isObject(value)) {
+                    groups[key] = value;
                 } else {
-                    tr.append(`<th>${toTitleCase(key.replace(/_/g, ' '))}</th>`);
+                    scalars[key] = value;
                 }
-                if (typeof value === 'object' && value !== null) {
-                    tr.append(`<td colspan="${totalColumn - (parent+1)}"></td>`);
-                    tbody.append(tr);
-                    tbody.append(objectToTable(value, parent + 1, totalColumn));
-                } else {
-                    if(key==='total_duplicate_records'){
-                        tr.append(`<td colspan="" style="border-right: none">${numberWithCommas(value)}</td>`);
-                        tr.append(`<td colspan="3" style="border-left: none">
-                        <div class="download-container">
-                        </div>
-                          <button class="btn btn-info download-duplicate-as-csv" onclick="onDownloadDuplicateCSVClicked(event)">
-                                Download as CSV
-                            </button>
-                        </td>`)
-                    }
-                    else{
-                        tr.append(`<td colspan="${totalColumn - (parent+1)}">${numberWithCommas(value)}</td>`);
-                    }
-                    tbody.append(tr);
-                }
-            })
-            return tbody.html();
+            });
+
+            if (Object.keys(scalars).length) {
+                const grid = $('<div class="stat-grid"></div>');
+                $.each(scalars, function (key, value) {
+                    grid.append(renderStatTile(key, value));
+                });
+                body.append(grid);
+            }
+            $.each(groups, function (key, value) {
+                body.append(renderGroup(key, value));
+            });
         }
 
-        const renderBackgroundProcessTable = (data) => {
-            let stringData = JSON.stringify(data);
-            let div = $('<div>');
-            let tableElm = $('<table class="table table-bordered table-summary">');
-            div.append(tableElm);
-            let tbody = $('<tbody>');
-            tableElm.append(tbody);
+        function buildCard(report) {
+            const card = $('<div class="report-card open"></div>');
+            const header = $(
+                `<div class="report-card__header">
+                    <h2><span class="dot"></span>${report.title}</h2>
+                    <i class="fa fa-chevron-down report-card__chevron"></i>
+                 </div>`
+            );
+            const body = $('<div class="report-card__body"></div>');
+            card.append(header).append(body);
+            $('.summary-container').append(card);
 
-            let updateLocationContextCount = (stringData.match(/bims.tasks.update_location_context/g) || []).length;
-            let tr1 = $('<tr>');
-            tr1.append(`<th>Updating Location Context</th>`);
-            if (updateLocationContextCount > 0) {
-                tr1.append(`<td><span style="color: red">Running</td></td>`);
-            } else {
-                tr1.append(`<td><span style="color: green">Not Running</td></td>`);
-            }
-            tbody.append(tr1);
+            header.on('click', function () {
+                card.toggleClass('open');
+                body.slideToggle(180);
+            });
 
-            let harvestGbifCount = (stringData.match(/bims.tasks.harvest_collections/g) || []).length;
-            let tr2 = $('<tr>');
-            tr2.append(`<th>Harvesting GBIF data</th>`);
-            if (harvestGbifCount > 0) {
-                tr2.append(`<td><span style="color: red">Running</td></td>`);
-            } else {
-                tr2.append(`<td><span style="color: green">Not Running</td></td>`);
-            }
-            tbody.append(tr2);
+            const showLoading = (message) => {
+                body.html(
+                    `<div class="card-loading" style="flex-direction: column; gap: 12px;">
+                        <img src="/static/img/small-loading.svg" width="120"
+                             style="filter: brightness(104%) contrast(97%);" alt="Loading">
+                        ${message ? `<div style="color:#7a7a7a; font-size:13px;">${message}</div>` : ''}
+                     </div>`
+                );
+            };
 
-            return div.html();
-        }
-
-        const fetchReportsData = (reportsApi) => {
-
-            let title = reportsApi['title'];
-            let url = reportsApi['url'];
-            let slug = title.replace(/ /g,"_");
-
-            const container = $(`<div>`);
-            $('.summary-container').append(container)
-            container.append(`<h3 class="summary-title" aria-expanded="true" data-target="#${slug}">${title}</h3>`);
-            let collapse = $(`<div class="panel-collapse collapse show" id="${slug}">`);
-            container.append(collapse);
-
-            const loading = $('.loading').clone();
-            loading.removeClass('loading');
-            loading.show();
-            collapse.append(loading);
-
-            $.get(url).then(
-                (response) => {
-                    setTimeout(() => {
-                        loading.remove();
-                        if (title === BACKGROUND_PROCESS) {
-                            collapse.append(renderBackgroundProcessTable(response));
-                        } else {
-                            collapse.append(`<table class="table table-bordered table-summary">${objectToTable(response)}</table>`)
+            const load = () => {
+                $.get(report.url).then(
+                    (response) => {
+                        if (response && response.status === 'processing') {
+                            showLoading(response.message || 'Generating report, please wait...');
+                            setTimeout(load, 4000);
+                            return;
                         }
-                    }, 1000)
-                }
-            )
+                        body.empty();
+                        renderReport(body, response);
+                    },
+                    () => {
+                        body.html('<div class="alert alert-danger mb-0">Failed to load this report.</div>');
+                    }
+                );
+            };
+
+            showLoading();
+            load();
         }
 
         $(() => {
-            for (let i=0; i < reportsApi.length; i++) {
-                fetchReportsData(reportsApi[i]);
-            }
+            reportsApi.forEach(buildCard);
         });
 
-        function onDownloadDuplicateCSVClicked(e) {
+        function startDuplicateDownload(downloadButton, url) {
             const alertModalBody = $('#alertModalBody');
-            let downloadButton = $(e.target);
-            let csvName = 'duplicate-records'
-            let url = '/api/duplicate-records/download/';
-            downloadCSV(url, downloadButton, csvName, true);
-            alertModalBody.html(
-                'Your data download is underway. ' +
-                'This may take some time. ' +
-                'You will be notified by email when your download is ready. '
-            );
-            $('#alertModal').modal({
+            const openModal = () => $('#alertModal').modal({
                 'keyboard': false,
                 'backdrop': 'static'
+            });
+
+            downloadButton.prop('disabled', true);
+            $.ajax({
+                url: url,
+                method: 'POST',
+                headers: {'X-CSRFToken': csrfmiddlewaretoken},
+                success: (data) => {
+                    downloadButton.prop('disabled', false);
+                    if (data && data.status === 'failed') {
+                        alertModalBody.html(data.message || 'Nothing to download.');
+                    } else {
+                        alertModalBody.html(
+                            'Your file is being generated. ' +
+                            'You can track the progress and download the file on the ' +
+                            '<a href="/download-request/">Download Requests</a> page. ' +
+                            'You will also be notified by email when it is ready.'
+                        );
+                    }
+                    openModal();
+                },
+                error: () => {
+                    downloadButton.prop('disabled', false);
+                    alertModalBody.html('Failed to start the download. Please try again.');
+                    openModal();
+                }
             });
         }
     </script>

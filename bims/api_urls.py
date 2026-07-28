@@ -27,6 +27,7 @@ from bims.api_views.boundary import (
 )
 from bims.api_views.celery_status import CeleryStatus
 from bims.api_views.duplicate_records import DuplicateRecordsApiView
+from bims.api_views.duplicate_sites import DuplicateSitesApiView
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSitesSummary,
@@ -406,6 +407,9 @@ urlpatterns = [
         name='merge-sites'),
     re_path(r'^duplicate-records/download/$',
         DuplicateRecordsApiView.as_view(),
+        ),
+    re_path(r'^duplicate-sites/download/$',
+        DuplicateSitesApiView.as_view(),
         ),
     re_path(r'^thermal-data/$',
         ThermalDataApiView.as_view(),
