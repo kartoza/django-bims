@@ -222,6 +222,12 @@
         // Metrics that should stand out with an accent tile.
         const ACCENT_METRICS = ['total_duplicate_records', 'total_removable_duplicates'];
 
+        // Metrics that offer a "Download CSV" button, mapped to their endpoint.
+        const DOWNLOAD_ENDPOINTS = {
+            'total_duplicate_records': '/api/duplicate-records/download/',
+            'total_duplicated_sites': '/api/duplicate-sites/download/'
+        };
+
         // Short descriptions shown under each total in the reports.
         const METRIC_DESCRIPTIONS = {
             'total_sites': 'All location sites recorded across the platform.',
@@ -264,15 +270,19 @@
             if (METRIC_DESCRIPTIONS[key]) {
                 tile.append(`<div class="stat-tile__desc">${METRIC_DESCRIPTIONS[key]}</div>`);
             }
-            if (key === 'total_duplicate_records') {
-                tile.append(
+            if (DOWNLOAD_ENDPOINTS[key]) {
+                const action = $(
                     `<div class="stat-tile__action">
-                        <button class="btn btn-info download-duplicate-as-csv"
-                                onclick="onDownloadDuplicateCSVClicked(event)">
+                        <button class="btn btn-info" type="button">
                             <i class="fa fa-download"></i> Download CSV
                         </button>
                      </div>`
                 );
+                const url = DOWNLOAD_ENDPOINTS[key];
+                action.find('button').on('click', (e) => {
+                    startDuplicateDownload($(e.currentTarget), url);
+                });
+                tile.append(action);
             }
             return tile;
         }
@@ -402,9 +412,8 @@
             reportsApi.forEach(buildCard);
         });
 
-        function onDownloadDuplicateCSVClicked(e) {
+        function startDuplicateDownload(downloadButton, url) {
             const alertModalBody = $('#alertModalBody');
-            const downloadButton = $(e.currentTarget);
             const openModal = () => $('#alertModal').modal({
                 'keyboard': false,
                 'backdrop': 'static'
@@ -412,16 +421,16 @@
 
             downloadButton.prop('disabled', true);
             $.ajax({
-                url: '/api/duplicate-records/download/',
+                url: url,
                 method: 'POST',
                 headers: {'X-CSRFToken': csrfmiddlewaretoken},
                 success: (data) => {
                     downloadButton.prop('disabled', false);
                     if (data && data.status === 'failed') {
-                        alertModalBody.html(data.message || 'No duplicate records to download.');
+                        alertModalBody.html(data.message || 'Nothing to download.');
                     } else {
                         alertModalBody.html(
-                            'Your duplicate records file is being generated. ' +
+                            'Your file is being generated. ' +
                             'You can track the progress and download the file on the ' +
                             '<a href="/download-request/">Download Requests</a> page. ' +
                             'You will also be notified by email when it is ready.'

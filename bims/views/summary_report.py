@@ -10,7 +10,10 @@ from bims.cache import (
     set_cache,
     SUMMARY_REPORT_GENERAL_CACHE,
 )
-from bims.helpers.get_duplicates import get_duplicate_records_summary
+from bims.helpers.get_duplicates import (
+    get_duplicate_records_summary,
+    get_duplicate_site_codes,
+)
 from bims.models import (
     LocationSite,
     LocationContextGroup,
@@ -149,13 +152,7 @@ class SummaryReportGeneralApiView(APIView):
 
         summary = {
             'total_sites': LocationSite.objects.all().count(),
-            'total_duplicated_sites': LocationSite.objects.exclude(
-                site_code=''
-            ).values('site_code').annotate(
-                count=Count('site_code')
-            ).values('site_code', 'count').filter(
-                count__gt=1
-            ).count(),
+            'total_duplicated_sites': get_duplicate_site_codes().count(),
             'total_records': BiologicalCollectionRecord.objects.all().count(),
             'total_duplicate_records': duplicate_summary['total_records'],
             'total_duplicate_groups': duplicate_summary['total_groups'],

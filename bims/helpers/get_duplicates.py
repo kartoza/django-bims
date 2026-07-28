@@ -51,6 +51,32 @@ def get_duplicate_records(source_collection=None):
     )
 
 
+def get_duplicate_site_codes():
+    """Return site codes shared by more than one location site.
+
+    Each row is annotated with ``duplicate``, the number of sites using that
+    site code. Empty site codes are ignored.
+    """
+    from bims.models import LocationSite
+
+    return (
+        LocationSite.objects.exclude(site_code='')
+        .values('site_code')
+        .annotate(duplicate=Count('site_code'))
+        .filter(duplicate__gt=1)
+    )
+
+
+def get_duplicate_sites():
+    """Return location sites that share a site code with another site."""
+    from bims.models import LocationSite
+
+    duplicate_codes = [row['site_code'] for row in get_duplicate_site_codes()]
+    return LocationSite.objects.filter(
+        site_code__in=duplicate_codes
+    ).order_by('site_code', 'id')
+
+
 def get_duplicate_records_summary(source_collection=None):
     """Return counts that describe the duplicate records.
 
