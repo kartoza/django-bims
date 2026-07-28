@@ -1,10 +1,16 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from preferences import preferences
+from django.db import connection
 from django.views.generic import TemplateView
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.db.models import Count
-from bims.helpers.get_duplicates import get_duplicate_records
+from bims.cache import (
+    get_cache,
+    set_cache,
+    SUMMARY_REPORT_GENERAL_CACHE,
+)
+from bims.helpers.get_duplicates import get_duplicate_records_summary
 from bims.models import (
     LocationSite,
     LocationContextGroup,
@@ -15,6 +21,9 @@ from bims.models import (
 from bims.enums import (
     TaxonomicGroupCategory
 )
+
+# Cache the general summary report for 24 hours.
+SUMMARY_REPORT_GENERAL_CACHE_TIMEOUT = 86400
 
 DANGER_TEMPLATE = '<span style="color: red">{}</span>'
 WARNING_TEMPLATE = '<span style="color: orange">{}</span>'
@@ -34,7 +43,43 @@ class SummaryReportView(UserPassesTestMixin, TemplateView):
 class SummaryReportGeneralApiView(APIView):
     """Summary report for general data"""
 
+    def _cache_key(self):
+        try:
+            schema_name = str(connection.schema_name)
+        except (AttributeError, TypeError):
+            try:
+                schema_name = connection.tenant.name if connection.tenant else ''
+            except AttributeError:
+                schema_name = ''
+        return f'{SUMMARY_REPORT_GENERAL_CACHE}_{schema_name}'
+
     def get(self, *args):
+        """Return the cached general report, or queue its generation.
+
+        The report runs many aggregate queries, so it is generated in the
+        background and cached. On a cache miss we trigger the task and return a
+        ``processing`` status that the frontend polls on.
+        """
+        cached_data = get_cache(self._cache_key())
+        if cached_data:
+            return Response(cached_data)
+
+        from bims.tasks.summary_report import (
+            generate_general_summary_report
+        )
+        generate_general_summary_report.delay(str(connection.schema_name))
+
+        return Response({
+            'status': 'processing',
+            'message': (
+                'Summary report is being generated. '
+                'Please refresh in a moment.'
+            )
+        })
+
+    def summary_data(self):
+        """Build the general summary report and store it in the cache."""
+        duplicate_summary = get_duplicate_records_summary()
         taxon_modules = TaxonGroup.objects.filter(
             category=TaxonomicGroupCategory.SPECIES_MODULE.name,
         )
@@ -102,7 +147,7 @@ class SummaryReportGeneralApiView(APIView):
                 ).distinct('site').count()
             )
 
-        return Response({
+        summary = {
             'total_sites': LocationSite.objects.all().count(),
             'total_duplicated_sites': LocationSite.objects.exclude(
                 site_code=''
@@ -112,7 +157,11 @@ class SummaryReportGeneralApiView(APIView):
                 count__gt=1
             ).count(),
             'total_records': BiologicalCollectionRecord.objects.all().count(),
-            'total_duplicate_records': get_duplicate_records().count(),
+            'total_duplicate_records': duplicate_summary['total_records'],
+            'total_duplicate_groups': duplicate_summary['total_groups'],
+            'total_removable_duplicates': (
+                duplicate_summary['total_redundant_records']
+            ),
             'total_modules': taxon_modules.count(),
             'total_species': (
                 Taxonomy.objects.filter(taxongroup__isnull=False).count()
@@ -129,7 +178,13 @@ class SummaryReportGeneralApiView(APIView):
             'total_sites_per_source_collection': (
                 total_sites_per_source_collection
             )
-        })
+        }
+        set_cache(
+            self._cache_key(),
+            summary,
+            timeout=SUMMARY_REPORT_GENERAL_CACHE_TIMEOUT
+        )
+        return summary
 
 
 class SummaryReportLocationContextApiView(APIView):
