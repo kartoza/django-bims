@@ -140,6 +140,14 @@ class AbstractTaxonomy(AbstractValidation):
         db_index=True,
     )
 
+    col_id = models.CharField(
+        verbose_name='Catalogue of Life ID',
+        max_length=50,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     verified = models.BooleanField(
         help_text='The data has been verified',
         default=False

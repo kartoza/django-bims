@@ -157,6 +157,7 @@ from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile, Role
 from bims.utils.gbif import suggest_search
+from bims.utils.col import resolve_col_id
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 from bims.tasks.location_site import (
@@ -1652,6 +1653,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'fetch_iucn_assessments',
         'harvest_synonyms_for_accepted',
         'export_taxa_list',
+        'find_col_id',
     ]
     fieldsets = (
         (_('Taxon Details'), {
@@ -1663,6 +1665,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 'parent',
                 'parent_hierarchy',
                 'species_group',
+                'col_id',
                 'gbif_key',
                 'fada_id',
                 'aphia_id',
@@ -1803,7 +1806,12 @@ class TaxonomyAdmin(admin.ModelAdmin):
     merge_taxa.short_description = 'Merge taxa'
 
     def link_to_gbif(self, obj):
-        if obj.gbif_key:
+        if obj.col_id:
+            link = 'https://gbif.org/taxon/{}'.format(obj.col_id)
+            label = obj.col_id
+            return format_html(
+                '<a href="{}" target="_blank">{}</a>', link, label)
+        elif obj.gbif_key:
             link = 'https://gbif.org/species/{}'.format(obj.gbif_key)
             label = obj.gbif_key
             return format_html(
@@ -1860,7 +1868,13 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 issues.append('Missing accepted taxon')
 
         # Upstream ID check applies to all statuses
-        if obj.gbif_key or obj.fada_id:
+        if obj.gbif_key:
+            if obj.col_id:
+                checks.append(True)
+            else:
+                checks.append(False)
+                issues.append('Missing COL ID')
+        elif obj.fada_id:
             checks.append(True)
         else:
             checks.append(False)
@@ -1971,6 +1985,41 @@ class TaxonomyAdmin(admin.ModelAdmin):
     harvest_synonyms_for_accepted.short_description = (
         "Harvest synonyms for accepted taxa (GBIF)"
     )
+
+    def find_col_id(self, request, queryset):
+        updated = 0
+        skipped = 0
+        errors = 0
+
+        for taxon in queryset.iterator(chunk_size=100):
+            try:
+                col_id, _ = resolve_col_id(
+                    taxon.gbif_key,
+                    taxon.canonical_name or '',
+                )
+            except Exception as e:
+                logger.exception(
+                    "find_col_id: error for taxon id=%s: %s",
+                    taxon.id, e,
+                )
+                errors += 1
+                continue
+
+            if col_id:
+                taxon.col_id = col_id
+                taxon.save(update_fields=['col_id'])
+                updated += 1
+            else:
+                skipped += 1
+
+        level = messages.INFO if errors == 0 else messages.WARNING
+        self.message_user(
+            request,
+            f"COL ID lookup completed. Updated: {updated}; skipped/not found: {skipped}; errors: {errors}.",
+            level=level,
+        )
+
+    find_col_id.short_description = "Find COL ID"
 
     def export_taxa_list(self, request, queryset):
         import os
