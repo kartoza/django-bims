@@ -167,6 +167,33 @@ class TestCollectionUpload(FastTenantTestCase):
             source_reference
         )
 
+    def test_reference_database_uses_title_as_database_name(self):
+        message, source_reference = process_source_reference(
+            document_author=self.owner.first_name,
+            reference='Admin',
+            document_title='Test Database - 1',
+            source_year='2015',
+            reference_category='database'
+        )
+        self.assertIsNotNone(source_reference)
+        self.assertEqual(source_reference.source_name, 'Admin')
+        self.assertEqual(source_reference.source.name, 'Test Database - 1')
+
+    def test_reference_database_different_titles_not_merged(self):
+        _, ref_a = process_source_reference(
+            reference='Admin',
+            document_title='Test Database - 1',
+            reference_category='database'
+        )
+        _, ref_b = process_source_reference(
+            reference='Admin',
+            document_title='Test Database - 2',
+            reference_category='database'
+        )
+        self.assertIsNotNone(ref_a)
+        self.assertIsNotNone(ref_b)
+        self.assertNotEqual(ref_a.id, ref_b.id)
+
     def test_reference_database_retains_date_and_authors(self):
         message, source_reference = process_source_reference(
             document_author=self.owner.first_name,

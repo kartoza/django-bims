@@ -277,11 +277,12 @@ def process_source_reference(
                     )
                 )
         elif 'database' in reference_category.lower():
-            reference_name = reference
+            reference_name = document_title if document_title else reference
+            db_lookup = {'name': reference_name}
+            if document_url:
+                db_lookup['url'] = document_url
             database_record, dr_created = (
-                DatabaseRecord.objects.get_or_create(
-                    name=reference_name
-                )
+                DatabaseRecord.objects.get_or_create(**db_lookup)
             )
             source_reference = (
                 SourceReference.create_source_reference(
