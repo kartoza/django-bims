@@ -41,11 +41,9 @@ class TestGBIFUtil(TestCase):
             )
         )
 
-    def _seed_sidecar(self, harvest_session, keys):
-        os.makedirs(gd.SIDECAR_DIR, exist_ok=True)
-        sidecar = os.path.join(gd.SIDECAR_DIR, f"{harvest_session.id}_species.json")
-        with open(sidecar, "w", encoding="utf-8") as fh:
-            json.dump(sorted(keys), fh)
+    def _seed_col_ids_sidecar(self, harvest_session, col_ids):
+        """Write {col_id: {}} dict to the col_ids sidecar."""
+        gd._col_ids_write_map(harvest_session, {str(k): {} for k in col_ids})
 
     def _prime_resume_meta(self, harvest_session, boundary, parent, polygon_count):
         """Initialize resume state so the code does NOT wipe the sidecar on first run."""
@@ -54,7 +52,7 @@ class TestGBIFUtil(TestCase):
             "download_keys": {},
             "meta": {
                 "boundary_id": boundary.id,
-                "parent_key": getattr(parent, "gbif_key", None),
+                "parent_key": getattr(parent, "col_id", None),
                 "polygon_count": polygon_count,
                 "batch_size": BOUNDARY_BATCH_SIZE,
             },
@@ -72,18 +70,16 @@ class TestGBIFUtil(TestCase):
         self.assertEqual(species, [])
 
     @patch('bims.utils.fetch_gbif.fetch_all_species_from_gbif', create=True)
-    @patch('bims.utils.gbif_download._species_add_from_dwca', return_value=2, create=True)
+    @patch('bims.utils.gbif_download._species_add_from_species_list', return_value=2, create=True)
     @patch('bims.utils.gbif_download.download_archive', return_value=Path('/tmp/dummy.zip'), create=True)
     @patch('bims.utils.gbif_download.get_ready_download_url', return_value='https://x/d.zip', create=True)
     @patch('bims.utils.gbif_download._submit_with_retry', return_value='dummy', create=True)
-    @patch('bims.utils.gbif_download._species_load_set', return_value=(2,1), create=True)
     def test_successful_data_retrieval(
         self,
-        _mock_species_load_set,
         _mock_submit_retry,
         _mock_ready,
         _mock_download,
-        _mock_add_from_dwca,
+        _mock_add_from_species_list,
         mock_fetch_taxon,
     ):
         boundary = self._make_boundary_with_two_polys()
@@ -100,7 +96,7 @@ class TestGBIFUtil(TestCase):
 
         taxon_1 = TaxonomyF.create()
         taxon_2 = TaxonomyF.create()
-        self._seed_sidecar(harvest_session, keys=[1, 2])
+        self._seed_col_ids_sidecar(harvest_session, col_ids=['AAA1', 'BBB2'])
 
         mock_fetch_taxon.side_effect = [taxon_1, taxon_2]
 
@@ -117,40 +113,23 @@ class TestGBIFUtil(TestCase):
 
     @patch('bims.utils.fetch_gbif.fetch_all_species_from_gbif',
            side_effect=Exception("Boom"), create=True)
-    @patch('bims.utils.gbif_download._species_add_from_dwca', return_value=2, create=True)
-    @patch('bims.utils.gbif_download.download_archive', return_value=Path('/tmp/dummy.zip'), create=True)
-    @patch('bims.utils.gbif_download.get_ready_download_url', return_value='https://x/d.zip', create=True)
-    @patch('bims.utils.gbif_download._submit_with_retry', return_value='dummy', create=True)
-    def test_error_handling_get_species(
-        self,
-        _mock_submit,
-        _mock_ready,
-        _mock_download,
-        _mock_add_from_dwca,
-        _mock_fetch_tax,
-    ):
+    def test_error_handling_get_species(self, _mock_fetch_tax):
         boundary = self._make_boundary_with_two_polys()
         harvest_session = HarvestSessionF.create(
             log_file=SimpleUploadedFile("test.log", b"")
         )
 
         self._prime_resume_meta(harvest_session, boundary, self.taxon, polygon_count=2)
-        self._seed_sidecar(harvest_session, keys=[1, 2])
+        self._seed_col_ids_sidecar(harvest_session, col_ids=['AAA1', 'BBB2'])
 
-        species = find_species_by_area(boundary.id, parent_species=self.taxon, harvest_session=harvest_session)
+        species = find_species_by_area(
+            boundary.id,
+            parent_species=self.taxon,
+            harvest_session=harvest_session,
+        )
         self.assertEqual(species, [])
 
-    @patch('bims.utils.gbif_download._species_add_from_dwca', return_value=2, create=True)
-    @patch('bims.utils.gbif_download.download_archive', return_value=Path('/tmp/dummy.zip'), create=True)
-    @patch('bims.utils.gbif_download.get_ready_download_url', return_value='https://x/d.zip', create=True)
-    @patch('bims.utils.gbif_download._submit_with_retry', return_value='dummy', create=True)
-    def test_canceled_harvest(
-        self,
-        _mock_submit,
-        _mock_ready,
-        _mock_download,
-        _mock_add_from_dwca,
-    ):
+    def test_canceled_harvest(self):
         boundary = self._make_boundary_with_two_polys()
 
         harvest_session = HarvestSessionF.create(
