@@ -10,10 +10,12 @@ from pygbif import species
 from bims.models.taxonomy import Taxonomy
 from bims.models.vernacular_name import VernacularName
 from bims.enums import TaxonomicRank, TaxonomicStatus
+from bims.utils.col import COL_CHECKLIST_KEY
 from bims.utils.logger import log
 
 
 GBIF_API = getattr(settings, 'GBIF_API_BASE_URL', 'https://api.gbif.org/v1')
+GBIF_API_V2 = getattr(settings, 'GBIF_API_V2', 'https://api.gbif.org/v2')
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +53,22 @@ def get_species(gbif_id):
     :return: species dictionary
     """
     api_url = GBIF_API + '/species/' + str(gbif_id)
+    try:
+        response = requests.get(api_url)
+        json_result = response.json()
+        return json_result
+    except (HTTPError, KeyError, simplejson.errors.JSONDecodeError) as e:
+        print(e)
+        return None
+
+
+def get_species_by_col_id(col_id):
+    """
+    Get species by col_id
+    :param col_id:
+    :return: species dict
+    """
+    api_url = f'{GBIF_API_V2}/species/match?checklistKey={COL_CHECKLIST_KEY}&scientificNameID=col:{col_id}'
     try:
         response = requests.get(api_url)
         json_result = response.json()
@@ -103,88 +121,37 @@ def find_species(
         returns_all=False,
         **classifier):
     """
-    GBIF lookup that prefers canonical backbone data.
-    - Filters by optional classifier kwargs (e.g., class_name='Actinopteri').
-    - Picks best candidate by status > exact match > nubKey > parentKey > smallest key.
-    - Resolves to /species/{nubKey} (backbone). If UNRANKED, returns its parent.
+    COL-based species lookup using the GBIF v2 species/match endpoint.
+    Returns the full COL match response dict or None.
     """
-    logger.info('Find species : %s', original_species_name)
+    logger.info('Find species (COL): %s', original_species_name)
+    params = {
+        'checklistKey': COL_CHECKLIST_KEY,
+        'scientificName': original_species_name,
+    }
+    if rank:
+        params['rank'] = rank.upper()
+
     try:
-        resp = species.name_lookup(q=original_species_name, limit=50, rank=rank)
-    except HTTPError:
-        logger.warning('Species not found (HTTPError) for %s', original_species_name)
-        return None
+        response = requests.get(
+            f'{GBIF_API_V2}/species/match', params=params, timeout=10)
+        if not response.ok:
+            logger.warning(
+                'COL match failed (%s) for %s', response.status_code, original_species_name)
+            return None
+        data = response.json()
     except Exception as e:
-        logger.warning('Lookup error for %s: %s', original_species_name, e)
+        logger.warning('COL match error for %s: %s', original_species_name, e)
         return None
 
-    if not resp or 'results' not in resp:
-        return None
-    results = resp['results']
-    if returns_all:
-        return results
-
-    def _matches_classifier(r: dict) -> bool:
-        if not classifier:
-            return True
-        for k, v in classifier.items():
-            if not v:
-                continue
-            key_db = 'class' if k == 'class_name' else k
-            if (r.get(key_db) or '').lower() != str(v).lower():
-                return False
-        return True
-
-    accepted_best = None
-    synonym_best = None
-    other_best = None
-
-    for r in results:
-        if not _matches_classifier(r):
-            continue
-
-        rk = (r.get('rank') or '').lower()
-        rank_key = (rk + 'Key') if rk in RANK_KEYS else 'key'
-        has_any_key = ('nubKey' in r) or (rank_key in r) or ('key' in r)
-        if not has_any_key or 'taxonomicStatus' not in r:
-            continue
-
-        status = r['taxonomicStatus']
-        if status == 'ACCEPTED':
-            accepted_best = _prefer(r, accepted_best, original_species_name)
-            if accepted_best and accepted_best.get('nubKey'):
-                break
-        elif status == 'SYNONYM':
-            synonym_best = _prefer(r, synonym_best, original_species_name)
-        else:
-            other_best = _prefer(r, other_best, original_species_name)
-
-    chosen = accepted_best or synonym_best or other_best
-    if not chosen:
+    if not data or (data.get('diagnostics') or {}).get('matchType') == 'NONE':
+        logger.info('No COL match for %s', original_species_name)
         return None
 
-    detail_key = chosen.get('nubKey') or chosen.get('key')
-    if not detail_key:
-        return chosen
+    if 'usage' not in data:
+        return None
 
-    detail = get_species(detail_key)
-    if not detail:
-        return chosen
-
-    nub_key = detail.get('nubKey')
-    if nub_key and nub_key != detail.get('key'):
-        canonical = get_species(nub_key)
-        if canonical:
-            detail = canonical
-
-    if (detail.get('rank') or '').upper() == 'UNRANKED':
-        parent_key = detail.get('parentKey')
-        if parent_key:
-            parent_detail = get_species(parent_key)
-            if parent_detail:
-                detail = parent_detail
-
-    return detail
+    return data
 
 
 def _prefer(candidate, current, original_name):
@@ -447,45 +414,32 @@ def suggest_search(query_params):
 
 
 def gbif_name_suggest(**kwargs):
-    # Wrapper for pygbif name_suggest function
-    response = species.name_suggest(**kwargs)
-    if len(response) == 0:
+    """COL-based name suggest using the GBIF v2 species/match endpoint."""
+    name = kwargs.get('q', '')
+    rank = kwargs.get('rank', None)
+
+    params = {
+        'checklistKey': COL_CHECKLIST_KEY,
+        'scientificName': name,
+    }
+    if rank:
+        params['rank'] = rank.upper()
+
+    try:
+        response = requests.get(
+            f'{GBIF_API_V2}/species/match', params=params, timeout=10)
+        if not response.ok:
+            return None
+        data = response.json()
+    except Exception as e:
+        logger.warning('COL name suggest error for %s: %s', name, e)
         return None
-    accepted_data = None
-    synonym_data = None
-    other_data = None
-    for result in response:
-        rank = result.get('rank', '')
-        if rank.lower() in RANK_KEYS:
-            rank_key = rank.lower() + 'Key'
-        else:
-            rank_key = 'key'
-        key_found = (
-                'nubKey' in result or rank_key in result)
-        if key_found and 'status' in result:
-            if result['status'] == 'ACCEPTED':
-                if accepted_data:
-                    if result['key'] < accepted_data['key']:
-                        accepted_data = result
-                else:
-                    accepted_data = result
-            if result['status'] == 'SYNONYM':
-                if synonym_data:
-                    if result['key'] < synonym_data['key']:
-                        synonym_data = result
-                else:
-                    synonym_data = result
-            else:
-                if other_data:
-                    if result['key'] < other_data['key']:
-                        other_data = result
-                else:
-                    other_data = result
-    if accepted_data:
-        return accepted_data
-    if synonym_data:
-        return synonym_data
-    return other_data
+
+    if not data or (data.get('diagnostics') or {}).get('matchType') == 'NONE':
+        return None
+    if 'usage' not in data:
+        return None
+    return data
 
 
 ACCEPTED_TAXON_KEY = 'acceptedTaxonKey'

@@ -2930,6 +2930,7 @@ class HarvestSessionAdmin(admin.ModelAdmin):
 
     actions = [
         'resume_harvest',
+        'reprocess_gbif_download',
     ]
 
     autocomplete_fields = [
@@ -2976,6 +2977,73 @@ class HarvestSessionAdmin(admin.ModelAdmin):
             )
 
         self.message_user(request, full_message)
+
+    def reprocess_gbif_download(self, request, queryset):
+        import re
+        import json as _json
+        from django.conf import settings
+        from pathlib import Path
+        from bims.utils.gbif_download import _species_reset, _col_ids_reset
+        from bims.tasks.harvest_gbif_species import harvest_gbif_species
+
+        if queryset.count() > 1:
+            self.message_user(
+                request, 'You can only reprocess one session at a time',
+                level=messages.ERROR)
+            return
+
+        harvest_session = queryset.first()
+        additional_data = harvest_session.additional_data or {}
+        download_keys = additional_data.get('gbif_download_keys', {})
+
+        if not download_keys:
+            # Fallback: extract download keys from the session log file
+            try:
+                log_path = harvest_session.log_file.path
+                pattern = re.compile(r'^(\S+)\s+status=SUCCEEDED')
+                with open(log_path, 'r', encoding='utf-8') as fh:
+                    for line in fh:
+                        m = pattern.match(line.strip())
+                        if m:
+                            gbif_key = m.group(1)
+                            zip_path = (
+                                Path(settings.MEDIA_ROOT) / 'gbif_downloads' / f'{gbif_key}.zip'
+                            )
+                            if zip_path.exists():
+                                batch_no = str(len(download_keys) + 1)
+                                download_keys[batch_no] = gbif_key
+            except Exception:
+                pass
+
+        if not download_keys:
+            self.message_user(
+                request,
+                'No cached download keys found. '
+                'Check that the GBIF zip files exist in gbif_downloads/ and the log file is intact.',
+                level=messages.ERROR)
+            return
+
+        state = {
+            'next_batch': 1,
+            'download_keys': download_keys,
+            'meta': additional_data.get('gbif_download_meta', {}),
+        }
+        harvest_session.status = _json.dumps(state)
+        harvest_session.finished = False
+        harvest_session.canceled = False
+        harvest_session.save()
+
+        _species_reset(harvest_session)
+        _col_ids_reset(harvest_session)
+
+        harvest_gbif_species.delay(harvest_session.id, connection.schema_name)
+
+        self.message_user(
+            request,
+            f'Reprocessing started for session {harvest_session.id} '
+            f'using {len(download_keys)} cached GBIF download(s).')
+
+    reprocess_gbif_download.short_description = 'Re-process cached GBIF species list download'
 
 
 class TaxonGroupTaxonomyAdmin(admin.ModelAdmin):
