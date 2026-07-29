@@ -112,14 +112,14 @@
                             id="harvest-synonyms"
                             name="harvest_synonyms_for_accepted"
                             value="1"
-                            {% if request.POST.harvest_synonyms_for_accepted %}checked{% endif %}
-                            {% if not preferences.SiteSetting.gbif_username or not preferences.SiteSetting.gbif_password %}disabled{% endif %}
+                            disabled
                           >
-                          <label class="form-check-label" for="harvest-synonyms">
+                          <label class="form-check-label text-muted" for="harvest-synonyms">
                             Harvest synonym(s) for all accepted taxa
                           </label>
                           <small class="form-text text-muted">
-                            When checked, synonyms for each accepted taxon will be harvested.
+                            <i class="fa fa-info-circle"></i>
+                            Not available: the Catalogue of Life API does not support listing synonyms by accepted taxon. Synonyms present in the harvest area will still be captured automatically via the species list download.
                           </small>
                         </div>
                       </div>
