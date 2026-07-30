@@ -1,5 +1,5 @@
 /* metagroup-widget.js
- * Renders metagroup (broader organism group) cards on the landing page.
+ * Renders metagroup (meta organism group) cards on the landing page.
  * Requires jQuery.
  * Call fetchAndRenderMetaGroups(containerId, config) on document ready.
  */
@@ -15,7 +15,7 @@
     }
 
     /**
-     * Build a single metagroup card element.
+     * Build a single metagroup card using the same layout as module-container cards.
      * @param {Object} mg     - Metagroup data from /api/metagroup-summary/
      * @param {Object} config - Theme config (nameFontSize, countFontSize, nameColor, countColor, fontFamily, textTransform)
      * @returns {jQuery|null}
@@ -25,48 +25,59 @@
 
         config = config || {};
 
-        var $card = $('<div class="metagroup-card text-center"></div>');
+        var $card = $('<div class="col-lg-2 col-md-3 col-sm-12 module-container text-center"></div>');
 
+        var $iconWrapper = $('<div class="chart-icon-wrapper"></div>');
         if (mg.icon) {
-            var $logoWrapper = $('<div class="metagroup-logo-wrapper"></div>');
-            $logoWrapper.append(
-                $('<img />').attr('src', mg.icon).attr('alt', mg.name)
+            $iconWrapper.append(
+                $('<img />').addClass('meta-organism-icon').attr('src', mg.icon).attr('alt', mg.name)
             );
-            $card.append($logoWrapper);
         }
+        $card.append($iconWrapper);
 
-        var $name = $('<div class="metagroup-name"></div>').text(mg.name);
-        if (config.nameFontSize)  $name.css('font-size',      config.nameFontSize);
-        if (config.nameColor)     $name.css('color',          config.nameColor);
-        if (config.fontFamily)    $name.css('font-family',    config.fontFamily);
-        if (config.textTransform) $name.css('text-transform', config.textTransform);
+        var nameStyle = '';
+        if (config.nameFontSize)  nameStyle += 'font-size: ' + config.nameFontSize + ' !important;';
+        if (config.nameColor)     nameStyle += 'color: ' + config.nameColor + ';';
+        if (config.fontFamily)    nameStyle += 'font-family: ' + config.fontFamily + ';';
+        if (config.textTransform) nameStyle += 'text-transform: ' + config.textTransform + ';';
+        var $name = $('<h4 class="module-name"></h4>').text(mg.name).attr('style', nameStyle + 'font-weight: bold;');
         $card.append($name);
 
-        var $stats = $('<div class="metagroup-stats"></div>');
-        if (config.countFontSize) $stats.css('font-size',  config.countFontSize);
-        if (config.countColor)    $stats.css('color',      config.countColor);
-        if (config.fontFamily)    $stats.css('font-family', config.fontFamily);
+        var infoStyle = '';
+        if (config.countFontSize)  infoStyle += 'font-size: ' + config.countFontSize + ';';
+        if (config.countColor)     infoStyle += 'color: ' + config.countColor + ';';
+        if (config.fontFamily)     infoStyle += 'font-family: ' + config.fontFamily + ';';
+        if (config.textTransform)  infoStyle += 'text-transform: ' + config.textTransform + ';';
 
-        $stats.append(
-            $('<div class="metagroup-stat"></div>').html(
-                '<span class="metagroup-number">' + getNumberWithCommas(mg.total_taxa || 0) + '</span> species'
+        var $infoContainer = $('<div class="module-info-container"></div>');
+
+        $infoContainer.append(
+            $('<p class="module-info" style="margin-bottom: 0;' + infoStyle + '"></p>').html(
+                '<span class="module-numbers">' + getNumberWithCommas(mg.total_taxa || 0) + '</span> Species'
             )
         );
-        $stats.append(
-            $('<div class="metagroup-stat"></div>').html(
-                '<span class="metagroup-number">' + getNumberWithCommas(mg.total_records || 0) + '</span> records'
+        $infoContainer.append(
+            $('<p class="module-info" style="margin-top: 0; margin-bottom: 0;' + infoStyle + '"></p>').html(
+                '<span class="module-numbers">' + getNumberWithCommas(mg.total_records || 0) + '</span> Records'
             )
         );
-        $card.append($stats);
+        if (mg.total_sites) {
+            $infoContainer.append(
+                $('<p class="module-info" style="margin-top: 0;' + infoStyle + '"></p>').html(
+                    '<span class="module-numbers">' + getNumberWithCommas(mg.total_sites) + '</span> Sites'
+                )
+            );
+        }
+        $card.append($infoContainer);
 
         return $card;
     }
 
     /**
      * Render metagroup cards from already-fetched data.
-     * @param {Array}  data      - Response from /api/metagroup-summary/
+     * @param {Array}  data        - Response from /api/metagroup-summary/
      * @param {string} containerId - CSS selector for the container element
-     * @param {Object} config    - Theme config
+     * @param {Object} config      - Theme config
      */
     function renderMetaGroups(data, containerId, config) {
         var $container = $(containerId);
