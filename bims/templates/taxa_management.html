@@ -32,7 +32,7 @@
         const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for a user';
         const taxaGroups = {{ taxa_groups_json | safe }};
-        const checklistVersions = {{ checklist_versions_json | safe }};
+        const checklistVersions = {{ checklist_versions_json | default:"{}" | safe }};
         let currentSelectedTaxonGroup = "";
         {% if selected_taxon_group %}
         currentSelectedTaxonGroup = "{{ selected_taxon_group.id }}";
