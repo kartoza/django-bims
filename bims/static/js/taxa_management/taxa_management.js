@@ -210,6 +210,7 @@ export const taxaManagement = (() => {
         taxaSidebar.init(updateTaxonGroup, selectedTaxonGroup)
         taxaTable.init(getTaxaList, selectedTaxonGroup)
         addNewTaxon.init(selectedTaxonGroup)
+        updateChecklistVersionNotice(selectedTaxonGroup)
 
         getTaxonGroupValidatedCount();
 
@@ -445,8 +446,31 @@ export const taxaManagement = (() => {
         return url.replace(/(taxonGroup=)\d+/, `$1${newTaxonGroup}`);
     }
 
+    function updateChecklistVersionNotice(taxonGroupId) {
+        const $notice = $('#checklist-version-notice');
+        if (!$notice.length) return;
+        const info = (typeof checklistVersions !== 'undefined') && checklistVersions[String(taxonGroupId)];
+        if (!info) {
+            $notice.empty();
+            return;
+        }
+        const checklistUrl = '/checklist/?module=' + taxonGroupId + '&version=' + info.id;
+        let html = '<small class="text-muted d-block mt-1">';
+        html += '<i class="fa fa-bookmark" aria-hidden="true"></i> ';
+        html += 'A versioned checklist <strong>' + info.version + '</strong>';
+        html += ' was published on ' + info.published_at;
+        html += ' and is available <a href="' + checklistUrl + '">here</a>';
+        html += '.';
+        if (info.has_changes_since) {
+            html += ' <span class="badge badge-warning ml-1" title="New taxa have been added since this version was published">Changes since publication</span>';
+        }
+        html += '</small>';
+        $notice.html(html);
+    }
+
     function updateTaxonGroup(taxonGroupId) {
         selectedTaxonGroup = taxonGroupId;
+        updateChecklistVersionNotice(taxonGroupId);
         let table = $('#taxaTable').DataTable();
         table.destroy();
         let newParams = new URLSearchParams(window.location.search);
@@ -518,7 +542,7 @@ export const taxaManagement = (() => {
     function calcScrollY() {
         const dashboardBody = document.querySelector('.dashboard-body');
         if (dashboardBody) {
-            return Math.max(window.innerHeight - dashboardBody.getBoundingClientRect().top - 170, 200) + 'px';
+            return Math.max(window.innerHeight - dashboardBody.getBoundingClientRect().top - 190, 200) + 'px';
         }
         return 'calc(100vh - 325px)';
     }

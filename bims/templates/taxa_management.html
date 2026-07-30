@@ -32,6 +32,7 @@
         const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for a user';
         const taxaGroups = {{ taxa_groups_json | safe }};
+        const checklistVersions = {{ checklist_versions_json | safe }};
         let currentSelectedTaxonGroup = "";
         {% if selected_taxon_group %}
         currentSelectedTaxonGroup = "{{ selected_taxon_group.id }}";
@@ -334,6 +335,7 @@
                     {% else %}
                         <h2>Taxon Management</h2>
                     {% endif %}
+                    <div id="checklist-version-notice"></div>
                 </div>
                 <div class="dashboard-body">
                     <hr class="db-hr"/>

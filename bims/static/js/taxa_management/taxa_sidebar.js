@@ -184,6 +184,7 @@ export const taxaSidebar = (() => {
         if (isReadonly && upstreamUrl) {
             html += `<small class="text-muted"><i class="fa fa-link" aria-hidden="true"></i> Source: <a href="${upstreamUrl}" target="_blank" rel="noopener">${upstreamUrl}</a> &middot; Synced monthly</small>`;
         }
+        html += `<div id="checklist-version-notice"></div>`;
         return html;
     }
 
