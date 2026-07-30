@@ -98,26 +98,29 @@ class TaxaManagementView(TemplateView):
 
         context['taxa_groups_json'] = json.dumps(context['taxa_groups'])
 
-        from bims.models.checklist_version import ChecklistVersion
         latest_versions = {}
-        for tg in taxa_groups_query:
-            lv = (
-                ChecklistVersion.objects
-                .filter(taxon_group=tg, status=ChecklistVersion.STATUS_PUBLISHED)
-                .order_by('-published_at')
-                .first()
-            )
-            if lv:
-                has_changes = (
-                    tg.taxonomies.filter(created_at__gt=lv.published_at).exists()
+        try:
+            from bims.models.checklist_version import ChecklistVersion
+            for tg in taxa_groups_query:
+                lv = (
+                    ChecklistVersion.objects
+                    .filter(taxon_group=tg, status=ChecklistVersion.STATUS_PUBLISHED)
+                    .order_by('-published_at')
+                    .first()
                 )
-                latest_versions[str(tg.id)] = {
-                    'version': lv.version,
-                    'published_at': lv.published_at.strftime('%d %B %Y') if lv.published_at else '',
-                    'doi': lv.doi or '',
-                    'id': str(lv.id),
-                    'has_changes_since': has_changes,
-                }
+                if lv:
+                    has_changes = (
+                        tg.taxonomies.filter(created_at__gt=lv.published_at).exists()
+                    )
+                    latest_versions[str(tg.id)] = {
+                        'version': lv.version,
+                        'published_at': lv.published_at.strftime('%d %B %Y') if lv.published_at else '',
+                        'doi': lv.doi or '',
+                        'id': str(lv.id),
+                        'has_changes_since': has_changes,
+                    }
+        except Exception:
+            pass
         context['checklist_versions_json'] = json.dumps(latest_versions)
         context['meta_groups'] = MetaGroup.objects.all().order_by('display_order', 'name').values('id', 'name')
         context['taxon_rank'] = [
