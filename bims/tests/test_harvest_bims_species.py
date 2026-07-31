@@ -60,7 +60,7 @@ def _taxon(
     taxon_id, canonical_name, rank='SPECIES',
     gbif_key=None, parent=None, scientific_name=None,
     author='', taxonomic_status='ACCEPTED',
-    tag_list='', additional_data=None,
+    tag_list='', additional_data=None, accepted_taxonomy=None,
 ):
     return {
         'id': taxon_id,
@@ -69,6 +69,7 @@ def _taxon(
         'rank': rank,
         'gbif_key': gbif_key,
         'parent': parent,
+        'accepted_taxonomy': accepted_taxonomy,
         'author': author,
         'taxonomic_status': taxonomic_status,
         'tag_list': tag_list,
@@ -278,6 +279,57 @@ class TestFindOrCreateTaxonomy(FastTenantTestCase):
         existing.refresh_from_db()
         self.assertIsNotNone(existing.parent)
         self.assertEqual(existing.parent.canonical_name, 'LateParent')
+
+    @mock.patch(_PATCH_GET_TAXON_BY_ID)
+    def test_synonym_parent_ignored_and_accepted_taxonomy_resolved(self, mock_get_taxon):
+        accepted_data = _taxon(1001, 'Thraulus', rank='GENUS')
+        mock_get_taxon.return_value = accepted_data
+
+        synonym_data = _taxon(
+            1000,
+            'Thraululus',
+            rank='GENUS',
+            parent=9999,
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=1001,
+        )
+        result = _find_or_create_taxonomy(
+            synonym_data, 'http://bims.test', self.remote_cache
+        )
+
+        self.assertIsNone(result.parent)
+        self.assertIsNotNone(result.accepted_taxonomy)
+        self.assertEqual(result.accepted_taxonomy.canonical_name, 'Thraulus')
+        mock_get_taxon.assert_called_once_with('http://bims.test', 1001)
+
+    @mock.patch(_PATCH_GET_TAXON_BY_ID)
+    def test_synonym_genus_parent_cycle_does_not_recurse(self, mock_get_taxon):
+        accepted_data = _taxon(2001, 'Thraulus', rank='GENUS', parent=2000)
+        synonym_data = _taxon(
+            2000,
+            'Thraululus',
+            rank='GENUS',
+            taxonomic_status='SYNONYM',
+            accepted_taxonomy=2001,
+        )
+
+        def _side_effect(base_url, taxon_id):
+            return {
+                2000: synonym_data,
+                2001: accepted_data,
+            }.get(taxon_id)
+
+        mock_get_taxon.side_effect = _side_effect
+
+        result = _find_or_create_taxonomy(
+            synonym_data, 'http://bims.test', self.remote_cache
+        )
+
+        result.refresh_from_db()
+        accepted = Taxonomy.objects.get(canonical_name='Thraulus', rank='GENUS')
+        self.assertEqual(result.accepted_taxonomy_id, accepted.pk)
+        self.assertIsNone(result.parent)
+        self.assertIsNone(accepted.parent)
 
     # -- additional_data merging -------------------------------------------
 
