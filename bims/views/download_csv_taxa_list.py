@@ -124,7 +124,11 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
         return 'Yes' if obj.gbif_key else 'No'
 
     def get_gbif_link(self, obj):
-        if obj.gbif_key:
+        if obj.col_id:
+            return 'https://www.gbif.org/taxon/{}'.format(
+                obj.col_id
+            )
+        elif obj.gbif_key:
             return 'https://www.gbif.org/species/{}'.format(
                 obj.gbif_key
             )
@@ -323,9 +327,12 @@ def download_checklist_snapshot(request):
 
     current_time = datetime.datetime.now()
     ext = 'pdf' if output == 'pdf' else 'csv'
+    by_family_suffix = '-by-family' if order_by == 'family' else ''
+    format_suffix = f'-{ext}{by_family_suffix}'
     filename = (
         f'{version.taxon_group.name}-v{version.version}-'
         f'{current_time.year}-{current_time.month}-{current_time.day}'
+        f'{format_suffix}'
     ).replace(' ', '_') + f'.{ext}'
 
     folder = settings.PROCESSED_CSV_PATH

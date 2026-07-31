@@ -359,7 +359,6 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             if (data['common_name'] !== '') {
                 this.dashboardTitleContainer.append('<div class="common-name-title">' + data['common_name'] + '</div>');
             }
-            var gbif_key = data['gbif_id'];
             var taxonomy_id = data['process_id'];
             var canonicalName = data['taxon'];
             var common_name = data['common_name'];
@@ -406,7 +405,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
                 csv_downloads_url: self.csvDownloadsUrl,
                 count: data['total_records'],
                 taxon_class: data['taxon'],
-                gbif_id: gbif_key,
+                col_id: data['col_id'],
                 common_name: data['common_name'],
                 additional_data: data['taxon_additional_data'],
                 taxonomic_status: data['taxonomic_status'] || '',

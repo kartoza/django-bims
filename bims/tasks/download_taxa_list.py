@@ -433,7 +433,7 @@ def _build_subset_note(request_dict):
     return 'Note: This export contains only taxa filtered to ' + '; '.join(parts) + '.'
 
 
-def _build_checklist_pdf_header(title, taxon_group, styles, subset_note=''):
+def _build_checklist_pdf_header(title, taxon_group, styles, subset_note='', doi=''):
     from bims.models import TaxonGroupCitation
 
     paragraphs = []
@@ -455,8 +455,10 @@ def _build_checklist_pdf_header(title, taxon_group, styles, subset_note=''):
         .filter(taxon_group=taxon_group)
         .order_by('-year', '-access_date', '-updated_at', '-created_at')
     )
-    if citations.exists():
+    if doi or citations.exists():
         paragraphs.append(Paragraph('To be cited as:', styles.heading))
+        if doi:
+            paragraphs.append(Paragraph(f'DOI: {doi}', styles.citation))
         for c in citations:
             paragraphs.append(Paragraph(c.formatted_citation(), styles.citation))
         paragraphs.append(Spacer(1, 6))
@@ -633,8 +635,13 @@ def download_taxa_list(
 
 
 def _snapshot_row_to_dict(row):
-    on_gbif = 'Yes' if row.gbif_key else 'No'
-    gbif_link = f'https://www.gbif.org/species/{row.gbif_key}' if row.gbif_key else '-'
+    on_gbif = 'Yes' if row.gbif_key or row.col_id else 'No'
+    if row.col_id:
+        gbif_link = f'https://www.gbif.org/taxon/{row.col_id}'
+    elif row.gbif_key:
+        gbif_link = f'https://www.gbif.org/species/{row.gbif_key}'
+    else:
+        gbif_link = '-'
     taxon = canonical_with_subgenus(row.canonical_name, row.genus, row.subgenus)
     scientific_name = row.scientific_name or ''
     if row.subgenus and taxon not in scientific_name:
@@ -681,6 +688,7 @@ def write_snapshot_pdf(snapshots, version, output_file, order_by=None):
         f'{version.taxon_group.name} v{version.version} Checklist',
         version.taxon_group,
         checklist_style,
+        doi=version.doi or '',
     )
 
     synonym_map = {}
@@ -729,7 +737,7 @@ def write_snapshot_pdf(snapshots, version, output_file, order_by=None):
     ).build(story)
 
 
-def write_snapshot_csv(snapshots, output_file, order_by=None):
+def write_snapshot_csv(snapshots, output_file, order_by=None, version=None):
     if order_by == 'family':
         snapshots = snapshots.order_by('family', 'genus', 'canonical_name')
     else:
@@ -762,6 +770,32 @@ def write_snapshot_csv(snapshots, output_file, order_by=None):
                 d[k] = (row.tags or {}).get(k, '')
             writer.writerow([d.get(k, '') for k in all_keys])
 
+        if version is not None:
+            from bims.models import TaxonGroupCitation
+            writer.writerow([])
+            title_text = f'{version.taxon_group.name} v{version.version} Checklist'
+            writer.writerow([title_text])
+            generated_text = (
+                f"(generated {datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Y')} "
+                f"from {get_current_domain()})"
+            )
+            writer.writerow([generated_text])
+            if version.doi:
+                writer.writerow([])
+                writer.writerow(['To be cited as:'])
+                writer.writerow([f'DOI: {version.doi}'])
+            citations = (
+                TaxonGroupCitation.objects
+                .filter(taxon_group=version.taxon_group)
+                .order_by('-year', '-access_date', '-updated_at', '-created_at')
+            )
+            if citations.exists():
+                if not version.doi:
+                    writer.writerow([])
+                    writer.writerow(['To be cited as:'])
+                for c in citations:
+                    writer.writerow([c.formatted_citation()])
+
 
 @shared_task(name='bims.tasks.download_checklist_snapshot', queue='update')
 def download_checklist_snapshot_task(
@@ -784,7 +818,7 @@ def download_checklist_snapshot_task(
     )
 
     if output == 'csv':
-        write_snapshot_csv(snapshots, output_file, order_by)
+        write_snapshot_csv(snapshots, output_file, order_by, version=version)
     else:
         write_snapshot_pdf(snapshots, version, output_file, order_by)
 

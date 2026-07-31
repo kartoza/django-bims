@@ -210,6 +210,7 @@ export const taxaManagement = (() => {
         taxaSidebar.init(updateTaxonGroup, selectedTaxonGroup)
         taxaTable.init(getTaxaList, selectedTaxonGroup)
         addNewTaxon.init(selectedTaxonGroup)
+        updateChecklistVersionNotice(selectedTaxonGroup)
 
         getTaxonGroupValidatedCount();
 
@@ -445,8 +446,31 @@ export const taxaManagement = (() => {
         return url.replace(/(taxonGroup=)\d+/, `$1${newTaxonGroup}`);
     }
 
+    function updateChecklistVersionNotice(taxonGroupId) {
+        const $notice = $('#checklist-version-notice');
+        if (!$notice.length) return;
+        const info = (typeof checklistVersions !== 'undefined') && checklistVersions[String(taxonGroupId)];
+        if (!info) {
+            $notice.empty();
+            return;
+        }
+        const checklistUrl = '/checklist/?module=' + taxonGroupId + '&version=' + info.id;
+        let html = '<small class="text-muted d-block mt-1">';
+        html += '<i class="fa fa-bookmark" aria-hidden="true"></i> ';
+        html += 'A versioned checklist <strong>' + info.version + '</strong>';
+        html += ' was published on ' + info.published_at;
+        html += ' and is available <a href="' + checklistUrl + '">here</a>';
+        html += '.';
+        if (info.has_changes_since) {
+            html += ' <span class="badge badge-warning ml-1" title="New taxa have been added since this version was published">Changes since publication</span>';
+        }
+        html += '</small>';
+        $notice.html(html);
+    }
+
     function updateTaxonGroup(taxonGroupId) {
         selectedTaxonGroup = taxonGroupId;
+        updateChecklistVersionNotice(taxonGroupId);
         let table = $('#taxaTable').DataTable();
         table.destroy();
         let newParams = new URLSearchParams(window.location.search);
@@ -518,7 +542,7 @@ export const taxaManagement = (() => {
     function calcScrollY() {
         const dashboardBody = document.querySelector('.dashboard-body');
         if (dashboardBody) {
-            return Math.max(window.innerHeight - dashboardBody.getBoundingClientRect().top - 170, 200) + 'px';
+            return Math.max(window.innerHeight - dashboardBody.getBoundingClientRect().top - 190, 200) + 'px';
         }
         return 'calc(100vh - 325px)';
     }
@@ -549,7 +573,7 @@ export const taxaManagement = (() => {
               data: "canonical_name",
               render: function (data, type, row) {
                 const prettyName = renderTextDiff(row.canonical_name || row.scientific_name);
-                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.gbif_key ? ` <a href="https://www.gbif.org/species/${row.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
+                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.col_id ? ` <a href="https://www.gbif.org/taxon/${row.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
               },
               className: "min-width-150"
             },
@@ -801,7 +825,7 @@ export const taxaManagement = (() => {
                             let name = data.canonical_name || data.scientific_name;
                             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
                                 ` <span class="badge badge-info">Synonym</span>` : '';
-                            let gbifHTML = data.gbif_key ? ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
+                            let gbifHTML = data.col_id ? ` <a href="https://www.gbif.org/taxon/${data.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
                             let iucnHTML = data.iucn_url ? ` <a href="${data.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
