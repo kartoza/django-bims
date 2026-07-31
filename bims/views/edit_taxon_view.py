@@ -25,7 +25,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         'parent',
         'taxonomic_status',
         'accepted_taxonomy',
-        'gbif_key',
+        'col_id',
         'fada_id'
     ]
     success_url = '/taxa_management/'
@@ -206,6 +206,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         data['Conservation References'] = (
             self.request.POST.get('additional_data__Conservation_References', '')).strip()
         data['fada_id'] = self.request.POST.get('fada_id', '').strip() or None
+        data['col_id'] = self.request.POST.get('col_id', '').strip() or None
 
         subgenus_id = self.request.POST.get('subgenus', '').strip()
         if is_synonym and subgenus_id:

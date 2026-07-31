@@ -337,6 +337,124 @@ class EditTaxonFadaTest(FastTenantTestCase):
 
         self.client.logout()
 
+    def test_col_id_field_saved_in_proposal(self):
+        """Test that col_id is properly saved when editing a taxon."""
+        self.client.login(username='superuser', password='password')
+
+        url = reverse('edit_taxon', kwargs={
+            'id': self.taxonomy.id,
+            'taxon_group_id': self.taxon_group.id
+        })
+
+        col_id_value = 'ABC123'
+
+        data = {
+            'taxon_name': 'Updated Taxon',
+            'rank': 'SPECIES',
+            'author': 'Test Author',
+            'iucn_status': self.iucn_status.id,
+            'taxonomic_status': 'ACCEPTED',
+            'accepted_taxonomy': '',
+            'tags': [],
+            'parent': self.parent.id,
+            'col_id': col_id_value,
+        }
+
+        response = self.client.post(url, data)
+
+        self.assertEqual(response.status_code, 302)
+
+        proposal = TaxonomyUpdateProposal.objects.filter(
+            original_taxonomy=self.taxonomy,
+            taxon_group=self.taxon_group,
+            status='pending'
+        ).first()
+
+        self.assertIsNotNone(proposal)
+        self.assertEqual(proposal.col_id, col_id_value)
+
+        self.client.logout()
+
+    def test_col_id_preserved_when_proposal_approved(self):
+        """Test that col_id is copied to the taxonomy when the proposal is approved."""
+        self.client.login(username='expert', password='password')
+
+        url = reverse('edit_taxon', kwargs={
+            'id': self.taxonomy.id,
+            'taxon_group_id': self.taxon_group.id
+        })
+
+        col_id_value = 'XYZ789'
+
+        data = {
+            'taxon_name': 'TestGenus Approved',
+            'rank': 'SPECIES',
+            'author': 'Test Author',
+            'iucn_status': self.iucn_status.id,
+            'taxonomic_status': 'ACCEPTED',
+            'accepted_taxonomy': '',
+            'tags': [],
+            'parent': self.parent.id,
+            'col_id': col_id_value,
+        }
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+
+        proposal = TaxonomyUpdateProposal.objects.filter(
+            original_taxonomy=self.taxonomy,
+            taxon_group=self.taxon_group,
+            status='pending'
+        ).first()
+
+        self.assertIsNotNone(proposal)
+        self.assertEqual(proposal.col_id, col_id_value)
+
+        proposal.approve(self.expert_user)
+
+        self.taxonomy.refresh_from_db()
+        self.assertEqual(self.taxonomy.col_id, col_id_value)
+
+        proposal.refresh_from_db()
+        self.assertEqual(proposal.status, 'approved')
+
+        self.client.logout()
+
+    def test_col_id_empty_string_becomes_none(self):
+        """Test that submitting an empty col_id results in None, not ''."""
+        self.client.login(username='superuser', password='password')
+
+        url = reverse('edit_taxon', kwargs={
+            'id': self.taxonomy.id,
+            'taxon_group_id': self.taxon_group.id
+        })
+
+        data = {
+            'taxon_name': 'Updated Taxon',
+            'rank': 'SPECIES',
+            'author': 'Test Author',
+            'iucn_status': self.iucn_status.id,
+            'taxonomic_status': 'ACCEPTED',
+            'accepted_taxonomy': '',
+            'tags': [],
+            'parent': self.parent.id,
+            'col_id': '',
+        }
+
+        response = self.client.post(url, data)
+        self.assertEqual(response.status_code, 302)
+
+        proposal = TaxonomyUpdateProposal.objects.filter(
+            original_taxonomy=self.taxonomy,
+            taxon_group=self.taxon_group,
+            status='pending'
+        ).first()
+
+        self.assertIsNotNone(proposal)
+        self.assertIsNone(proposal.col_id)
+
+        self.client.logout()
+
 
 class EditTaxonReadOnlyGroupTest(FastTenantTestCase):
     """

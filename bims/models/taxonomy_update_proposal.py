@@ -376,6 +376,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     'additional_data',
                     'vernacular_names',
                     'gbif_key',
+                    'col_id',
                     'gbif_data',
                     'fada_id',
                     'origin',
