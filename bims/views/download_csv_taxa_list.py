@@ -124,7 +124,11 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
         return 'Yes' if obj.gbif_key else 'No'
 
     def get_gbif_link(self, obj):
-        if obj.gbif_key:
+        if obj.col_id:
+            return 'https://www.gbif.org/taxon/{}'.format(
+                obj.col_id
+            )
+        elif obj.gbif_key:
             return 'https://www.gbif.org/species/{}'.format(
                 obj.gbif_key
             )

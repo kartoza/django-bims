@@ -635,8 +635,13 @@ def download_taxa_list(
 
 
 def _snapshot_row_to_dict(row):
-    on_gbif = 'Yes' if row.gbif_key else 'No'
-    gbif_link = f'https://www.gbif.org/species/{row.gbif_key}' if row.gbif_key else '-'
+    on_gbif = 'Yes' if row.gbif_key or row.col_id else 'No'
+    if row.col_id:
+        gbif_link = f'https://www.gbif.org/taxon/{row.col_id}'
+    elif row.gbif_key:
+        gbif_link = f'https://www.gbif.org/species/{row.gbif_key}'
+    else:
+        gbif_link = '-'
     taxon = canonical_with_subgenus(row.canonical_name, row.genus, row.subgenus)
     scientific_name = row.scientific_name or ''
     if row.subgenus and taxon not in scientific_name:
