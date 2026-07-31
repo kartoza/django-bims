@@ -123,6 +123,7 @@ class BioCollectionSummary(APIView):
             taxonomy.additional_data
         )
         response_data['gbif_id'] = taxonomy.gbif_key
+        response_data['col_id'] = taxonomy.col_id
         response_data['total_records'] = len(collection_results)
         response_data['conservation_status'] = iucn_status
         if taxonomy.origin:

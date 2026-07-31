@@ -247,6 +247,10 @@ export const taxonDetail = (() => {
                                 <div class="col-4"><strong>GBIF Key</strong></div>
                                 <div class="col-8">${data.gbif_key ? data.gbif_key : ''}</div>
                             </div>
+                            <div class="dt-item col-12 row">
+                                <div class="col-4"><strong>COL XR</strong></div>
+                                <div class="col-8">${data.col_id ? data.col_id : ''}</div>
+                            </div>
                             ${typeof isFadaSite !== 'undefined' && isFadaSite ? `
                             <div class="dt-item col-12 row">
                                 <div class="col-4"><strong>FADA ID</strong></div>

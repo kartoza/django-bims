@@ -573,7 +573,7 @@ export const taxaManagement = (() => {
               data: "canonical_name",
               render: function (data, type, row) {
                 const prettyName = renderTextDiff(row.canonical_name || row.scientific_name);
-                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.gbif_key ? ` <a href="https://www.gbif.org/species/${row.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
+                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.col_id ? ` <a href="https://www.gbif.org/taxon/${row.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
               },
               className: "min-width-150"
             },
@@ -825,7 +825,7 @@ export const taxaManagement = (() => {
                             let name = data.canonical_name || data.scientific_name;
                             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
                                 ` <span class="badge badge-info">Synonym</span>` : '';
-                            let gbifHTML = data.gbif_key ? ` <a href="https://www.gbif.org/species/${data.gbif_key}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
+                            let gbifHTML = data.col_id ? ` <a href="https://www.gbif.org/taxon/${data.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
                             let iucnHTML = data.iucn_url ? ` <a href="${data.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
