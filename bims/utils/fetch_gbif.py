@@ -645,12 +645,19 @@ def fetch_all_species_from_gbif(
         species_data and
         not taxonomy.accepted_taxonomy
     ):
-        usage = species_data.get('usage', {})
-        ak = (
-            usage.get('acceptedKey') or
-            species_data.get('acceptedKey') or
-            species_data.get('acceptedTaxonKey')
-        )
+        if col_id:
+            ak = (
+                species_data.get('acceptedUsage', {}).get(
+                    'key', None
+                )
+            )
+        else:
+            usage = species_data.get('usage', {})
+            ak = (
+                usage.get('acceptedKey') or
+                species_data.get('acceptedKey') or
+                species_data.get('acceptedTaxonKey')
+            )
         if ak and ak != taxonomy.col_id and ak not in _visited:
             accepted_preexists = Taxonomy.objects.filter(col_id=ak).exists()
             if accepted_preexists:

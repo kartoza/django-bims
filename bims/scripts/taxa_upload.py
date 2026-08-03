@@ -1461,25 +1461,51 @@ class TaxaProcessor(object):
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'taxonomic_status', taxonomic_status.strip().upper())
 
             # Refresh gbif_data for existing taxa, cached data may be outdated.
-            if not new_taxon and taxonomy.gbif_key:
-                fresh_data = get_species(taxonomy.gbif_key)
-                if fresh_data:
-                    taxonomy.gbif_data = fresh_data
-                    taxonomy.save(update_fields=['gbif_data'])
+            if not new_taxon:
+                if taxonomy.col_id:
+                    fresh_data = get_species_by_col_id(taxonomy.col_id)
+                    if fresh_data:
+                        taxonomy.gbif_data = fresh_data
+                        taxonomy.save(update_fields=['gbif_data'])
+                elif taxonomy.gbif_key:
+                    fresh_data = get_species(taxonomy.gbif_key)
+                    if fresh_data:
+                        taxonomy.gbif_data = fresh_data
+                        taxonomy.save(update_fields=['gbif_data'])
 
             if is_synonym and not accepted_taxon:
-                accepted_key = (taxonomy.gbif_data or {}).get('acceptedKey', '')
+                gbif_data = taxonomy.gbif_data or {}
+                usage = gbif_data.get('usage')
+                is_col_data = isinstance(usage, dict)
+                accepted_key = (
+                    gbif_data.get('acceptedUsage', {}).get('key', None)
+                    if is_col_data else gbif_data.get('acceptedKey', '')
+                )
+
                 if accepted_key:
-                    accepted_taxon = Taxonomy.objects.filter(gbif_key=accepted_key).first()
+                    if is_col_data:
+                        accepted_taxon = Taxonomy.objects.filter(col_id=accepted_key).first()
+                    else:
+                        accepted_taxon = Taxonomy.objects.filter(gbif_key=accepted_key).first()
                 if accepted_key and not accepted_taxon:
-                    accepted_taxon = fetch_all_species_from_gbif(
-                        gbif_key=accepted_key,
-                        fetch_children=False,
-                        is_synonym=False,
-                        fetch_vernacular_names=False,
-                        use_name_lookup=False,
-                        preserve_taxonomic_status=False
-                    )
+                    if is_col_data:
+                        accepted_taxon = fetch_all_species_from_gbif(
+                            col_id=accepted_key,
+                            fetch_children=False,
+                            is_synonym=False,
+                            fetch_vernacular_names=False,
+                            use_name_lookup=False,
+                            preserve_taxonomic_status=False
+                        )
+                    else:
+                        accepted_taxon = fetch_all_species_from_gbif(
+                            gbif_key=accepted_key,
+                            fetch_children=False,
+                            is_synonym=False,
+                            fetch_vernacular_names=False,
+                            use_name_lookup=False,
+                            preserve_taxonomic_status=False
+                        )
 
             if accepted_taxon and accepted_taxon.accepted_taxonomy:
                 accepted_taxon.accepted_taxonomy = None

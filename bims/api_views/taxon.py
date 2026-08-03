@@ -766,14 +766,14 @@ class TaxaList(APIView):
         if is_gbif:
             try:
                 is_gbif = is_gbif.lower() == 'true'
+                no_gbif_or_col = (
+                    Q(gbif_key__isnull=True) &
+                    (Q(col_id__isnull=True) | Q(col_id=''))
+                )
                 if is_gbif:
-                    taxon_list = taxon_list.exclude(
-                        gbif_key__isnull=True
-                    )
+                    taxon_list = taxon_list.exclude(no_gbif_or_col)
                 else:
-                    taxon_list = taxon_list.filter(
-                        gbif_key__isnull=True
-                    )
+                    taxon_list = taxon_list.filter(no_gbif_or_col)
             except ValueError:
                 pass
         if is_iucn:
