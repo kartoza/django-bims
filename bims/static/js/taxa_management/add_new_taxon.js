@@ -97,6 +97,9 @@ export const addNewTaxon = (() => {
         const status = taxonomicStatus || $('#new-taxon-status').val() || '';
         const normalizedStatus = normalizeStatus(status);
         const finalStatus = normalizedStatus || 'ACCEPTED';
+        // gbifKey here is the raw GBIF suggest key from the search table (there's
+        // no COL equivalent for as-you-type suggestions); the backend resolves it
+        // to a Catalogue of Life col_id before the taxon is created/stored.
         let postData = {
             'gbifKey': gbifKey,
             'taxonName': name,

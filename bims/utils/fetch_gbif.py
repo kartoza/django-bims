@@ -4,6 +4,7 @@ import requests
 from django.db import IntegrityError, transaction
 from django.db.models.fields.related import ForeignObjectRel
 
+from bims.scripts.species_keys import RANK_INDEX
 from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
     gbif_name_suggest, gbif_synonyms_by_usage, get_species_by_col_id
@@ -406,15 +407,12 @@ _RANK_PARENT = {
 }
 
 
-def _parent_col_id_from_classification(classification, rank):
+def _parent_col_id_from_classification(classification):
     """Return the COL ID of the immediate parent from a classification list."""
-    target = _RANK_PARENT.get((rank or '').upper())
-    if not target or not classification:
+    if not classification or len(classification) == 1:
         return None
-    for entry in reversed(classification):
-        if (entry.get('rank') or '').upper() == target:
-            return entry.get('key')
-    return None
+    parent = list(reversed(classification))[1]
+    return parent.get('key', None)
 
 
 def _clean_col_data(col_data):
@@ -575,7 +573,7 @@ def fetch_all_species_from_gbif(
         taxonomy.save()
     elif not is_synonym:
         classification = species_data.get('classification', [])
-        parent_col_id = _parent_col_id_from_classification(classification, taxonomy.rank)
+        parent_col_id = _parent_col_id_from_classification(classification)
 
         need_fetch_parent = (
             parent_col_id
@@ -606,7 +604,7 @@ def fetch_all_species_from_gbif(
             if not cursor.parent:
                 cursor_data = cursor.gbif_data or {}
                 cursor_classification = cursor_data.get('classification', [])
-                pk = _parent_col_id_from_classification(cursor_classification, cursor.rank)
+                pk = _parent_col_id_from_classification(cursor_classification)
                 if pk and pk != cursor.col_id and pk not in _visited:
                     pt = fetch_all_species_from_gbif(
                         col_id=pk,

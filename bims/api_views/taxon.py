@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
 from django.forms import model_to_dict
 from django.http import Http404, JsonResponse
-from django.db.models import Count, Case, Value, When, F, CharField, Prefetch, Q
+from django.db.models import Count, Case, Value, When, F, CharField, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework import status
 from rest_framework.generics import UpdateAPIView, get_object_or_404
@@ -23,7 +23,7 @@ from taggit.models import Tag
 
 from bims.api_views.merge_sites import IsSuperUser
 from bims.api_views.taxon_update import is_expert, is_contributor
-from bims.models.taxonomy import Taxonomy, TaxonTag, CustomTaggedTaxonomy
+from bims.models.taxonomy import Taxonomy, TaxonTag
 from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
@@ -31,7 +31,9 @@ from bims.models.biological_collection_record import (
 )
 from bims.models import TaxonGroup, VernacularName, TaxonGroupTaxonomy
 from bims.enums.taxonomic_rank import TaxonomicRank
-from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
+from bims.utils.gbif import suggest_search, get_vernacular_names
+from bims.utils.fetch_gbif import fetch_all_species_from_gbif
+from bims.utils.col import resolve_col_id
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
@@ -349,6 +351,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             'taxon_name': '',
         }
         taxonomy = None
+        col_id = self.request.POST.get('colId', None)
         gbif_key = self.request.POST.get('gbifKey', None)
         taxon_name = self.request.POST.get('taxonName', None)
         taxon_group = self.request.POST.get('taxonGroup', None)
@@ -368,11 +371,19 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         if parent_id:
             parent = Taxonomy.objects.get(id=int(parent_id))
 
-        if gbif_key:
-            taxonomy = update_taxonomy_from_gbif(
-                key=gbif_key,
-                fetch_parent=not is_synonym,
-                get_vernacular=not is_synonym
+        if not col_id and gbif_key:
+            col_id, _ = resolve_col_id(gbif_key, canonical_name=taxon_name or '')
+            if not col_id:
+                return Response(
+                    {'error': f'Could not resolve a Catalogue of Life id for GBIF key {gbif_key}.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if col_id:
+            taxonomy = fetch_all_species_from_gbif(
+                col_id=col_id,
+                fetch_vernacular_names=not is_synonym,
+                is_synonym=is_synonym,
             )
 
         elif taxon_name and rank:
