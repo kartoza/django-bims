@@ -140,6 +140,13 @@ class AbstractTaxonomy(AbstractValidation):
         db_index=True,
     )
 
+    taxonworks_otu_id = models.IntegerField(
+        verbose_name='TaxonWorks OTU ID',
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     col_id = models.CharField(
         verbose_name='Catalogue of Life ID',
         max_length=50,

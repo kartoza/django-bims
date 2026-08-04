@@ -49,6 +49,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             this.csvDownloadsUrl = '';
             this.imagesCard = this.$el.find('#fsdd-images-card-body');
             this.iucnLink = this.$el.find('#fsdd-iucn-link');
+            this.wormsLink = this.$el.find('#fsdd-worms-link');
             this.iucnAssessmentsBody = this.$el.find('#fsdd-iucn-assessments-body');
             this.metadataTableList = this.$el.find('#metadata-table-list-taxon');
             this.sourceReferenceIds = [];
@@ -369,6 +370,14 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             if (iucn_url) {
                 this.iucnLink.attr('href', iucn_url);
             }
+
+            var worms_url = data['worms_url'];
+            if (worms_url) {
+                this.wormsLink.attr('href', worms_url).show();
+            } else {
+                this.wormsLink.hide();
+            }
+
 
             var origin_block_data = {};
             var origin_dict = {

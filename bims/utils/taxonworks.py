@@ -147,3 +147,49 @@ def find_taxon_name_by_name(base_url: str, project_token: str,
 
 def taxon_name_url(base_url: str, taxon_name_id: int) -> str:
     return f"{normalize_taxonworks_base_url(base_url)}/taxon_names/{taxon_name_id}"
+
+
+def get_otus_for_taxon_name_ids(base_url: str, project_token: str,
+                                taxon_name_ids: list[int],
+                                per_page: int = 500) -> list[dict]:
+    """Fetch OTUs for a specific batch of taxon_name_ids (max ~10 at a time)."""
+    url = f"{taxonworks_api_base_url(base_url)}/otus"
+    params = [
+        ("project_token", project_token),
+        ("page", 1),
+        ("per", per_page),
+    ]
+    for tid in taxon_name_ids:
+        params.append(("taxon_name_id[]", tid))
+    try:
+        time.sleep(REQUEST_DELAY)
+        resp = _http.get(url, params=params, timeout=60)
+        resp.raise_for_status()
+        data = resp.json()
+        return data if isinstance(data, list) else []
+    except Exception as exc:
+        logger.warning(
+            "TaxonWorks get_otus_for_taxon_name_ids(%s) failed: %s",
+            taxon_name_ids, exc
+        )
+        return []
+
+
+def fetch_otus_for_ids(base_url: str, project_token: str,
+                       all_taxon_name_ids: list[int],
+                       batch_size: int = 10) -> dict[int, int]:
+    """
+    Fetch OTUs for all given taxon_name_ids in batches of batch_size.
+    Returns a mapping of taxon_name_id -> otu_id.
+    """
+    mapping: dict[int, int] = {}
+    ids = list(all_taxon_name_ids)
+    for i in range(0, len(ids), batch_size):
+        batch = ids[i:i + batch_size]
+        otus = get_otus_for_taxon_name_ids(base_url, project_token, batch)
+        for otu in otus:
+            taxon_name_id = otu.get("taxon_name_id")
+            otu_id = otu.get("id")
+            if taxon_name_id and otu_id:
+                mapping[int(taxon_name_id)] = int(otu_id)
+    return mapping

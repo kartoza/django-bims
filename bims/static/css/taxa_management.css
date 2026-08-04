@@ -10,6 +10,16 @@
     padding-top: 4px;
 }
 
+.badge-taxonworks {
+    background-color: #342d25;
+    color: #fff;
+}
+
+.badge-worms {
+    background-color: #256092;
+    color: #fff;
+}
+
 .total-data {
     color: #444444;
     border-radius: 10px;

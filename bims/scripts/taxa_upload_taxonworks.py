@@ -29,10 +29,14 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
 
     def __init__(self, base_url: str | None = None,
                  project_token: str | None = None,
-                 records_by_id: dict[int, dict] | None = None):
+                 records_by_id: dict[int, dict] | None = None,
+                 otus_by_taxon_name_id: dict[int, int] | None = None):
         self.base_url = base_url
         self.project_token = project_token
-        self.records_by_id = records_by_id or {}
+        # Use `is not None` so that an empty dict passed by the caller keeps its
+        # identity - the harvester updates these dicts in-place per page.
+        self.records_by_id: dict[int, dict] = records_by_id if records_by_id is not None else {}
+        self.otus_by_taxon_name_id: dict[int, int] = otus_by_taxon_name_id if otus_by_taxon_name_id is not None else {}
         self.taxonomies_by_taxonworks_id: dict[int, Taxonomy] = {}
 
     def handle_error(self, row, message):
@@ -378,6 +382,9 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
         taxonomy.additional_data = taxonworks_record_to_additional_data(record, self.base_url or "")
         if record_id:
             taxonomy.taxonworks_id = record_id
+            otu_id = self.otus_by_taxon_name_id.get(record_id)
+            if otu_id:
+                taxonomy.taxonworks_otu_id = otu_id
         taxonomy.save()
 
         is_synonym = taxonomy.taxonomic_status == "SYNONYM"
@@ -420,7 +427,8 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
 
 class SessionTaxonWorksTaxaProcessor:
     def __init__(self, log_fn, base_url: str, project_token: str,
-                 records_by_id: dict[int, dict] | None = None):
+                 records_by_id: dict[int, dict] | None = None,
+                 otus_by_taxon_name_id: dict[int, int] | None = None):
         class _Processor(TaxonWorksTaxaProcessor):
             def handle_error(self_, row, message):  # noqa: N805
                 log_fn(f"Row error TaxonWorksID={row.get('id')}: {message}")
@@ -432,6 +440,7 @@ class SessionTaxonWorksTaxaProcessor:
             base_url=base_url,
             project_token=project_token,
             records_by_id=records_by_id,
+            otus_by_taxon_name_id=otus_by_taxon_name_id,
         )
 
     def process(self, record: dict, taxon_group, harvest_synonyms: bool):
