@@ -76,7 +76,7 @@
                                 class="form-control"
                                 id="aphia-id"
                                 name="aphia_id"
-                                placeholder="e.g. 2 (Animalia), 11676 (Actinopterygii)"
+                                placeholder="e.g. 2 (Animalia), 10194 (Actinopterygii)"
                                 min="1"
                                 value="{{ request.POST.aphia_id }}"
                             >
@@ -88,6 +88,30 @@
                                 </a>.
                                 The harvester will recursively import all accepted children.
                             </small>
+                        </div>
+                    </div>
+
+                    <!-- Freshwater only -->
+                    <div class="form-group row" style="margin-top: 20px;">
+                        <label class="col-sm-2 col-form-label"></label>
+                        <div class="col-sm-10">
+                            <div class="form-check">
+                                <input
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    id="freshwater-only"
+                                    name="freshwater_only"
+                                    value="1"
+                                    {% if request.POST.freshwater_only %}checked{% endif %}
+                                >
+                                <label class="form-check-label" for="freshwater-only">
+                                    Freshwater taxa only
+                                </label>
+                                <small class="form-text text-muted">
+                                    When checked, only taxa flagged as <code>isFreshwater=1</code> in WoRMS will be imported.
+                                    Non-freshwater records are still traversed but not saved to the database.
+                                </small>
+                            </div>
                         </div>
                     </div>
 
@@ -133,7 +157,7 @@
                             <h5 class="card-title">
                                 Module group: {{ upload_session.module_group.name }}
                                 {% if upload_session.aphia_id %}
-                                    &mdash; AphiaID {{ upload_session.aphia_id }}
+                                    : AphiaID {{ upload_session.aphia_id }}
                                 {% endif %}
                             </h5>
                             <div style="float: right; margin-top: -40px">
@@ -176,7 +200,7 @@
                                 <p>
                                     {{ session.module_group.name }}
                                     {% with aid=session.additional_data %}
-                                        {% if aid.aphia_id %}&mdash; AphiaID {{ aid.aphia_id }}{% endif %}
+                                        {% if aid.aphia_id %}: AphiaID {{ aid.aphia_id }}{% endif %}
                                     {% endwith %}
                                 </p>
                                 <p>Started at {{ session.start_time }}</p>
