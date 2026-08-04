@@ -61,7 +61,7 @@ class TestWormsTaxaUpload(FastTenantTestCase):
 
         # Marine habitat tag attached
         self.assertTrue(
-            sp.tags.filter(name='Marine').exists()
+            sp.tags.filter(name='marine').exists()
         )
 
         # Source reference (citation) saved
@@ -86,12 +86,13 @@ class TestWormsTaxaUpload(FastTenantTestCase):
         self.assertEqual(subfam.parent.canonical_name, 'Cypraeidae')
         self.assertEqual(subfam.parent.rank, 'FAMILY')
 
-        # Temporary name mapped
-        temp_tax = Taxonomy.objects.get(
-            canonical_name='[unassigned] Decapodiformes',
-            rank='ORDER',
+        # Temporary name taxa are skipped entirely
+        self.assertFalse(
+            Taxonomy.objects.filter(
+                canonical_name='[unassigned] Decapodiformes',
+                rank='ORDER',
+            ).exists()
         )
-        self.assertEqual(temp_tax.taxonomic_status, 'TEMPORARY NAME')
 
         # Accepted species has ACCEPTED status and no accepted_taxonomy link
         accepted = Taxonomy.objects.get(
@@ -120,12 +121,19 @@ class TestWormsTaxaUpload(FastTenantTestCase):
         extras = alt_rep.additional_data
         self.assertIn('AphiaID', extras)
 
-        # Terrestrial-only -> Terrestrial tag present
-        terr = Taxonomy.objects.get(
-            canonical_name='[unassigned] Scolodontidae',
-            rank='SUBFAMILY',
+        # Temporary name taxa are skipped - [unassigned] Scolodontidae not imported
+        self.assertFalse(
+            Taxonomy.objects.filter(
+                canonical_name='[unassigned] Scolodontidae',
+                rank='SUBFAMILY',
+            ).exists()
         )
-        self.assertTrue(terr.tags.filter(name='Terrestrial').exists())
+        # Terrestrial tag is still attached to accepted/synonym terrestrial taxa
+        terr = Taxonomy.objects.get(
+            canonical_name='×Acostitrapa',
+            rank='GENUS',
+        )
+        self.assertTrue(terr.tags.filter(name='terrestrial').exists())
 
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.taxa_upload_worms.preferences')
