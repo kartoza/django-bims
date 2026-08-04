@@ -20,7 +20,8 @@ from bims.tasks.harvest_worms_species import harvest_worms_species
 
 def _api_record(aphia_id, sci_name, rank, status,
                 genus="", family="Accipitridae",
-                valid_aphia_id=None, valid_name=None):
+                valid_aphia_id=None, valid_name=None,
+                is_freshwater=0):
     """Minimal WoRMS REST-API-style record dict."""
     return {
         "AphiaID": aphia_id,
@@ -42,7 +43,7 @@ def _api_record(aphia_id, sci_name, rank, status,
         "subgenus": None,
         "isMarine": 0,
         "isBrackish": 0,
-        "isFreshwater": 0,
+        "isFreshwater": is_freshwater,
         "isTerrestrial": 1,
         "lsid": f"urn:lsid:marinespecies.org:taxname:{aphia_id}",
         "citation": "",
@@ -237,7 +238,49 @@ class TestHarvestWormsSpeciesTask(FastTenantTestCase):
         self.assertIn('Canceled', session.status)
 
     # ------------------------------------------------------------------
-    # 6. Resume: already-processed IDs are skipped
+    # 6. Freshwater-only filter: non-freshwater children are skipped
+    # ------------------------------------------------------------------
+
+    @mock.patch(_PATCH_PREFS)
+    @mock.patch(_PATCH_GBIF, return_value=False)
+    @mock.patch(_PATCH_CHILDREN)
+    @mock.patch(_PATCH_RECORD)
+    @mock.patch(_PATCH_CONNECT)
+    @mock.patch(_PATCH_DISCONNECT)
+    def test_freshwater_only_skips_non_freshwater(
+        self, mock_dis, mock_con, mock_record, mock_children, mock_gbif, mock_prefs
+    ):
+        mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
+
+        root = _api_record(1836, 'Aves', 'class', 'accepted', is_freshwater=1)
+        freshwater_child = _api_record(
+            2001, 'Freshius', 'genus', 'accepted', genus='Freshius', is_freshwater=1
+        )
+        marine_child = _api_record(
+            2002, 'Marinus', 'genus', 'accepted', genus='Marinus', is_freshwater=0
+        )
+
+        mock_record.return_value = root
+
+        def _children(aphia_id, **kw):
+            if aphia_id == 1836:
+                return [freshwater_child, marine_child]
+            return []
+
+        mock_children.side_effect = _children
+
+        session = self._make_session(
+            additional={'aphia_id': 1836, 'freshwater_only': True}
+        )
+        harvest_worms_species(session.id, schema_name=self.schema_name)
+
+        session.refresh_from_db()
+        self.assertTrue(session.finished)
+        self.assertTrue(Taxonomy.objects.filter(canonical_name='Freshius').exists())
+        self.assertFalse(Taxonomy.objects.filter(canonical_name='Marinus').exists())
+
+    # ------------------------------------------------------------------
+    # 7. Resume: already-processed IDs are skipped
     # ------------------------------------------------------------------
 
     @mock.patch(_PATCH_PREFS)

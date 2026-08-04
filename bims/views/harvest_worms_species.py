@@ -82,6 +82,7 @@ class HarvestWormsSpeciesView(UserPassesTestMixin, LoginRequiredMixin, TemplateV
         taxon_group_id = request.POST.get('taxon_group')
         aphia_id_raw = request.POST.get('aphia_id', '').strip()
         harvest_synonyms = request.POST.get('harvest_synonyms_for_accepted') == '1'
+        freshwater_only = request.POST.get('freshwater_only') == '1'
 
         if not taxon_group_id:
             messages.error(request, 'Please select a taxon group.')
@@ -100,7 +101,7 @@ class HarvestWormsSpeciesView(UserPassesTestMixin, LoginRequiredMixin, TemplateV
             category='worms',
             is_fetching_species=True,
             harvest_synonyms=harvest_synonyms,
-            additional_data={'aphia_id': aphia_id},
+            additional_data={'aphia_id': aphia_id, 'freshwater_only': freshwater_only},
         )
 
         log_folder = os.path.join(settings.MEDIA_ROOT, 'harvest-worms-session-log')

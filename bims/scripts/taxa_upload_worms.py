@@ -100,18 +100,32 @@ class WormsTaxaProcessor(TaxaProcessor):
 
     RANK_MAP = {
         "kingdom": "KINGDOM",
+        "subkingdom": "SUBKINGDOM",
         "phylum": "PHYLUM",
+        "subphylum": "SUBPHYLUM",
+        "infraphylum": "INFRAPHYLUM",
+        "megaclass": "MEGACLASS",
+        "gigaclass": "GIGACLASS",
+        "superclass": "SUPERCLASS",
         "class": "CLASS",
+        "subclass": "SUBCLASS",
         "infraclass": "INFRACLASS",
+        "superorder": "SUPERORDER",
         "order": "ORDER",
+        "suborder": "SUBORDER",
+        "infraorder": "INFRAORDER",
+        "parvorder": "PARVORDER",
+        "superfamily": "SUPERFAMILY",
         "family": "FAMILY",
         "subfamily": "SUBFAMILY",
-        "superfamily": "SUPERFAMILY",
-        "infraorder": "INFRAORDER",
+        "tribe": "TRIBE",
+        "subtribe": "SUBTRIBE",
         "genus": "GENUS",
         "subgenus": "SUBGENUS",
         "species": "SPECIES",
         "subspecies": "SUBSPECIES",
+        "variety": "VARIETY",
+        "forma": "FORMA",
     }
 
     STATUS_MAP = {
@@ -123,15 +137,19 @@ class WormsTaxaProcessor(TaxaProcessor):
         "junior subjective synonym": "SYNONYM",
         "senior objective synonym": "SYNONYM",
         "senior subjective synonym": "SYNONYM",
-        "temporary name": "TEMPORARY NAME",
         "unavailable name": "UNAVAILABLE NAME",
     }
 
+    SKIP_STATUSES = {
+        "misspelling - incorrect subsequent spelling",
+        "temporary name",
+    }
+
     HABITAT_TAGS = [
-        ("Marine", "Marine"),
-        ("Brackish", "Brackish"),
-        ("Fresh", "Freshwater"),
-        ("Terrestrial", "Terrestrial"),
+        ("Marine", "marine"),
+        ("Brackish", "brackish"),
+        ("Fresh", "freshwater"),
+        ("Terrestrial", "terrestrial"),
     ]
 
     def _boolish(self, v):
@@ -211,18 +229,35 @@ class WormsTaxaProcessor(TaxaProcessor):
         Build/find parents up to immediate parent of `for_rank`.
         Returns the immediate parent Taxonomy or None.
         """
+        _none = None
         lineage = [
-            ("KINGDOM", row.get(WORMS_COLUMN_NAMES["kingdom"])),
-            ("PHYLUM", row.get(WORMS_COLUMN_NAMES["phylum"])),
-            ("CLASS", row.get(WORMS_COLUMN_NAMES["clazz"])),
-            ("INFRACLASS", row.get(WORMS_COLUMN_NAMES["clazz"]) and None),
-            ("ORDER", row.get(WORMS_COLUMN_NAMES["order"])),
-            ("FAMILY", row.get(WORMS_COLUMN_NAMES["family"])),
-            ("SUBFAMILY", row.get(WORMS_COLUMN_NAMES["family"]) and None),
-            ("GENUS", row.get(WORMS_COLUMN_NAMES["genus"])),
-            ("SUBGENUS", row.get(WORMS_COLUMN_NAMES["subgenus"])),
-            ("SPECIES", self._lineage_species_name(row)),
-            ("SUBSPECIES", row.get(WORMS_COLUMN_NAMES["subspecies"]))
+            ("KINGDOM",     row.get(WORMS_COLUMN_NAMES["kingdom"])),
+            ("SUBKINGDOM",  _none),
+            ("PHYLUM",      row.get(WORMS_COLUMN_NAMES["phylum"])),
+            ("SUBPHYLUM",   _none),
+            ("INFRAPHYLUM", _none),
+            ("MEGACLASS",   _none),
+            ("GIGACLASS",   _none),
+            ("SUPERCLASS",  _none),
+            ("CLASS",       row.get(WORMS_COLUMN_NAMES["clazz"])),
+            ("SUBCLASS",    _none),
+            ("INFRACLASS",  _none),
+            ("SUPERORDER",  _none),
+            ("ORDER",       row.get(WORMS_COLUMN_NAMES["order"])),
+            ("SUBORDER",    _none),
+            ("INFRAORDER",  _none),
+            ("PARVORDER",   _none),
+            ("SUPERFAMILY", _none),
+            ("FAMILY",      row.get(WORMS_COLUMN_NAMES["family"])),
+            ("SUBFAMILY",   _none),
+            ("TRIBE",       _none),
+            ("SUBTRIBE",    _none),
+            ("GENUS",       row.get(WORMS_COLUMN_NAMES["genus"])),
+            ("SUBGENUS",    row.get(WORMS_COLUMN_NAMES["subgenus"])),
+            ("SPECIES",     self._lineage_species_name(row)),
+            ("SUBSPECIES",  row.get(WORMS_COLUMN_NAMES["subspecies"])),
+            ("VARIETY",     _none),
+            ("FORMA",       _none),
         ]
         idx = {r: i for i, (r, _) in enumerate(lineage)}
         if for_rank not in idx:
@@ -286,13 +321,16 @@ class WormsTaxaProcessor(TaxaProcessor):
             taxon and store the result in gbif_key / gbif_data if the taxon
             does not already have a GBIF key.
         """
+        status_raw = (row.get(WORMS_COLUMN_NAMES["status"]) or "").strip()
+        if status_raw.lower() in self.SKIP_STATUSES:
+            logger.debug("Skipping AphiaID=%s: status %r", row.get(WORMS_COLUMN_NAMES["aphia_id"]), status_raw)
+            return
+
         worms_rank = row.get(WORMS_COLUMN_NAMES["rank"])
         rank = self._map_rank(worms_rank)
         if not rank:
             self.handle_error(row, f"Unsupported/empty taxonRank: {worms_rank}")
             return
-
-        status_raw = (row.get(WORMS_COLUMN_NAMES["status"]) or "").strip()
         taxonomic_status = self.STATUS_MAP.get(status_raw.lower(), status_raw.upper() or None)
 
         is_accepted = status_raw.lower() == "accepted"
