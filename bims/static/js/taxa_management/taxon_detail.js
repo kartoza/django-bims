@@ -91,7 +91,8 @@ export const taxonDetail = (() => {
         `;
     }
 
-    function formatDetailTaxon(data) {
+    function formatDetailTaxon(data, options = {}) {
+        const _taxonworksBaseUrl = ((options.taxonworksBaseUrl || '')).replace(/\/+$/, '');
         const hierarchySource = getHierarchySource(data);
         const notice = acceptedHierarchyNotice(data, hierarchySource);
 
@@ -261,6 +262,12 @@ export const taxonDetail = (() => {
                                 <div class="dt-item col-12 row">
                                     <div class="col-4"><strong>WoRMS AphiaID</strong></div>
                                     <div class="col-8"><a href="https://www.marinespecies.org/aphia.php?p=taxdetails&id=${data.aphia_id}" target="_blank" rel="noopener noreferrer">${data.aphia_id}</a></div>
+                                </div>
+                            `: ''}
+                            ${data.taxonworks_otu_id && _taxonworksBaseUrl ? `
+                                <div class="dt-item col-12 row">
+                                    <div class="col-4"><strong>TaxonWorks OTU</strong></div>
+                                    <div class="col-8"><a href="${_taxonworksBaseUrl}/${data.taxonworks_otu_id}" target="_blank" rel="noopener noreferrer">${data.taxonworks_otu_id}</a></div>
                                 </div>
                             `: ''}
                             ${data.urls && data.urls.length ? `

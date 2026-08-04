@@ -573,7 +573,28 @@ export const taxaManagement = (() => {
               data: "canonical_name",
               render: function (data, type, row) {
                 const prettyName = renderTextDiff(row.canonical_name || row.scientific_name);
-                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.col_id ? ` <a href="https://www.gbif.org/taxon/${row.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${row.aphia_id ? ` <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&id=${row.aphia_id}" target="_blank"><span class="badge badge-info">WoRMS</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
+
+                const allGroups = taxaSidebar.allTaxaGroups(taxaGroups);
+                const currentGroup = allGroups.find(g => String(g.id) === String(currentSelectedTaxonGroup));
+                const twBaseUrl = ((currentGroup && currentGroup.taxonworks_base_url) || '').replace(/\/+$/, '');
+
+                const gbifBadge = row.col_id
+                  ? ` <a href="https://www.gbif.org/taxon/${row.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>`
+                  : '';
+                const iucnBadge = row.iucn_url
+                  ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>`
+                  : '';
+                const wormsBadge = row.aphia_id
+                  ? ` <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&id=${row.aphia_id}" target="_blank"><span class="badge badge-worms">WoRMS</span></a>`
+                  : '';
+                const taxonworksBadge = (row.taxonworks_otu_id && twBaseUrl)
+                  ? ` <a href="${twBaseUrl}/${row.taxonworks_otu_id}" target="_blank"><span class="badge badge-taxonworks">TaxonWorks</span></a>`
+                  : '';
+                const unvalidatedBadge = !row.validated
+                  ? ' <span class="badge badge-secondary">Unvalidated</span>'
+                  : '';
+
+                return `${prettyName}<br/>${gbifBadge}${iucnBadge}${wormsBadge}${taxonworksBadge}${unvalidatedBadge}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
               },
               className: "min-width-150"
             },
@@ -906,6 +927,10 @@ export const taxaManagement = (() => {
             } else {
                 tr.classList.add('details');
 
+                const _allGroups = taxaSidebar.allTaxaGroups(taxaGroups);
+                const _currentGroup = _allGroups.find(g => String(g.id) === String(currentSelectedTaxonGroup));
+                const _detailOptions = { taxonworksBaseUrl: (_currentGroup && _currentGroup.taxonworks_base_url) || '' };
+
                 if (!taxonCache[tr.id]) {
                     row.child(formatLoadingMessage()).show();
                     try {
@@ -919,7 +944,7 @@ export const taxaManagement = (() => {
                             }
                         }
                         taxonCache[tr.id] = data;
-                        row.child(taxonDetail.formatDetailTaxon(data)).show();
+                        row.child(taxonDetail.formatDetailTaxon(data, _detailOptions)).show();
                     } catch (error) {
                         console.error('Error fetching taxon data:', error);
                         row.child('<div style="padding-left:50px; color: red;">Failed to load data</div>').show();
@@ -934,7 +959,7 @@ export const taxaManagement = (() => {
                             console.warn('Failed to load accepted taxon for hierarchy', acceptedError);
                         }
                     }
-                    row.child(taxonDetail.formatDetailTaxon(cached)).show();
+                    row.child(taxonDetail.formatDetailTaxon(cached, _detailOptions)).show();
                 }
 
                 if (proposalId && proposalId !== 'null') {
@@ -950,7 +975,7 @@ export const taxaManagement = (() => {
                         }
                         let $tr = $(row.child())
                         let $changes = $('<div class="taxon_proposal"><div>Updates</div></div>')
-                        $changes.append(taxonDetail.formatDetailTaxon(data))
+                        $changes.append(taxonDetail.formatDetailTaxon(data, _detailOptions))
                         $tr.find('td').append($changes);
                     } catch (error) {
                         console.error('Error fetching taxon data:', error);

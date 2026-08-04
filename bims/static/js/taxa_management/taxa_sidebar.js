@@ -164,6 +164,7 @@ export const taxaSidebar = (() => {
         $('.taxon-group-contributors-container select').val(null).trigger('change');
         $('#edit-module-img-container').empty();
         $('#edit-module-meta-group').val('');
+        $('#taxonworks-base-url').val('');
 
         $('#editModuleModal').modal({
             keyboard: false
@@ -314,6 +315,10 @@ export const taxaSidebar = (() => {
             selectHTML.val(selectedParent.id).change()
         }
         $('#parent-taxon-module-container').html(selectHTML);
+
+        // TaxonWorks source
+        const taxonworksBaseUrl = _element.find('.taxon-group-title').data('taxonworks-base-url') || '';
+        $editTaxonGroupModal.find('#taxonworks-base-url').val(taxonworksBaseUrl);
 
         // Upload template
         let taxaUploadTemplate = _element.find('.taxon-group-title').data('taxa-upload-template');
