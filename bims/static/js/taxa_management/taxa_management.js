@@ -573,7 +573,7 @@ export const taxaManagement = (() => {
               data: "canonical_name",
               render: function (data, type, row) {
                 const prettyName = renderTextDiff(row.canonical_name || row.scientific_name);
-                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.col_id ? ` <a href="https://www.gbif.org/taxon/${row.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
+                return `${prettyName}<br/>${row.nameHTML ? '' : ''}${row.col_id ? ` <a href="https://www.gbif.org/taxon/${row.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : ''}${row.iucn_url ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : ''}${row.aphia_id ? ` <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&id=${row.aphia_id}" target="_blank"><span class="badge badge-info">WoRMS</span></a>` : ''}${!row.validated ? ' <span class="badge badge-secondary">Unvalidated</span>' : ''}<input type="hidden" class="proposal-id" value="${row.proposal_id}" />`;
               },
               className: "min-width-150"
             },

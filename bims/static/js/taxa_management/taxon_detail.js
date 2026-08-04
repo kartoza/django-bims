@@ -259,8 +259,8 @@ export const taxonDetail = (() => {
                             ` : ''}
                             ${typeof data.aphia_id !== 'undefined' && data.aphia_id ? `
                                 <div class="dt-item col-12 row">
-                                    <div class="col-4"><strong>Aphia ID</strong></div>
-                                    <div class="col-8">${data.aphia_id}</div>
+                                    <div class="col-4"><strong>WoRMS AphiaID</strong></div>
+                                    <div class="col-8"><a href="https://www.marinespecies.org/aphia.php?p=taxdetails&id=${data.aphia_id}" target="_blank" rel="noopener noreferrer">${data.aphia_id}</a></div>
                                 </div>
                             `: ''}
                             ${data.urls && data.urls.length ? `
