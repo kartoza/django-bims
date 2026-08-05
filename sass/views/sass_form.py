@@ -678,6 +678,14 @@ class SassFormView(UserPassesTestMixin, TemplateView, SessionFormMixin):
             except SiteVisit.DoesNotExist:
                 pass
 
+        if not self.site_visit:
+            date_param = self.request.GET.get('date', '')
+            if date_param:
+                try:
+                    context['date'] = parse(date_param)
+                except (ValueError, OverflowError):
+                    pass
+
         if self.site_visit:
             context['is_update'] = True
             context['site_visit_id'] = self.site_visit.id
