@@ -10,7 +10,7 @@ from django.db import connection
 from bims.models.search_process import SITES_SUMMARY, SEARCH_PROCESSING
 
 from bims.models.water_temperature import WaterTemperature
-from django.db.models import F, Value, Case, When, Count, Q, CharField
+from django.db.models import F, Value, Case, When, Count, Q, CharField, IntegerField, Min
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from sorl.thumbnail import get_thumbnail
@@ -78,6 +78,12 @@ class LocationSiteOverviewData(object):
                 default=Value('Unknown'),
                 output_field=CharField(),
             ),
+            endemism_order=Case(
+                When(taxonomy__endemism__isnull=False,
+                     then=F('taxonomy__endemism__display_order')),
+                default=Value(9999),
+                output_field=IntegerField(),
+            ),
             origin_name=Case(
                 When(taxonomy__origin__isnull=True,
                      then=Value('Unknown')),
@@ -103,7 +109,10 @@ class LocationSiteOverviewData(object):
 
         endemism_rows = annotated.values(
             'module_group_id', 'endemism_name'
-        ).annotate(count=Count('id')).order_by('module_group_id', 'endemism_name')
+        ).annotate(
+            count=Count('id'),
+            min_order=Min('endemism_order')
+        ).order_by('module_group_id', 'min_order')
         endemism_by_group = {}
         for row in endemism_rows:
             endemism_by_group.setdefault(row['module_group_id'], []).append(
