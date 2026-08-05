@@ -147,11 +147,17 @@ def generate_location_site_summary(
             'taxonomy__national_conservation_status__category'
             if national else 'taxonomy__iucn_status__category'
         )
+        order_field_path = (
+            'taxonomy__national_conservation_status__order'
+            if national else 'taxonomy__iucn_status__order'
+        )
         cons_status_data = collection_records.annotate(
-            status=Coalesce(F(status_field_path), Value('NE'))
+            status=Coalesce(F(status_field_path), Value('NE')),
+            cons_order=Coalesce(F(order_field_path), Value(9999))
         ).values('status').annotate(
-            count=Count('status')
-        ).order_by('status')
+            count=Count('status'),
+            min_order=Min('cons_order')
+        ).order_by('min_order')
         keys = [item['status'] for item in cons_status_data]
         values = [item['count'] for item in cons_status_data]
         return [keys, values]
