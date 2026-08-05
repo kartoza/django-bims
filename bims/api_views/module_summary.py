@@ -203,10 +203,14 @@ class ModuleSummary(APIView):
             collections.annotate(
                 value=Case(When(taxonomy__iucn_status__isnull=False,
                                 then=F('taxonomy__iucn_status__category')),
-                           default=Value('NE'))
+                           default=Value('NE')),
+                cons_order=Coalesce(
+                    F('taxonomy__iucn_status__order'), Value(9999)
+                )
             ).values('value').annotate(
-                count=Count('value')
-            ).values_list('value', 'count')
+                count=Count('value'),
+                min_order=Min('cons_order')
+            ).order_by('min_order').values_list('value', 'count')
         )
         iucn_category = dict(IUCNStatus.CATEGORY_CHOICES)
         iucn_status = IUCNStatus.objects.filter(

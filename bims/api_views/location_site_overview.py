@@ -138,7 +138,8 @@ class LocationSiteOverviewData(object):
         ).values('module_group_id', 'iucn_category').annotate(
             colour=F('taxonomy__iucn_status__colour'),
             count=Count('id'),
-        ).order_by('module_group_id', 'iucn_category')
+            min_order=Min('taxonomy__iucn_status__order'),
+        ).order_by('module_group_id', 'min_order')
         cons_by_group = {}
         for row in cons_rows:
             entry = {
