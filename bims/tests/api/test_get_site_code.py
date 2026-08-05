@@ -14,7 +14,7 @@ from django.urls import reverse
 from rest_framework import status
 
 from bims.tests.model_factories import UserF, LocationSiteF, LocationContextGroupF, LayerF
-from bims.utils.site_code import SANPARK_PARK_KEY
+from bims.utils.site_code import SANPARK_PARK_KEY, wetland_catchment
 
 
 def mocked_fetch_river_name(latitude, longitude):
@@ -107,3 +107,46 @@ class TestGetSiteCode(FastTenantTestCase):
         self.assertTrue(
             'KRU' in site_code
         )
+
+
+class TestWetlandCatchment(FastTenantTestCase):
+    def _make_patches(self):
+        layer_patch = patch('bims.utils.site_code.Layer')
+        catchments_patch = patch(
+            'bims.utils.site_code._get_catchments_data',
+            return_value=({}, {})
+        )
+        return layer_patch, catchments_patch
+
+    def test_wetland_name_from_wetland_data(self):
+        layer_patch, catchments_patch = self._make_patches()
+        with layer_patch as mock_layer, catchments_patch:
+            mock_layer.objects.filter.return_value.first.return_value = None
+            _, site_code = wetland_catchment(
+                lat=-26.0, lon=28.0,
+                wetland_data={'name': 'Blesbokspruit'},
+                user_wetland_name=''
+            )
+        self.assertIn('Bles', site_code)
+
+    def test_wetland_name_from_user_wetland_name(self):
+        layer_patch, catchments_patch = self._make_patches()
+        with layer_patch as mock_layer, catchments_patch:
+            mock_layer.objects.filter.return_value.first.return_value = None
+            _, site_code = wetland_catchment(
+                lat=-26.0, lon=28.0,
+                wetland_data={},
+                user_wetland_name='Lakeside'
+            )
+        self.assertIn('Lake', site_code)
+
+    def test_wetland_name_unspecified_when_no_name(self):
+        layer_patch, catchments_patch = self._make_patches()
+        with layer_patch as mock_layer, catchments_patch:
+            mock_layer.objects.filter.return_value.first.return_value = None
+            _, site_code = wetland_catchment(
+                lat=-26.0, lon=28.0,
+                wetland_data={},
+                user_wetland_name=''
+            )
+        self.assertIn('UNSP', site_code)
