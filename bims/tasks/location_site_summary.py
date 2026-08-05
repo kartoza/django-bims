@@ -2,7 +2,7 @@ import json
 import time
 
 from celery import shared_task, current_task
-from django.db.models import Q, F, Count, Case, When, Value
+from django.db.models import Q, F, Count, Case, When, Value, IntegerField, Min
 from django.db.models.functions import Coalesce, ExtractYear
 from preferences import preferences
 from sorl.thumbnail import get_thumbnail
@@ -225,15 +225,24 @@ def generate_location_site_summary(
 
         start_time = time.time()
         endemism_data = collection_records.annotate(
-            name=Case(When(taxonomy__endemism__name__isnull=False,
-                           then=F('taxonomy__endemism__name')),
-                      default=Value('Unknown'))
+            name=Case(
+                When(taxonomy__endemism__name__isnull=False,
+                     then=F('taxonomy__endemism__name')),
+                default=Value('Unknown')
+            ),
+            endemism_order=Case(
+                When(taxonomy__endemism__isnull=False,
+                     then=F('taxonomy__endemism__display_order')),
+                default=Value(9999),
+                output_field=IntegerField()
+            )
         ).values(
             'name'
         ).annotate(
-            count=Count('name')
+            count=Count('name'),
+            min_order=Min('endemism_order')
         ).order_by(
-            'name'
+            'min_order'
         )
         biodiversity_data['species']['endemism_chart'] = {
             'keys': [item['name'] for item in endemism_data],

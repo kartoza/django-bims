@@ -3,7 +3,7 @@ from django.db.models.functions import Coalesce
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
-from django.db.models import Count, F, Case, When, Value, Q, Subquery
+from django.db.models import Count, F, Case, When, Value, Q, Subquery, IntegerField, Min
 from sorl.thumbnail import get_thumbnail
 
 from bims.enums import TaxonomicStatus
@@ -151,12 +151,23 @@ class ModuleSummary(APIView):
         """
         Returns endemism summary data from the provided collections
         """
-        return dict(collections.annotate(
-                value=Case(When(taxonomy__endemism__isnull=False,
-                                then=F('taxonomy__endemism__name')),
-                           default=Value('Unknown'))
-            ).values('value').annotate(
-                count=Count('value')).values_list('value', 'count'))
+        rows = collections.annotate(
+            value=Case(
+                When(taxonomy__endemism__isnull=False,
+                     then=F('taxonomy__endemism__name')),
+                default=Value('Unknown')
+            ),
+            endemism_order=Case(
+                When(taxonomy__endemism__isnull=False,
+                     then=F('taxonomy__endemism__display_order')),
+                default=Value(9999),
+                output_field=IntegerField()
+            )
+        ).values('value').annotate(
+            count=Count('value'),
+            min_order=Min('endemism_order')
+        ).order_by('min_order').values_list('value', 'count')
+        return dict(rows)
 
     def get_sass_summary(self):
         """
