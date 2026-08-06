@@ -300,6 +300,18 @@ class WormsTaxaProcessor(TaxaProcessor):
                 tag, _ = Tag.objects.get_or_create(name=tag_label)
                 taxonomy.tags.add(tag)
 
+    def _maybe_add_aquatic_tag(self, taxonomy: Taxonomy, row: dict, is_new: bool):
+        """Add 'aquatic' tag only on first harvest of a freshwater taxon.
+
+        On re-harvest the tag is left untouched so experts can edit it freely.
+        """
+        if not is_new:
+            return
+        fresh_val = row.get('Fresh') if 'Fresh' in row else row.get(WORMS_COLUMN_NAMES['fresh'])
+        if self._boolish(fresh_val):
+            tag, _ = Tag.objects.get_or_create(name='aquatic')
+            taxonomy.tags.add(tag)
+
     def _attach_citation(self, taxonomy: Taxonomy, row: dict):
         citation = _strip_html(row.get(WORMS_COLUMN_NAMES["citation"]))
         if not citation:
@@ -344,10 +356,23 @@ class WormsTaxaProcessor(TaxaProcessor):
             self.handle_error(row, "Parent cannot have the same name as the taxon")
             return
 
-        taxonomy = Taxonomy.objects.filter(
-            canonical_name__iexact=canonical_name
-        ).first()
-        if not taxonomy:
+        aphia_id_int = None
+        aphia_id_val = row.get(WORMS_COLUMN_NAMES["aphia_id"])
+        if aphia_id_val is not None:
+            try:
+                aphia_id_int = int(aphia_id_val)
+            except (ValueError, TypeError):
+                pass
+
+        existing = None
+        if aphia_id_int:
+            existing = Taxonomy.objects.filter(aphia_id=aphia_id_int).first()
+        if not existing:
+            existing = Taxonomy.objects.filter(
+                canonical_name__iexact=canonical_name
+            ).first()
+        is_new = existing is None
+        if is_new:
             taxonomy = Taxonomy.objects.create(
                 canonical_name=canonical_name,
                 scientific_name=scientific_name,
@@ -356,6 +381,7 @@ class WormsTaxaProcessor(TaxaProcessor):
                 parent=parent
             )
         else:
+            taxonomy = existing
             taxonomy.canonical_name = canonical_name
             taxonomy.scientific_name = scientific_name
             taxonomy.legacy_canonical_name = canonical_name
@@ -422,17 +448,14 @@ class WormsTaxaProcessor(TaxaProcessor):
             taxonomy.accepted_taxonomy = acc
 
         self._attach_habitat_tags(taxonomy, row)
-        self._attach_citation(taxonomy, row)
+        self._maybe_add_aquatic_tag(taxonomy, row, is_new)
 
-        aphia_id_val = row.get(WORMS_COLUMN_NAMES["aphia_id"])
-        if aphia_id_val is not None:
-            try:
-                taxonomy.aphia_id = int(aphia_id_val)
-            except (ValueError, TypeError):
-                pass
+        if aphia_id_int is not None:
+            taxonomy.aphia_id = aphia_id_int
 
         extras = dict(row)
-        taxonomy.additional_data = json.dumps(extras)
+        taxonomy.additional_data = extras
+        self._attach_citation(taxonomy, row)
 
         taxonomy.save()
 
