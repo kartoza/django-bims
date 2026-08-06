@@ -10,7 +10,7 @@ from taggit.models import Tag
 from bims.scripts.data_upload import DataCSVUpload
 from bims.scripts.species_keys import *  # noqa
 from bims.models import (
-    Taxonomy, SourceReference
+    Taxonomy,
 )
 from .taxa_upload import TaxaProcessor
 from bims.utils.fetch_gbif import harvest_synonyms_for_accepted_taxonomy
@@ -304,10 +304,9 @@ class WormsTaxaProcessor(TaxaProcessor):
         citation = _strip_html(row.get(WORMS_COLUMN_NAMES["citation"]))
         if not citation:
             return
-        ref = SourceReference.create_source_reference(
-            category=None, source_id=None, note=citation
-        )
-        taxonomy.source_reference = ref
+        additional_data = taxonomy.additional_data or {}
+        additional_data["Taxonomic References"] = citation
+        taxonomy.additional_data = additional_data
 
     def process_worms_data(self, row: dict, taxon_group, harvest_synonyms: bool = False,
                            fetch_gbif_key: bool = False):
