@@ -432,7 +432,8 @@ class WormsTaxaProcessor(TaxaProcessor):
                 pass
 
         extras = dict(row)
-        taxonomy.additional_data = json.dumps(extras)
+        taxonomy.additional_data = extras
+        self._attach_citation(taxonomy, row)
 
         taxonomy.save()
 
