@@ -2,6 +2,9 @@
 """
 Tests for ChecklistVersion and ChecklistSnapshot workflow.
 """
+import tempfile
+from unittest.mock import patch, MagicMock
+
 from django.test import TestCase
 
 from bims.models.checklist_version import ChecklistVersion, ChecklistSnapshot
@@ -514,6 +517,107 @@ class TestChecklistVersionQueryPatterns(TestCase):
                 checklist_id=str(self.taxon.pk),
                 scientific_name='duplicate',
             )
+
+
+class TestWriteSnapshotPdfRegions(TestCase):
+    """write_snapshot_pdf appends biogeographic region codes after authorship."""
+
+    def setUp(self):
+        self.group = TaxonGroupF.create(name='Crustaceans')
+        self.user = UserF.create()
+        self.version = _make_version(self.group, version='1.0')
+
+    def _make_snapshot(self, checklist_id, scientific_name, authorship='', genus='Ankylocythere', distributions=None):
+        return ChecklistSnapshot.objects.create(
+            checklist_version=self.version,
+            checklist_id=checklist_id,
+            scientific_name=scientific_name,
+            canonical_name=scientific_name,
+            authorship=authorship,
+            rank='SPECIES',
+            taxonomic_status='accepted',
+            genus=genus,
+            distributions=distributions or [],
+        )
+
+    def _paragraph_texts(self):
+        """Return all text strings passed to Paragraph during write_snapshot_pdf."""
+        from bims.tasks.download_taxa_list import write_snapshot_pdf
+
+        snapshots = ChecklistSnapshot.objects.filter(checklist_version=self.version)
+        captured = []
+
+        class CaptureParagraph:
+            def __init__(self, text, style=None):
+                captured.append(text)
+
+        mock_styles = MagicMock()
+        for attr in ('title', 'generated', 'group', 'species', 'synonym', 'heading', 'citation'):
+            setattr(mock_styles, attr, MagicMock())
+
+        mod_path = 'bims.tasks.download_taxa_list'
+        with patch(f'{mod_path}.Paragraph', CaptureParagraph), \
+             patch(f'{mod_path}.SimpleDocTemplate') as mock_doc, \
+             patch(f'{mod_path}._get_checklist_pdf_styles', return_value=mock_styles), \
+             patch(f'{mod_path}._build_checklist_pdf_header', return_value=[]):
+            mock_doc.return_value.build = MagicMock()
+            write_snapshot_pdf(snapshots, self.version, '/tmp/test_checklist.pdf')
+
+        return captured
+
+    def test_region_appended_after_authorship(self):
+        self._make_snapshot(
+            checklist_id='1',
+            scientific_name='Ankylocythere ancyla',
+            authorship='Crawford, 1965',
+            distributions=[{'area': 'NA'}],
+        )
+        texts = self._paragraph_texts()
+        self.assertTrue(
+            any('Crawford, 1965: NA' in t for t in texts),
+            f'Expected "Crawford, 1965: NA" in paragraph texts, got: {texts}',
+        )
+
+    def test_multiple_regions_sorted_and_appended(self):
+        self._make_snapshot(
+            checklist_id='2',
+            scientific_name='Ankylocythere bidentata',
+            authorship='Hart, 1962',
+            distributions=[{'area': 'NT'}, {'area': 'NA'}],
+        )
+        texts = self._paragraph_texts()
+        self.assertTrue(
+            any('Hart, 1962: NA NT' in t for t in texts),
+            f'Expected "Hart, 1962: NA NT" in paragraph texts, got: {texts}',
+        )
+
+    def test_no_region_when_distributions_empty(self):
+        self._make_snapshot(
+            checklist_id='3',
+            scientific_name='Ankylocythere chipola',
+            authorship='Hobbs, 1978',
+            distributions=[],
+        )
+        texts = self._paragraph_texts()
+        self.assertFalse(
+            any(': ' in t and 'Hobbs, 1978' in t for t in texts),
+            f'Expected no region suffix when distributions is empty, got: {texts}',
+        )
+
+    def test_snapshot_distributions_field_populated_from_biographic_tags(self):
+        taxon = TaxonomyF.create(
+            scientific_name='Ankylocythere freyi',
+            rank='SPECIES',
+        )
+        taxon.biographic_distributions.add('NA', 'NT')
+        _add_validated(self.group, taxon)
+
+        version = _make_version(self.group, version='2.0')
+        version.publish(published_by=self.user)
+
+        row = version.snapshot_rows.get(checklist_id=str(taxon.pk))
+        areas = sorted(d['area'] for d in row.distributions)
+        self.assertEqual(areas, ['NA', 'NT'])
 
 
 class TestChecklistVersionChangelogSummary(TestCase):
