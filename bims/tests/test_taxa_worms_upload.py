@@ -64,9 +64,9 @@ class TestWormsTaxaUpload(FastTenantTestCase):
             sp.tags.filter(name='marine').exists()
         )
 
-        # Source reference (citation) saved
-        self.assertIsNotNone(sp.source_reference)
-        self.assertIn('marinespecies.org', (sp.source_reference.note or ''))
+        # Citation stored in additional_data
+        self.assertIn('Taxonomic References', (sp.additional_data or {}))
+        self.assertIn('marinespecies.org', sp.additional_data['Taxonomic References'])
 
         # Added to group as validated
         self.assertTrue(
