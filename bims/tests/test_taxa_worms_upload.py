@@ -505,6 +505,54 @@ class TestWormsTaxaUpload(FastTenantTestCase):
         )
 
     @mock.patch('bims.scripts.taxa_upload_worms.preferences')
+    def test_habitat_tags_not_touched_on_reharvest(self, mock_preferences):
+        """Habitat tags are only added on first harvest; expert edits survive re-harvest."""
+        mock_preferences.SiteSetting.auto_validate_taxa_on_upload = True
+
+        class _P(WormsTaxaProcessor):
+            def handle_error(self, row, message): raise AssertionError(message)
+            def finish_processing_row(self, row, taxonomy): pass
+
+        from taggit.models import Tag
+
+        row = {
+            "AphiaID": 6001,
+            "ScientificName": "Marinus littoralis",
+            "Authority": "Gray, 1820",
+            "AphiaID_accepted": 6001,
+            "ScientificName_accepted": "Marinus littoralis",
+            "Authority_accepted": "Gray, 1820",
+            "Kingdom": "Animalia", "Phylum": "Chordata", "Class": "Actinopterygii",
+            "Order": "Perciformes", "Family": "Percidae",
+            "Genus": "Marinus", "Subgenus": "",
+            "Species": "littoralis", "Subspecies": "",
+            "taxonRank": "species", "taxonomicStatus": "accepted",
+            "Marine": 1, "Brackish": 0, "Fresh": 0, "Terrestrial": 0,
+            "Qualitystatus": "", "Unacceptreason": "",
+            "DateLastModified": "", "LSID": "", "Parent AphiaID": "",
+            "Storedpath": "", "Citation": "",
+        }
+
+        processor = _P()
+
+        # First harvest attaches the marine tag
+        processor.process_worms_data(row, self.taxon_group)
+        t = Taxonomy.objects.get(canonical_name='Marinus littoralis', rank='SPECIES')
+        self.assertTrue(t.tags.filter(name='marine').exists())
+
+        # Expert removes the tag
+        t.tags.remove(Tag.objects.get(name='marine'))
+        self.assertFalse(t.tags.filter(name='marine').exists())
+
+        # Re-harvest must not re-add the removed habitat tag
+        processor.process_worms_data(row, self.taxon_group)
+        t.refresh_from_db()
+        self.assertFalse(
+            t.tags.filter(name='marine').exists(),
+            "Re-harvest must not re-add the habitat tag that an expert removed",
+        )
+
+    @mock.patch('bims.scripts.taxa_upload_worms.preferences')
     def test_non_freshwater_taxon_does_not_get_aquatic_tag(self, mock_preferences):
         mock_preferences.SiteSetting.auto_validate_taxa_on_upload = True
 

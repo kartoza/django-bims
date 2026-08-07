@@ -292,8 +292,14 @@ class WormsTaxaProcessor(TaxaProcessor):
 
         return parent
 
-    def _attach_habitat_tags(self, taxonomy: Taxonomy, row: dict):
-        """Turn habitat flags into tags."""
+    def _attach_habitat_tags(self, taxonomy: Taxonomy, row: dict, is_new: bool):
+        """Turn habitat flags into tags.
+
+        Only applied on the first harvest of a taxon. On re-harvest the tags
+        are left untouched so experts can edit them freely.
+        """
+        if not is_new:
+            return
         for col, tag_label in self.HABITAT_TAGS:
             val = row.get(col) if col in row else row.get(WORMS_COLUMN_NAMES[col.lower()])
             if self._boolish(val):
@@ -447,7 +453,7 @@ class WormsTaxaProcessor(TaxaProcessor):
 
             taxonomy.accepted_taxonomy = acc
 
-        self._attach_habitat_tags(taxonomy, row)
+        self._attach_habitat_tags(taxonomy, row, is_new)
         self._maybe_add_aquatic_tag(taxonomy, row, is_new)
 
         if aphia_id_int is not None:
