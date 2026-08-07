@@ -536,6 +536,11 @@ def process_download_pdf_taxa_list(
                     sp_line += f" {s_obj.author}"
                 if "type species" in (s_obj.additional_data or {}):
                     sp_line += " (Type species for genus)"
+                regions = sorted(
+                    t.name for t in s_obj.biographic_distributions.all()
+                )
+                if regions:
+                    sp_line += f': {" ".join(regions)}'
                 paragraphs.append(Paragraph(sp_line, st.species))
 
                 for syn in Taxonomy.objects.filter(accepted_taxonomy=s_obj):
@@ -719,6 +724,9 @@ def write_snapshot_pdf(snapshots, version, output_file, order_by=None):
             sp_line = f'<i>{sci_name}</i>'
             if s.authorship:
                 sp_line += f' {s.authorship}'
+            regions = sorted(d['area'] for d in (s.distributions or []) if d.get('area'))
+            if regions:
+                sp_line += f': {" ".join(regions)}'
             story.append(Paragraph(sp_line, checklist_style.species))
             for syn in synonym_map.get(s.checklist_id, []):
                 syn_taxon = canonical_with_subgenus(syn.canonical_name, syn.genus, syn.subgenus)
