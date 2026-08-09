@@ -26,6 +26,7 @@ from bims.scripts.species_keys import (
     SUBORDER, SUBCLASS, SUBPHYLUM, SPECIES, GENUS,
     TRIBE, FAMILY, ORDER, PHYLUM, KINGDOM, AUTHORS
 )
+from bims.templatetags import is_fada_site
 from bims.utils.domain import get_current_domain
 from bims.utils.taxonomy import canonical_with_subgenus
 
@@ -464,8 +465,16 @@ def _build_checklist_pdf_header(title, taxon_group, styles, subset_note='', doi=
         paragraphs.append(Spacer(1, 6))
 
     paragraphs.append(Paragraph(
-        '<i>= denotes a synonym of the accepted taxon above it.</i>', styles.citation
+        '<i>= denotes a synonym of the accepted taxon above it</i>', styles.citation
     ))
+    if is_fada_site():
+        paragraphs.append(Spacer(1, 6))
+        paragraphs.append(Paragraph(
+            'Biogeographic distribution: ANT = Antarctic, AT = Afrotropical, AU = '
+            'Australasian, NA = Nearctic, NT = Neotropical, '
+            'OL = Oriental (Indomalaya), PA = Palaearctic, '
+            'PAC = Pacific (Oceania)', styles.citation
+        ))
     paragraphs.append(Spacer(1, 12))
     return paragraphs
 
@@ -540,7 +549,7 @@ def process_download_pdf_taxa_list(
                     t.name for t in s_obj.biographic_distributions.all()
                 )
                 if regions:
-                    sp_line += f': {" ".join(regions)}'
+                    sp_line += f': {", ".join(regions)}'
                 paragraphs.append(Paragraph(sp_line, st.species))
 
                 for syn in Taxonomy.objects.filter(accepted_taxonomy=s_obj):
