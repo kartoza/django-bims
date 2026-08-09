@@ -1,15 +1,15 @@
 import csv
 import os
+import re
 from django.conf import settings
-from django.db.models import F
 from django.http import Http404
 from preferences import preferences
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
 from django.utils import timezone
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import SimpleDocTemplate, TableStyle, Table, Spacer
+from reportlab.platypus import SimpleDocTemplate, TableStyle, Table
 from reportlab.platypus.para import Paragraph
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -38,7 +38,7 @@ CSV_HEADER_TITLE = {
     'scientific_name': 'Accepted Scientific name and authority',
     'cites_listing': 'CITES listing',
     'tops': 'TOPS',
-    'park_or_mpa_name': 'Park or MPA name',
+    'park_or_mpa_name': PARK_OR_MPA_NAME,
     'include or exclude': 'Include/Exclude',
     'gbif_coordinate_uncertainty_m': 'GBIF coordinate uncertainty (m)',
     'gbif_coordinate_precision': 'GBIF coordinate precision'
@@ -125,7 +125,6 @@ def _format_park_column_title(park_name):
 
 
 def _slugify_park_fieldname(park_name):
-    import re
     base = (park_name or '').strip().lower()
     base = base.replace('national park', 'np')
     base = re.sub(r'\W+', '_', base)
