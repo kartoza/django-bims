@@ -330,6 +330,260 @@ class TestWormsTaxaUpload(FastTenantTestCase):
         self.assertEqual(t.aphia_id, 9999)
 
     # ------------------------------------------------------------------
+    # aquatic tag - freshwater taxa
+    # ------------------------------------------------------------------
+
+    @mock.patch('bims.scripts.taxa_upload_worms.preferences')
+    def test_freshwater_taxon_gets_aquatic_tag_on_first_harvest(self, mock_preferences):
+        mock_preferences.SiteSetting.auto_validate_taxa_on_upload = True
+
+        class _P(WormsTaxaProcessor):
+            def handle_error(self, row, message): raise AssertionError(message)
+            def finish_processing_row(self, row, taxonomy): pass
+
+        row = {
+            "AphiaID": 5001,
+            "ScientificName": "Freshus lacustris",
+            "Authority": "Smith, 2020",
+            "AphiaID_accepted": 5001,
+            "ScientificName_accepted": "Freshus lacustris",
+            "Authority_accepted": "Smith, 2020",
+            "Kingdom": "Animalia", "Phylum": "Chordata", "Class": "Actinopterygii",
+            "Order": "Cypriniformes", "Family": "Cyprinidae",
+            "Genus": "Freshus", "Subgenus": "",
+            "Species": "lacustris", "Subspecies": "",
+            "taxonRank": "species", "taxonomicStatus": "accepted",
+            "Marine": 0, "Brackish": 0, "Fresh": 1, "Terrestrial": 0,
+            "Qualitystatus": "", "Unacceptreason": "",
+            "DateLastModified": "", "LSID": "", "Parent AphiaID": "",
+            "Storedpath": "", "Citation": "",
+        }
+        _P().process_worms_data(row, self.taxon_group)
+
+        t = Taxonomy.objects.get(canonical_name='Freshus lacustris', rank='SPECIES')
+        self.assertTrue(t.tags.filter(name='aquatic').exists())
+        self.assertTrue(t.tags.filter(name='freshwater').exists())
+
+    @mock.patch('bims.scripts.taxa_upload_worms.preferences')
+    def test_existing_taxon_matched_by_aphia_id_is_not_new(self, mock_preferences):
+        """A taxon found by aphia_id must be treated as existing (is_new=False)."""
+        mock_preferences.SiteSetting.auto_validate_taxa_on_upload = True
+
+        class _P(WormsTaxaProcessor):
+            def handle_error(self, row, message): raise AssertionError(message)
+            def finish_processing_row(self, row, taxonomy): pass
+
+        from taggit.models import Tag
+
+        def _make_row(aphia_id, sci_name):
+            return {
+                "AphiaID": aphia_id,
+                "ScientificName": sci_name,
+                "Authority": "Smith, 2020",
+                "AphiaID_accepted": aphia_id,
+                "ScientificName_accepted": sci_name,
+                "Authority_accepted": "Smith, 2020",
+                "Kingdom": "Animalia", "Phylum": "Chordata", "Class": "Actinopterygii",
+                "Order": "Cypriniformes", "Family": "Cyprinidae",
+                "Genus": sci_name.split()[0], "Subgenus": "",
+                "Species": sci_name.split()[1], "Subspecies": "",
+                "taxonRank": "species", "taxonomicStatus": "accepted",
+                "Marine": 0, "Brackish": 0, "Fresh": 1, "Terrestrial": 0,
+                "Qualitystatus": "", "Unacceptreason": "",
+                "DateLastModified": "", "LSID": "", "Parent AphiaID": "",
+                "Storedpath": "", "Citation": "",
+            }
+
+        processor = _P()
+
+        # --- scenario: expert removes the tag ---
+        row_a = _make_row(6001, "Freshus aphiatus")
+        processor.process_worms_data(row_a, self.taxon_group)
+        ta = Taxonomy.objects.get(canonical_name='Freshus aphiatus', rank='SPECIES')
+        self.assertTrue(ta.tags.filter(name='aquatic').exists())
+
+        ta.tags.remove(Tag.objects.get(name='aquatic'))
+
+        processor.process_worms_data(dict(row_a, ScientificName="Freshus renamed"), self.taxon_group)
+        ta.refresh_from_db()
+        self.assertFalse(
+            ta.tags.filter(name='aquatic').exists(),
+            "Re-harvest via aphia_id must not re-add the removed aquatic tag",
+        )
+
+        # --- scenario: expert renames the tag ---
+        row_b = _make_row(6002, "Freshus riparius")
+        processor.process_worms_data(row_b, self.taxon_group)
+        tb = Taxonomy.objects.get(canonical_name='Freshus riparius', rank='SPECIES')
+        self.assertTrue(tb.tags.filter(name='aquatic').exists())
+
+        aquatic_tag = Tag.objects.get(name='aquatic')
+        aquatic_tag.name = 'aquatic-verified'
+        aquatic_tag.slug = 'aquatic-verified'
+        aquatic_tag.save()
+
+        processor.process_worms_data(dict(row_b, ScientificName="Freshus renamed2"), self.taxon_group)
+        tb.refresh_from_db()
+        self.assertTrue(
+            tb.tags.filter(name='aquatic-verified').exists(),
+            "Renamed tag must persist after re-harvest via aphia_id",
+        )
+        self.assertFalse(
+            tb.tags.filter(name='aquatic').exists(),
+            "Re-harvest via aphia_id must not re-add aquatic after expert renamed it",
+        )
+
+    @mock.patch('bims.scripts.taxa_upload_worms.preferences')
+    def test_aquatic_tag_not_touched_on_reharvest(self, mock_preferences):
+        """Expert edits to the aquatic tag (remove or rename) must survive a re-harvest."""
+        mock_preferences.SiteSetting.auto_validate_taxa_on_upload = True
+
+        class _P(WormsTaxaProcessor):
+            def handle_error(self, row, message): raise AssertionError(message)
+            def finish_processing_row(self, row, taxonomy): pass
+
+        from taggit.models import Tag
+
+        def _make_row(aphia_id, sci_name):
+            genus, species = sci_name.split()
+            return {
+                "AphiaID": aphia_id,
+                "ScientificName": sci_name,
+                "Authority": "Jones, 2019",
+                "AphiaID_accepted": aphia_id,
+                "ScientificName_accepted": sci_name,
+                "Authority_accepted": "Jones, 2019",
+                "Kingdom": "Animalia", "Phylum": "Chordata", "Class": "Actinopterygii",
+                "Order": "Cypriniformes", "Family": "Cyprinidae",
+                "Genus": genus, "Subgenus": "",
+                "Species": species, "Subspecies": "",
+                "taxonRank": "species", "taxonomicStatus": "accepted",
+                "Marine": 0, "Brackish": 0, "Fresh": 1, "Terrestrial": 0,
+                "Qualitystatus": "", "Unacceptreason": "",
+                "DateLastModified": "", "LSID": "", "Parent AphiaID": "",
+                "Storedpath": "", "Citation": "",
+            }
+
+        processor = _P()
+
+        # --- scenario: expert removes the tag ---
+        row_a = _make_row(5002, "Freshus rivularis")
+        processor.process_worms_data(row_a, self.taxon_group)
+        ta = Taxonomy.objects.get(canonical_name='Freshus rivularis', rank='SPECIES')
+        self.assertTrue(ta.tags.filter(name='aquatic').exists())
+
+        ta.tags.remove(Tag.objects.get(name='aquatic'))
+        self.assertFalse(ta.tags.filter(name='aquatic').exists())
+
+        processor.process_worms_data(row_a, self.taxon_group)
+        ta.refresh_from_db()
+        self.assertFalse(
+            ta.tags.filter(name='aquatic').exists(),
+            "Re-harvest must not re-add the aquatic tag that an expert removed",
+        )
+
+        # --- scenario: expert renames the tag ---
+        row_b = _make_row(5003, "Freshus lacustris")
+        processor.process_worms_data(row_b, self.taxon_group)
+        tb = Taxonomy.objects.get(canonical_name='Freshus lacustris', rank='SPECIES')
+        self.assertTrue(tb.tags.filter(name='aquatic').exists())
+
+        aquatic_tag = Tag.objects.get(name='aquatic')
+        aquatic_tag.name = 'aquatic-verified'
+        aquatic_tag.slug = 'aquatic-verified'
+        aquatic_tag.save()
+
+        processor.process_worms_data(row_b, self.taxon_group)
+        tb.refresh_from_db()
+        self.assertTrue(
+            tb.tags.filter(name='aquatic-verified').exists(),
+            "Renamed tag must persist after re-harvest",
+        )
+        self.assertFalse(
+            tb.tags.filter(name='aquatic').exists(),
+            "Re-harvest must not re-add aquatic after expert renamed it",
+        )
+
+    @mock.patch('bims.scripts.taxa_upload_worms.preferences')
+    def test_habitat_tags_not_touched_on_reharvest(self, mock_preferences):
+        """Habitat tags are only added on first harvest; expert edits survive re-harvest."""
+        mock_preferences.SiteSetting.auto_validate_taxa_on_upload = True
+
+        class _P(WormsTaxaProcessor):
+            def handle_error(self, row, message): raise AssertionError(message)
+            def finish_processing_row(self, row, taxonomy): pass
+
+        from taggit.models import Tag
+
+        row = {
+            "AphiaID": 6001,
+            "ScientificName": "Marinus littoralis",
+            "Authority": "Gray, 1820",
+            "AphiaID_accepted": 6001,
+            "ScientificName_accepted": "Marinus littoralis",
+            "Authority_accepted": "Gray, 1820",
+            "Kingdom": "Animalia", "Phylum": "Chordata", "Class": "Actinopterygii",
+            "Order": "Perciformes", "Family": "Percidae",
+            "Genus": "Marinus", "Subgenus": "",
+            "Species": "littoralis", "Subspecies": "",
+            "taxonRank": "species", "taxonomicStatus": "accepted",
+            "Marine": 1, "Brackish": 0, "Fresh": 0, "Terrestrial": 0,
+            "Qualitystatus": "", "Unacceptreason": "",
+            "DateLastModified": "", "LSID": "", "Parent AphiaID": "",
+            "Storedpath": "", "Citation": "",
+        }
+
+        processor = _P()
+
+        # First harvest attaches the marine tag
+        processor.process_worms_data(row, self.taxon_group)
+        t = Taxonomy.objects.get(canonical_name='Marinus littoralis', rank='SPECIES')
+        self.assertTrue(t.tags.filter(name='marine').exists())
+
+        # Expert removes the tag
+        t.tags.remove(Tag.objects.get(name='marine'))
+        self.assertFalse(t.tags.filter(name='marine').exists())
+
+        # Re-harvest must not re-add the removed habitat tag
+        processor.process_worms_data(row, self.taxon_group)
+        t.refresh_from_db()
+        self.assertFalse(
+            t.tags.filter(name='marine').exists(),
+            "Re-harvest must not re-add the habitat tag that an expert removed",
+        )
+
+    @mock.patch('bims.scripts.taxa_upload_worms.preferences')
+    def test_non_freshwater_taxon_does_not_get_aquatic_tag(self, mock_preferences):
+        mock_preferences.SiteSetting.auto_validate_taxa_on_upload = True
+
+        class _P(WormsTaxaProcessor):
+            def handle_error(self, row, message): raise AssertionError(message)
+            def finish_processing_row(self, row, taxonomy): pass
+
+        row = {
+            "AphiaID": 5003,
+            "ScientificName": "Marinus pelagicus",
+            "Authority": "Gray, 1820",
+            "AphiaID_accepted": 5003,
+            "ScientificName_accepted": "Marinus pelagicus",
+            "Authority_accepted": "Gray, 1820",
+            "Kingdom": "Animalia", "Phylum": "Chordata", "Class": "Actinopterygii",
+            "Order": "Perciformes", "Family": "Percidae",
+            "Genus": "Marinus", "Subgenus": "",
+            "Species": "pelagicus", "Subspecies": "",
+            "taxonRank": "species", "taxonomicStatus": "accepted",
+            "Marine": 1, "Brackish": 0, "Fresh": 0, "Terrestrial": 0,
+            "Qualitystatus": "", "Unacceptreason": "",
+            "DateLastModified": "", "LSID": "", "Parent AphiaID": "",
+            "Storedpath": "", "Citation": "",
+        }
+        _P().process_worms_data(row, self.taxon_group)
+
+        t = Taxonomy.objects.get(canonical_name='Marinus pelagicus', rank='SPECIES')
+        self.assertFalse(t.tags.filter(name='aquatic').exists())
+        self.assertTrue(t.tags.filter(name='marine').exists())
+
+    # ------------------------------------------------------------------
     # _lineage_species_name builds full binomial
     # ------------------------------------------------------------------
 
