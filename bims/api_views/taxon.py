@@ -31,7 +31,7 @@ from bims.models.biological_collection_record import (
 )
 from bims.models import TaxonGroup, VernacularName, TaxonGroupTaxonomy
 from bims.enums.taxonomic_rank import TaxonomicRank
-from bims.utils.gbif import suggest_search, get_vernacular_names
+from bims.utils.gbif import suggest_search, get_vernacular_names, species_search
 from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 from bims.utils.col import resolve_col_id
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
@@ -230,7 +230,7 @@ class FindTaxon(APIView):
         if 'limit' not in query_dict:
             query_dict['limit'] = self.limit_default
 
-        gbif_response = suggest_search(query_dict) or []
+        gbif_response = species_search(query_dict) or []
 
         for gbif in gbif_response:
             key = gbif.get('key')
@@ -241,19 +241,23 @@ class FindTaxon(APIView):
             if phylum_keys and phylum_key not in phylum_keys:
                 continue
 
+            col_id = gbif.get('taxonID', None)
+            if not col_id:
+                continue
+
             seen_keys.add(key)
 
-            taxa_qs = Taxonomy.objects.filter(gbif_key=key)
+            taxa_qs = Taxonomy.objects.filter(col_id=col_id)
             stored_local = taxa_qs.exists()
             taxa_id = None
             validated = False
             taxon_group_ids = []
-            status = gbif.get('status', '')
+            taxon_status = gbif.get('taxonomicStatus', '')
 
             if stored_local:
                 taxon = taxa_qs.first()
                 taxa_id = taxon.id
-                status = taxon.taxonomic_status
+                taxon_status = taxon.taxonomic_status
 
                 taxon_group_ids = list(
                     taxon.taxongrouptaxonomy_set.values_list('taxongroup_id', flat=True)
@@ -271,19 +275,19 @@ class FindTaxon(APIView):
                         is_validated=True
                     ).exists()
 
-            canonical_name = gbif.get('canonicalName') or gbif.get('scientificName', '')
+            canonical_name = gbif.get('canonicalName')
 
             taxon_list.append({
                 self.scientific_name: gbif.get('scientificName', ''),
                 self.canonical_name: canonical_name,
                 self.rank: gbif.get('rank', ''),
-                self.key: key,
+                self.key: col_id,
                 self.taxa_id: taxa_id or '',
                 self.source: 'gbif',
                 self.stored_local: stored_local,
                 self.validated: validated,
                 self.taxon_group_ids: taxon_group_ids,
-                self.status: status,
+                self.status: taxon_status,
             })
 
         if not taxon_list and taxon_name:

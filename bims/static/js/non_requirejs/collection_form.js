@@ -546,7 +546,7 @@ function populateFindTaxonTable(table, data) {
         let status = value['status'];
 
         if (source === 'gbif') {
-            source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
+            source = `<a href="https://www.gbif.org/taxon/${key}" target="_blank">${gbifImage}</a>`;
         } else if (source === 'local') {
             source = fontAwesomeIcon('database');
         }
@@ -557,7 +557,7 @@ function populateFindTaxonTable(table, data) {
         }
         let action = (`<button 
                         type="button" 
-                        onclick="addNewTaxonToObservedList('${canonicalName}',${key},'${rank}',${taxaId})" 
+                        onclick="addNewTaxonToObservedList('${canonicalName}','${key}','${rank}',${taxaId})" 
                         class="btn btn-success">${fontAwesomeIcon('plus')}&nbsp;ADD
                        </button>`);
         tableBody.append(`<tr>
@@ -573,9 +573,9 @@ function populateFindTaxonTable(table, data) {
     table.show();
 }
 
-function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null) {
+function addNewTaxonToObservedList(name, colId, rank, taxaId = null) {
     let postData = {
-        'gbifKey': gbifKey,
+        'colId': colId,
         'taxonName': name,
         'rank': rank,
         'taxonGroup': taxonGroupName,

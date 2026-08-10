@@ -93,7 +93,7 @@ export const addNewTaxon = (() => {
         }
     }
 
-    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, parentId = "", authorName = "", taxonomicStatus = "", subgenusId = "") {
+    function addNewTaxonToObservedList(name, colId, rank, taxaId = null, parentId = "", authorName = "", taxonomicStatus = "", subgenusId = "") {
         const status = taxonomicStatus || $('#new-taxon-status').val() || '';
         const normalizedStatus = normalizeStatus(status);
         const finalStatus = normalizedStatus || 'ACCEPTED';
@@ -101,7 +101,7 @@ export const addNewTaxon = (() => {
         // no COL equivalent for as-you-type suggestions); the backend resolves it
         // to a Catalogue of Life col_id before the taxon is created/stored.
         let postData = {
-            'gbifKey': gbifKey,
+            'colId': colId,
             'taxonName': name,
             'rank': rank,
             'taxonGroupId': currentSelectedTaxonGroup,
@@ -183,8 +183,8 @@ export const addNewTaxon = (() => {
             let status = value['status'];
 
             if (source === 'gbif') {
-                source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
-                scientificName = `<a href="https://www.gbif.org/species/${key}" target="_blank">${scientificName}</a>`;
+                source = `<a href="https://www.gbif.org/taxon/${key}" target="_blank">${gbifImage}</a>`;
+                scientificName = `<a href="https://www.gbif.org/taxon/${key}" target="_blank">${scientificName}</a>`;
             } else if (source === 'local') {
                 source = fontAwesomeIcon('database');
             }
@@ -333,11 +333,11 @@ export const addNewTaxon = (() => {
         $(document).on('click', '.add-taxon-btn', function() {
             const button = $(this);
             const name = button.data('canonical-name');
-            const gbifKey = button.data('key');
+            const colId = button.data('key');
             const rank = button.data('rank');
             const taxaId = button.data('taxa-id');
             const status = button.data('status') || '';
-            addNewTaxonToObservedList(name, gbifKey, rank, taxaId, "", "", status);
+            addNewTaxonToObservedList(name, colId, rank, taxaId, "", "", status);
         });
 
         $('#new-taxon-status').on('change', function () {

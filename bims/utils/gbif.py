@@ -413,6 +413,28 @@ def suggest_search(query_params):
         return None
 
 
+def species_search(query_params):
+    """
+    Full-text search of name usages covering the scientific and vernacular names, the species description,
+    distribution and the entire classification across all name usages of all or some checklists.
+    :param query_params: Query parameter
+    :return:
+    """
+    query_params['datasetKey'] = COL_CHECKLIST_KEY
+    api_url = GBIF_API + '/species/search?{param}'.format(
+        param=urllib.parse.urlencode(query_params)
+    )
+    try:
+        response = requests.get(api_url)
+        results = response.json()
+        if "results" in results:
+            return results["results"]
+        return None
+    except (HTTPError, KeyError) as e:
+        print(e)
+        return None
+
+
 def gbif_name_suggest(**kwargs):
     """COL-based name suggest using the GBIF v2 species/match endpoint."""
     name = kwargs.get('q', '')
