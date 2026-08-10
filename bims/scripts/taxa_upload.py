@@ -28,7 +28,7 @@ from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif, fetch_gbif_vernacular_names, harvest_synonyms_for_accepted_taxonomy
 )
 from bims.scripts.data_upload import DataCSVUpload
-from bims.utils.gbif import get_species
+from bims.utils.gbif import get_species, get_species_by_col_id
 from td_biblio.exceptions import DOILoaderError
 from td_biblio.models import Entry
 from td_biblio.utils.loaders import DOILoader
@@ -851,71 +851,73 @@ class TaxaProcessor(object):
             self.handle_error(row=row, message='Missing Taxon value')
             return
 
-        # GBIF key
-        gbif_key = None
+        # COL id (Catalogue of Life)
+        # GBIF links now point at COL taxa (gbif.org/taxon/<col_id>); the legacy
+        # gbif.org/species/<gbif_key> form is no longer accepted as upload input.
+        col_id = None
         if on_gbif:
             gbif_link = self.get_row_value(row, GBIF_LINK) or self.get_row_value(row, GBIF_URL)
             if gbif_link:
-                last = str(gbif_link).rstrip('/').split('/')[-1]
-                gbif_key = last[:-2] if last.endswith('.0') else last
-
-        # For FADA sites, check if a species with this GBIF key already exists
-        # If it has a different rank and taxon name, remove the GBIF key from input
-        if gbif_key and is_fada_site():
-            try:
-                existing_taxonomy = Taxonomy.objects.filter(gbif_key=int(gbif_key)).first()
-                if existing_taxonomy:
-                    existing_rank = _safe_upper(existing_taxonomy.rank) if existing_taxonomy.rank else ''
-                    input_rank = _safe_upper(rank) if rank else ''
-                    existing_name = _canon(existing_taxonomy.canonical_name) if existing_taxonomy.canonical_name else ''
-                    input_name = _canon(taxon_name) if taxon_name else ''
-                    if existing_rank != input_rank and existing_name != input_name:
-                        logger.info(
-                            "FADA: GBIF key %s already exists with different rank (%s vs %s) "
-                            "and name (%s vs %s); removing GBIF key from input",
-                            gbif_key, existing_rank, input_rank,
-                            existing_taxonomy.canonical_name, taxon_name
-                        )
-                        gbif_key = None
-            except (ValueError, TypeError):
-                # gbif_key is not a valid integer, will be handled later
-                pass
-
-        accepted_genus_mismatch = False
-
-        if gbif_key:
-            try:
-                gbif_rec = get_species(gbif_key)
-
-                if gbif_rec and _safe_upper(gbif_rec.get("rank")) == "UNRANKED":
-                    parent_key = gbif_rec.get("parentKey")
-                    if parent_key:
-                        logger.info(
-                            "GBIF key %s is UNRANKED; switching to parentKey %s", gbif_key, parent_key)
-                        gbif_key = str(parent_key)
-                        gbif_rec = get_species(parent_key)
-
-            except Exception as e:
-                self.handle_error(
-                    row=row,
-                    message=f"GBIF lookup failed for key {gbif_key}")
-                return
-
-            if not gbif_rec or not isinstance(gbif_rec, dict) or not gbif_rec.get("key"):
-                self.handle_error(
-                    row=row,
-                    message=f"GBIF record not found or invalid for key {gbif_key}; ignoring provided key.")
-                return
-            else:
-                expected_rank = _safe_upper(rank)
-                gbif_rank = _safe_upper(gbif_rec.get("rank"))
-                # For FADA sites, skip rank mismatch validation
-                if expected_rank and gbif_rank and gbif_rank != expected_rank and not is_fada_site():
+                link_str = str(gbif_link).rstrip('/')
+                last = link_str.split('/')[-1]
+                last = last[:-2] if last.endswith('.0') else last
+                if '/species/' in link_str.lower():
                     self.handle_error(
                         row=row,
                         message=(
-                            f'GBIF key {gbif_key} rank mismatch: expected {expected_rank}, '
-                            f'got {gbif_rank}.'
+                            f"GBIF key '{last}' is not accepted; provide a Catalogue of "
+                            f"Life link instead (e.g. gbif.org/taxon/{last})."
+                        )
+                    )
+                    return
+                col_id = last
+
+        # For FADA sites, check if a species with this COL id already exists
+        # If it has a different rank and taxon name, remove the COL id from input
+        if col_id and is_fada_site():
+            existing_taxonomy = Taxonomy.objects.filter(col_id=col_id).first()
+            if existing_taxonomy:
+                existing_rank = _safe_upper(existing_taxonomy.rank) if existing_taxonomy.rank else ''
+                input_rank = _safe_upper(rank) if rank else ''
+                existing_name = _canon(existing_taxonomy.canonical_name) if existing_taxonomy.canonical_name else ''
+                input_name = _canon(taxon_name) if taxon_name else ''
+                if existing_rank != input_rank and existing_name != input_name:
+                    logger.info(
+                        "FADA: COL id %s already exists with different rank (%s vs %s) "
+                        "and name (%s vs %s); removing COL id from input",
+                        col_id, existing_rank, input_rank,
+                        existing_taxonomy.canonical_name, taxon_name
+                    )
+                    col_id = None
+
+        accepted_genus_mismatch = False
+
+        if col_id:
+            try:
+                col_rec = get_species_by_col_id(col_id)
+            except Exception as e:
+                self.handle_error(
+                    row=row,
+                    message=f"COL lookup failed for id {col_id}")
+                return
+
+            col_usage = (col_rec or {}).get("usage") or {}
+
+            if not col_rec or not isinstance(col_rec, dict) or not col_usage.get("key"):
+                self.handle_error(
+                    row=row,
+                    message=f"COL record not found or invalid for id {col_id}; ignoring provided id.")
+                return
+            else:
+                expected_rank = _safe_upper(rank)
+                col_rank = _safe_upper(col_usage.get("rank"))
+                # For FADA sites, skip rank mismatch validation
+                if expected_rank and col_rank and col_rank != expected_rank and not is_fada_site():
+                    self.handle_error(
+                        row=row,
+                        message=(
+                            f'COL id {col_id} rank mismatch: expected {expected_rank}, '
+                            f'got {col_rank}.'
                         )
                     )
                     return
@@ -925,43 +927,47 @@ class TaxaProcessor(object):
                     else:
                         expected_name = taxon_name
 
-                    gbif_canonical = gbif_rec.get("canonicalName") or gbif_rec.get("scientificName") or ""
+                    col_canonical = col_usage.get("canonicalName") or col_usage.get("name") or ""
                     canon_expected = _canon(expected_name) if expected_name else ""
-                    canon_gbif = _canon(gbif_canonical) if gbif_canonical else ""
+                    canon_col = _canon(col_canonical) if col_canonical else ""
 
                     norm_expected = _norm_taxon_for_similarity(expected_name) if expected_name else ""
-                    norm_gbif = _norm_taxon_for_similarity(gbif_canonical) if gbif_canonical else ""
+                    norm_col = _norm_taxon_for_similarity(col_canonical) if col_canonical else ""
 
-                    ratio = 1.0 if not norm_expected or not norm_gbif else max(
-                        difflib.SequenceMatcher(None, canon_expected, canon_gbif).ratio(),
-                        difflib.SequenceMatcher(None, norm_expected, norm_gbif).ratio(),
+                    ratio = 1.0 if not norm_expected or not norm_col else max(
+                        difflib.SequenceMatcher(None, canon_expected, canon_col).ratio(),
+                        difflib.SequenceMatcher(None, norm_expected, norm_col).ratio(),
                     )
 
                     csv_genus = _safe_strip(self.get_row_value(row, GENUS)) or ""
-                    gbif_genus = _safe_strip(gbif_rec.get("genus")) or ""
+                    col_genus = ""
+                    for entry in (col_rec or {}).get("classification") or []:
+                        if _safe_upper(entry.get("rank")) == "GENUS":
+                            col_genus = _safe_strip(entry.get("name"))
+                            break
 
                     # Handle genus mismatch more gracefully if the specific epithet matches
                     # For FADA sites, keep csv_genus even if there's a mismatch
                     genus_mismatch = (
-                        rank.lower() != 'genus' and csv_genus and gbif_genus and csv_genus.lower() != gbif_genus.lower()
+                        rank.lower() != 'genus' and csv_genus and col_genus and csv_genus.lower() != col_genus.lower()
                     )
                     if genus_mismatch and not is_fada_site():
                         csv_ep = self._specific_epithet(expected_name) or self._specific_epithet(taxon_name) or _canon(_safe_strip(self.get_row_value(row, SPECIES)))
-                        gbif_ep = _canon(_safe_strip(gbif_rec.get("specificEpithet"))) or self._specific_epithet(gbif_canonical)
-                        if csv_ep and gbif_ep and csv_ep == gbif_ep:
+                        col_ep = self._specific_epithet(col_canonical)
+                        if csv_ep and col_ep and csv_ep == col_ep:
                             accepted_genus_mismatch = True
                             if isinstance(row, dict):
                                 row["_gbif_genus_mismatch"] = {
                                     "csv_genus": csv_genus,
-                                    "gbif_genus": gbif_genus,
-                                    "gbif_key": gbif_key,
-                                    "gbif_canonical": gbif_canonical,
+                                    "gbif_genus": col_genus,
+                                    "col_id": col_id,
+                                    "gbif_canonical": col_canonical,
                                 }
                         else:
                             self.handle_error(
                                 row=row,
                                 message=(
-                                    f"GBIF key {gbif_key}: genus mismatch '{csv_genus}' vs '{gbif_genus}' "
+                                    f"COL id {col_id}: genus mismatch '{csv_genus}' vs '{col_genus}' "
                                     f"and epithet differs; cannot safely reconcile."
                                 ),
                             )
@@ -972,8 +978,8 @@ class TaxaProcessor(object):
                         self.handle_error(
                             row=row,
                             message=(
-                                f"GBIF key {gbif_key}: name mismatch (similarity={ratio:.2f} < {NAME_SIM_THRESHOLD}). "
-                                f"Expected '{expected_name}'; GBIF '{gbif_canonical}'."
+                                f"COL id {col_id}: name mismatch (similarity={ratio:.2f} < {NAME_SIM_THRESHOLD}). "
+                                f"Expected '{expected_name}'; COL '{col_canonical}'."
                             ),
                         )
                         return
@@ -1035,12 +1041,12 @@ class TaxaProcessor(object):
         else:
             parent = None
 
-        # Resolve existing taxa (by gbif, fada, or canonical)
+        # Resolve existing taxa (by col_id, fada, or canonical)
         taxa = Taxonomy.objects.none()
         taxa_found_by_id = False
 
-        if gbif_key:
-            taxa = Taxonomy.objects.filter(gbif_key=gbif_key)
+        if col_id:
+            taxa = Taxonomy.objects.filter(col_id=col_id)
         if not taxa and fada_id:
             taxa = Taxonomy.objects.filter(fada_id=fada_id)
             taxa_found_by_id = taxa.exists()
@@ -1135,9 +1141,9 @@ class TaxaProcessor(object):
                     else:
                         taxonomy.rank = _safe_upper(rank)
 
-            if not taxonomy and gbif_key and should_fetch_from_gbif:
+            if not taxonomy and col_id and should_fetch_from_gbif:
                 taxonomy = fetch_all_species_from_gbif(
-                    gbif_key=gbif_key,
+                    col_id=col_id,
                     taxonomic_rank=rank,
                     fetch_vernacular_names=should_fetch_vernacular_names,
                     is_synonym=is_synonym,
@@ -1402,8 +1408,8 @@ class TaxaProcessor(object):
                 if use_proposal and proposal is not None:
                     proposal.fada_id = fada_id
 
-            if gbif_key:
-                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'gbif_key', gbif_key)
+            if col_id:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'col_id', col_id)
 
             # Tags + biographic distributions
             if new_taxon or not use_proposal:
@@ -1455,25 +1461,51 @@ class TaxaProcessor(object):
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'taxonomic_status', taxonomic_status.strip().upper())
 
             # Refresh gbif_data for existing taxa, cached data may be outdated.
-            if not new_taxon and taxonomy.gbif_key:
-                fresh_data = get_species(taxonomy.gbif_key)
-                if fresh_data:
-                    taxonomy.gbif_data = fresh_data
-                    taxonomy.save(update_fields=['gbif_data'])
+            if not new_taxon:
+                if taxonomy.col_id:
+                    fresh_data = get_species_by_col_id(taxonomy.col_id)
+                    if fresh_data:
+                        taxonomy.gbif_data = fresh_data
+                        taxonomy.save(update_fields=['gbif_data'])
+                elif taxonomy.gbif_key:
+                    fresh_data = get_species(taxonomy.gbif_key)
+                    if fresh_data:
+                        taxonomy.gbif_data = fresh_data
+                        taxonomy.save(update_fields=['gbif_data'])
 
             if is_synonym and not accepted_taxon:
-                accepted_key = (taxonomy.gbif_data or {}).get('acceptedKey', '')
+                gbif_data = taxonomy.gbif_data or {}
+                usage = gbif_data.get('usage')
+                is_col_data = isinstance(usage, dict)
+                accepted_key = (
+                    gbif_data.get('acceptedUsage', {}).get('key', None)
+                    if is_col_data else gbif_data.get('acceptedKey', '')
+                )
+
                 if accepted_key:
-                    accepted_taxon = Taxonomy.objects.filter(gbif_key=accepted_key).first()
+                    if is_col_data:
+                        accepted_taxon = Taxonomy.objects.filter(col_id=accepted_key).first()
+                    else:
+                        accepted_taxon = Taxonomy.objects.filter(gbif_key=accepted_key).first()
                 if accepted_key and not accepted_taxon:
-                    accepted_taxon = fetch_all_species_from_gbif(
-                        gbif_key=accepted_key,
-                        fetch_children=False,
-                        is_synonym=False,
-                        fetch_vernacular_names=False,
-                        use_name_lookup=False,
-                        preserve_taxonomic_status=False
-                    )
+                    if is_col_data:
+                        accepted_taxon = fetch_all_species_from_gbif(
+                            col_id=accepted_key,
+                            fetch_children=False,
+                            is_synonym=False,
+                            fetch_vernacular_names=False,
+                            use_name_lookup=False,
+                            preserve_taxonomic_status=False
+                        )
+                    else:
+                        accepted_taxon = fetch_all_species_from_gbif(
+                            gbif_key=accepted_key,
+                            fetch_children=False,
+                            is_synonym=False,
+                            fetch_vernacular_names=False,
+                            use_name_lookup=False,
+                            preserve_taxonomic_status=False
+                        )
 
             if accepted_taxon and accepted_taxon.accepted_taxonomy:
                 accepted_taxon.accepted_taxonomy = None

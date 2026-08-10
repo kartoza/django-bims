@@ -7,10 +7,10 @@ from bims.tests.model_factories import TaxonomyF, TaxonGroupF, UserF, IUCNStatus
 from bims.models import Taxonomy, TaxonGroupTaxonomy
 
 
-def mock_update_taxonomy_from_gbif(key, fetch_parent=True, get_vernacular=True):
+def mock_fetch_all_species_from_gbif(col_id=None, fetch_vernacular_names=True, is_synonym=False, **kwargs):
     iucn_status = IUCNStatusF.create()
     taxonomy = TaxonomyF.create(
-        gbif_key=key,
+        col_id=col_id,
         scientific_name="Mocked Scientific Name",
         canonical_name="Mocked Canonical Name",
         iucn_status=iucn_status
@@ -28,10 +28,10 @@ class AddNewTaxonTestCase(FastTenantTestCase):
         )
         self.taxonomy = TaxonomyF()
 
-    @patch('bims.api_views.taxon.update_taxonomy_from_gbif', side_effect=mock_update_taxonomy_from_gbif)
-    def test_add_new_taxon_with_gbif_key(self, mock_update):
+    @patch('bims.api_views.taxon.fetch_all_species_from_gbif', side_effect=mock_fetch_all_species_from_gbif)
+    def test_add_new_taxon_with_col_id(self, mock_fetch):
         data = {
-            'gbifKey': '1',
+            'colId': 'ABC123',
             'taxonName': 'Test Taxon',
             'taxonGroup': self.taxon_group.name,
             'rank': 'species',
@@ -45,41 +45,86 @@ class AddNewTaxonTestCase(FastTenantTestCase):
         from bims.models import Taxonomy
         taxonomy = Taxonomy.objects.get(id=response.data['id'])
         self.assertEqual(taxonomy.last_modified_by, self.user)
+        self.assertEqual(taxonomy.col_id, 'ABC123')
 
-    @patch('bims.api_views.taxon.update_taxonomy_from_gbif', side_effect=mock_update_taxonomy_from_gbif)
-    def test_add_new_taxon_without_gbif_key(self, mock_update):
+    @patch('bims.api_views.taxon.fetch_all_species_from_gbif', side_effect=mock_fetch_all_species_from_gbif)
+    @patch('bims.api_views.taxon.resolve_col_id')
+    def test_add_new_taxon_with_gbif_key_resolves_to_col_id(self, mock_resolve_col_id, mock_fetch):
+        """
+        The find-taxon search table only surfaces legacy GBIF suggest keys,
+        so picking a result posts gbifKey; the backend must resolve it to a
+        col_id (via resolve_col_id) before creating the taxon.
+        """
+        mock_resolve_col_id.return_value = ('RESOLVED123', {})
+
         data = {
-            'taxonName': 'Test Taxon Without GBIF',
+            'gbifKey': '99999',
+            'taxonName': 'Test Taxon',
+            'taxonGroup': self.taxon_group.name,
+            'rank': 'species',
+            'authorName': 'Test Author',
+        }
+        response = self.client.post(reverse('add-new-taxon'), data)
+        self.assertEqual(response.status_code, 200)
+
+        mock_resolve_col_id.assert_called_once_with('99999', canonical_name='Test Taxon')
+        mock_fetch.assert_called_once()
+        self.assertEqual(mock_fetch.call_args.kwargs.get('col_id'), 'RESOLVED123')
+
+        taxonomy = Taxonomy.objects.get(id=response.data['id'])
+        self.assertEqual(taxonomy.col_id, 'RESOLVED123')
+
+    @patch('bims.api_views.taxon.fetch_all_species_from_gbif', side_effect=mock_fetch_all_species_from_gbif)
+    @patch('bims.api_views.taxon.resolve_col_id')
+    def test_add_new_taxon_with_gbif_key_unresolvable_returns_error(self, mock_resolve_col_id, mock_fetch):
+        """If the GBIF key can't be resolved to a col_id, reject with a 400 instead of creating a taxon."""
+        mock_resolve_col_id.return_value = (None, None)
+
+        data = {
+            'gbifKey': '99999',
+            'taxonName': 'Test Taxon',
+            'taxonGroup': self.taxon_group.name,
+            'rank': 'species',
+            'authorName': 'Test Author',
+        }
+        response = self.client.post(reverse('add-new-taxon'), data)
+        self.assertEqual(response.status_code, 400)
+        self.assertIn('error', response.data)
+        mock_fetch.assert_not_called()
+
+    def test_add_new_taxon_without_col_id(self):
+        data = {
+            'taxonName': 'Test Taxon Without COL',
             'taxonGroup': self.taxon_group.name,
             'rank': 'species',
             'parentId': self.taxonomy.id,
-            'authorName': 'Test Author Without GBIF',
+            'authorName': 'Test Author Without COL',
         }
         response = self.client.post(reverse('add-new-taxon'), data)
         self.assertEqual(response.status_code, 200)
         self.assertTrue('id' in response.data)
         self.assertTrue('taxon_name' in response.data)
-        self.assertEqual(response.data['taxon_name'], 'Test Taxon Without GBIF')
+        self.assertEqual(response.data['taxon_name'], 'Test Taxon Without COL')
         from bims.models import Taxonomy
         taxonomy = Taxonomy.objects.get(id=response.data['id'])
         self.assertEqual(taxonomy.last_modified_by, self.user)
 
         data = {
-            'taxonName': 'Test Taxon Without GBIF 2',
+            'taxonName': 'Test Taxon Without COL 2',
             'taxonGroupId': self.taxon_group.id,
             'rank': 'species',
             'familyId': self.taxonomy.id,
-            'authorName': 'Test Author Without GBIF 2',
+            'authorName': 'Test Author Without COL 2',
         }
         response = self.client.post(reverse('add-new-taxon'), data)
         self.assertEqual(response.status_code, 200)
         self.assertTrue('id' in response.data)
         self.assertTrue('taxon_name' in response.data)
-        self.assertEqual(response.data['taxon_name'], 'Test Taxon Without GBIF 2')
+        self.assertEqual(response.data['taxon_name'], 'Test Taxon Without COL 2')
 
     def test_reject_duplicate_taxon_same_name_same_parent(self):
         """
-        When a manual taxon (no gbifKey) with the same canonical_name and parent
+        When a manual taxon (no colId) with the same canonical_name and parent
         already exists, the API should return 400 and not create a duplicate.
         """
         parent = TaxonomyF.create(

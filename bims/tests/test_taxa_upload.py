@@ -996,6 +996,103 @@ class TestSubgenusUpload(FastTenantTestCase):
             'should_fetch_from_gbif must not be suppressed for synonyms.'
         )
 
+    @mock.patch('bims.scripts.taxa_upload.get_species_by_col_id')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_col_link_parsed_and_passed_as_col_id(
+        self, mock_fetch_gbif, mock_get_species_by_col_id
+    ):
+        """
+        A GBIF Link pointing at gbif.org/taxon/<id> is a Catalogue of Life
+        link; the id must be validated via COL and routed through as
+        col_id, never gbif_key.
+        """
+        mock_fetch_gbif.return_value = None
+        mock_get_species_by_col_id.return_value = {
+            'usage': {
+                'key': 'ABC123',
+                'canonicalName': 'Aedes aegypti',
+                'name': 'Aedes aegypti',
+                'rank': 'SPECIES',
+            },
+            'classification': [
+                {'rank': 'GENUS', 'name': 'Aedes'},
+            ],
+        }
+
+        row = {
+            'Taxon Rank': 'Species',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Insecta',
+            'Order': 'Diptera',
+            'Family': 'Culicidae',
+            'Genus': 'Aedes',
+            'Taxon': 'Aedes aegypti',
+            'Taxonomic status': 'accepted',
+            'On GBIF': 'Yes',
+            'GBIF Link': 'https://www.gbif.org/taxon/ABC123',
+            'Author(s)': '',
+        }
+
+        processor = TaxaProcessor()
+        processor.all_keys = {}
+        with mock.patch('bims.scripts.taxa_upload.preferences') as mock_prefs:
+            mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
+            processor.process_data(row, TaxonGroupF.create())
+
+        mock_get_species_by_col_id.assert_called_with('ABC123')
+
+        col_id_calls = [
+            c for c in mock_fetch_gbif.call_args_list
+            if c.kwargs.get('col_id') == 'ABC123'
+        ]
+        self.assertGreater(
+            len(col_id_calls), 0,
+            'fetch_all_species_from_gbif should be called with col_id, not gbif_key.'
+        )
+        for c in mock_fetch_gbif.call_args_list:
+            self.assertNotIn('gbif_key', c.kwargs)
+
+    @mock.patch('bims.scripts.taxa_upload.get_species_by_col_id')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_gbif_species_link_rejected_when_on_gbif(
+        self, mock_fetch_gbif, mock_get_species_by_col_id
+    ):
+        """
+        The legacy gbif.org/species/<gbif_key> link form is no longer
+        accepted upload input; when 'On GBIF' is set the row must be
+        rejected with an error and not processed further.
+        """
+        errors = []
+
+        row = {
+            'Taxon Rank': 'Species',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Insecta',
+            'Order': 'Diptera',
+            'Family': 'Culicidae',
+            'Genus': 'Aedes',
+            'Taxon': 'Aedes rejectus',
+            'Taxonomic status': 'accepted',
+            'On GBIF': 'Yes',
+            'GBIF Link': 'https://www.gbif.org/species/99999',
+            'Author(s)': '',
+        }
+
+        processor = TaxaProcessor()
+        processor.all_keys = {}
+        processor.handle_error = lambda row, message: errors.append(message)
+        processor.process_data(row, TaxonGroupF.create())
+
+        self.assertTrue(errors, 'A gbif.org/species/ link must raise an error.')
+        self.assertIn('99999', errors[0])
+        mock_get_species_by_col_id.assert_not_called()
+        mock_fetch_gbif.assert_not_called()
+        self.assertFalse(
+            Taxonomy.objects.filter(canonical_name='Aedes rejectus').exists()
+        )
+
     @mock.patch('bims.scripts.taxa_upload.get_species')
     @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
     def test_synonym_same_name_different_subgenus_matches_null_subgenus_record(

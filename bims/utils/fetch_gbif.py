@@ -4,9 +4,10 @@ import requests
 from django.db import IntegrityError, transaction
 from django.db.models.fields.related import ForeignObjectRel
 
+from bims.scripts.species_keys import RANK_INDEX
 from bims.utils.gbif import (
     get_children, find_species, get_species, get_vernacular_names,
-    gbif_name_suggest, gbif_synonyms_by_usage
+    gbif_name_suggest, gbif_synonyms_by_usage, get_species_by_col_id
 )
 from bims.models import Taxonomy, VernacularName, TaxonGroup
 from bims.enums import TaxonomicRank, TaxonomicStatus
@@ -196,6 +197,82 @@ def fetch_gbif_vernacular_names(taxonomy):
     return True
 
 
+def _create_or_update_from_col(col_data, fetch_vernacular_names=False, preserve_taxonomic_status=False):
+    """Create or update Taxonomy from a COL v2 match API response."""
+    usage = col_data.get('usage', {})
+    col_id = str(usage.get('key') or '')
+    canonical_name = usage.get('canonicalName', '')
+    scientific_name = usage.get('name', '') or canonical_name
+    author = usage.get('authorship', '')
+    raw_rank = (usage.get('rank') or '').upper()
+    status_str = (usage.get('status') or '').upper()
+
+    if not canonical_name and not scientific_name:
+        logger.error('COL response missing name fields: %s', col_data)
+        return None
+    if not raw_rank:
+        logger.error('COL response missing rank: %s', col_data)
+        return None
+
+    rank_enum = TaxonomicRank.__members__.get(raw_rank)
+    rank = rank_enum.name if rank_enum else raw_rank
+
+    try:
+        taxonomic_status = TaxonomicStatus[status_str].name
+    except KeyError:
+        taxonomic_status = ''
+
+    clean_data = _clean_col_data(col_data)
+
+    taxa = None
+    if col_id:
+        taxa = Taxonomy.objects.filter(col_id=col_id)
+    if not taxa or not taxa.exists():
+        taxa = Taxonomy.objects.filter(
+            scientific_name=scientific_name,
+            canonical_name=canonical_name,
+            rank=rank,
+        )
+
+    if not taxa or not taxa.exists():
+        taxonomy = Taxonomy.objects.create(
+            scientific_name=scientific_name,
+            canonical_name=canonical_name,
+            taxonomic_status=taxonomic_status,
+            rank=rank,
+        )
+    else:
+        if preserve_taxonomic_status:
+            existing_status = taxa[0].taxonomic_status
+            update_fields = {
+                'scientific_name': scientific_name,
+                'canonical_name': canonical_name,
+                'rank': rank,
+            }
+            if not existing_status:
+                update_fields['taxonomic_status'] = taxonomic_status
+            taxa.update(**update_fields)
+        else:
+            taxa.update(
+                scientific_name=scientific_name,
+                canonical_name=canonical_name,
+                taxonomic_status=taxonomic_status,
+                rank=rank,
+            )
+        taxonomy = taxa[0]
+
+    if author:
+        taxonomy.author = author
+    if col_id and not taxonomy.col_id:
+        taxonomy.col_id = col_id
+    taxonomy.gbif_data = clean_data
+
+    if fetch_vernacular_names:
+        fetch_gbif_vernacular_names(taxonomy)
+    taxonomy.save()
+    return taxonomy
+
+
 def create_or_update_taxonomy(
         gbif_data,
         fetch_vernacular_names=False,
@@ -206,6 +283,9 @@ def create_or_update_taxonomy(
     :param fetch_vernacular_names: should fetch vernacular names
     :param preserve_taxonomic_status: if True, preserve existing taxonomic_status from CSV (FADA use case)
     """
+    if gbif_data and 'usage' in gbif_data:
+        return _create_or_update_from_col(gbif_data, fetch_vernacular_names, preserve_taxonomic_status)
+
     taxa = None
     try:
         species_key = gbif_data['nubKey']
@@ -218,11 +298,9 @@ def create_or_update_taxonomy(
         parent_key = gbif_data.get("parentKey")
         if parent_key:
             logger.debug("UNRANKED record %s; resolving to parent %s", gbif_data.get("key"), parent_key)
-            return fetch_all_species_from_gbif(
-                gbif_key=parent_key,
-                fetch_children=False,
-                preserve_taxonomic_status=preserve_taxonomic_status
-            )
+            parent_data = get_species(parent_key)
+            if parent_data:
+                return create_or_update_taxonomy(parent_data, fetch_vernacular_names, preserve_taxonomic_status)
         logger.debug("Skipping UNRANKED record (no parentKey) – GBIF key %s", gbif_data.get("key"))
         return None
 
@@ -250,6 +328,9 @@ def create_or_update_taxonomy(
             taxonomic_status].name
     except KeyError:
         taxonomic_status = ''
+    taxon_key_raw = str(gbif_data.get('taxonKey') or '')
+    col_id_from_data = taxon_key_raw if (taxon_key_raw and not taxon_key_raw.isdigit()) else None
+
     if 'oldKey' in gbif_data:
         taxa = Taxonomy.objects.filter(
             gbif_key=gbif_data['oldKey']
@@ -257,6 +338,10 @@ def create_or_update_taxonomy(
     if not taxa:
         taxa = Taxonomy.objects.filter(
             gbif_key=gbif_data['key']
+        )
+    if not taxa and col_id_from_data:
+        taxa = Taxonomy.objects.filter(
+            col_id=col_id_from_data
         )
     if not taxa:
         taxa = Taxonomy.objects.filter(
@@ -298,16 +383,50 @@ def create_or_update_taxonomy(
     taxonomy.gbif_key = species_key
     taxonomy.gbif_data = gbif_data
 
+    if col_id_from_data and not taxonomy.col_id:
+        taxonomy.col_id = col_id_from_data
+
     if fetch_vernacular_names:
         fetch_gbif_vernacular_names(taxonomy)
     taxonomy.save()
     return taxonomy
 
 
+_RANK_PARENT = {
+    'SPECIES': 'GENUS',
+    'SUBSPECIES': 'SPECIES',
+    'VARIETY': 'SPECIES',
+    'SUBVARIETY': 'SPECIES',
+    'FORM': 'SPECIES',
+    'SUBFORM': 'SPECIES',
+    'GENUS': 'FAMILY',
+    'FAMILY': 'ORDER',
+    'ORDER': 'CLASS',
+    'CLASS': 'PHYLUM',
+    'PHYLUM': 'KINGDOM',
+}
+
+
+def _parent_col_id_from_classification(classification):
+    """Return the COL ID of the immediate parent from a classification list."""
+    if not classification or len(classification) == 1:
+        return None
+    parent = list(reversed(classification))[1]
+    return parent.get('key', None)
+
+
+def _clean_col_data(col_data):
+    """Strip diagnostics and additionalStatus before persisting."""
+    if not col_data:
+        return col_data
+    return {k: v for k, v in col_data.items() if k not in ('diagnostics', 'additionalStatus')}
+
+
 def fetch_all_species_from_gbif(
     species='',
     taxonomic_rank=None,
-    gbif_key=None,
+    col_id=None,
+    col_row=None,
     parent=None,
     fetch_children=False,
     fetch_vernacular_names=False,
@@ -319,16 +438,18 @@ def fetch_all_species_from_gbif(
     _depth=0,
     **classifier):
     """
-    Get species detail and all lower rank species
-    :param species: species name
-    :param taxonomic_rank: taxonomy rank e.g. class
-    :param gbif_key: gbif key
-    :param parent: taxonomy parent
-    :param fetch_children: fetch children or not
-    :param fetch_vernacular_names: fetch vernacular names or not
-    :param use_name_lookup: use name_lookup to search species
-    :param preserve_taxonomic_status: if True, preserve existing taxonomic_status from CSV (FADA use case)
-    :return:
+    Get species detail from COL and create/update the local Taxonomy record.
+    :param species: species name (used when col_id is not provided)
+    :param taxonomic_rank: taxonomy rank e.g. SPECIES
+    :param col_id: COL identifier - preferred lookup key
+    :param col_row: full row dict from GBIF SPECIES_LIST download
+    :param parent: explicit parent Taxonomy instance
+    :param fetch_children: unused - COL match API does not support children listing
+    :param fetch_vernacular_names: fetch vernacular names after save
+    :param use_name_lookup: use find_species (True) or gbif_name_suggest (False)
+    :param is_synonym: treat this taxon as a synonym
+    :param preserve_taxonomic_status: if True, preserve existing taxonomic_status
+    :return: Taxonomy instance or None
     """
     def log_info(message: str):
         logger.info(message)
@@ -340,54 +461,43 @@ def fetch_all_species_from_gbif(
         _visited = set()
 
     if _depth > MAX_DEPTH:
-        log_info(f"Depth>{MAX_DEPTH} for key={gbif_key} – aborting to avoid recursion loop")
+        log_info(f"Depth>{MAX_DEPTH} for col_id={col_id} – aborting to avoid recursion loop")
         return None
 
     source_taxonomic_status = 'accepted' if not is_synonym else 'synonym'
+    species_data = None
+    taxon = None
 
-    if gbif_key:
-        if gbif_key in _visited:
-            log_info(f"Cycle detected at key={gbif_key}; skipping further recursion")
-            existing = Taxonomy.objects.filter(gbif_key=gbif_key).first()
-            return existing
-        _visited.add(gbif_key)
-        log_info('Get species {gbif_key}'.format(
-            gbif_key=gbif_key
-        ))
-        species_data = None
-        taxon = None
+    if col_id:
+        if col_id in _visited:
+            log_info(f"Cycle detected at col_id={col_id}; skipping further recursion")
+            return Taxonomy.objects.filter(col_id=col_id).first()
+        _visited.add(col_id)
+        log_info(f'Get species by COL ID: {col_id}')
 
         try:
-            taxon = Taxonomy.objects.get(gbif_key=gbif_key)
-            if taxonomic_rank:
-                if taxon.rank.upper() == taxonomic_rank.upper():
-                    species_data = taxon.gbif_data
-                else:
-                    return None
-            else:
-                species_data = taxon.gbif_data
+            taxon = Taxonomy.objects.get(col_id=col_id)
+            if taxonomic_rank and taxon.rank and taxon.rank.upper() != taxonomic_rank.upper():
+                return None
+            species_data = taxon.gbif_data
         except Taxonomy.MultipleObjectsReturned:
-            taxa = Taxonomy.objects.filter(gbif_key=gbif_key)
+            taxa = Taxonomy.objects.filter(col_id=col_id)
             taxon = taxa.first()
-            merge_taxa_data(
-                excluded_taxon=taxon,
-                taxa_list=taxa.exclude(id=taxon.id)
-            )
+            merge_taxa_data(excluded_taxon=taxon, taxa_list=taxa.exclude(id=taxon.id))
             species_data = taxon.gbif_data
         except Taxonomy.DoesNotExist:
             pass
 
-        gbif_data = get_species(gbif_key)
-        if gbif_data:
-            if taxon:
-                taxon.gbif_data = gbif_data
-                taxon.save()
-            species_data = gbif_data
-    else:
-        log_info('Fetching {species} - {rank}'.format(
-            species=species,
-            rank=taxonomic_rank,
-        ))
+        if not species_data:
+            col_api_data = get_species_by_col_id(col_id)
+            if col_api_data and 'usage' in col_api_data:
+                species_data = col_api_data
+                if taxon:
+                    taxon.gbif_data = _clean_col_data(col_api_data)
+                    taxon.save()
+
+    elif species:
+        log_info('Fetching {species} - {rank}'.format(species=species, rank=taxonomic_rank))
         if use_name_lookup:
             species_data = find_species(
                 original_species_name=species,
@@ -395,49 +505,46 @@ def fetch_all_species_from_gbif(
                 returns_all=False,
                 **classifier)
         else:
-            species_data = gbif_name_suggest(
-                q=species,
-                rank=taxonomic_rank
-            )
+            species_data = gbif_name_suggest(q=species, rank=taxonomic_rank)
 
-        # Check if the taxon name from GBIF is different from the query
-        # If different, return None to avoid incorrect matches
         if species_data and species:
-            gbif_canonical = (species_data.get('canonicalName') or '').strip().lower()
+            col_canonical = (
+                (species_data.get('usage') or {}).get('canonicalName') or
+                species_data.get('canonicalName') or ''
+            ).strip().lower()
             input_name = species.strip().lower()
-            if gbif_canonical and input_name and gbif_canonical != input_name:
+            if col_canonical and input_name and col_canonical != input_name:
                 log_info(
-                    f"GBIF name mismatch: input '{species}' does not match "
-                    f"GBIF canonical name '{species_data.get('canonicalName')}' - skipping"
+                    f"COL name mismatch: input '{species}' does not match "
+                    f"COL canonical name '{col_canonical}' - skipping"
                 )
                 return None
+    else:
+        log_info('No identifier or name provided')
+        return None
 
-    raw_rank = species_data.get('rank', '').upper() if species_data else ''
+    if not species_data:
+        log_info('Species not found')
+        return None
 
-    if species_data:
-        if taxonomic_rank and species_data['rank'] != taxonomic_rank.upper():
-            return None
-        if 'taxonomicStatus' in species_data:
-            species_status = species_data['taxonomicStatus']
-        elif 'status' in species_data:
-            species_status = species_data['status']
-        else:
-            species_status = ''
-        if preserve_taxonomic_status and species_status.lower() not in source_taxonomic_status:
-            return None
+    usage = species_data.get('usage', {})
+    raw_rank = (usage.get('rank') or species_data.get('rank', '')).upper()
+    species_status = (
+        usage.get('status') or
+        species_data.get('taxonomicStatus') or
+        species_data.get('status') or ''
+    )
 
-    if taxonomic_rank:
-        if raw_rank != taxonomic_rank.upper():
-            return None
+    if taxonomic_rank and raw_rank != taxonomic_rank.upper():
+        return None
 
-    if raw_rank == "UNRANKED":
-        parent_key = (species_data or {}).get("parentKey")
-        if parent_key and parent_key != species_data.get("key") and parent_key not in _visited:
-            log_info(
-                f"UNRANKED record {species_data.get('key')}; "
-                f"resolving to parent {parent_key}")
+    if raw_rank == 'UNRANKED':
+        classification = species_data.get('classification', [])
+        parent_col_id = classification[-1].get('key') if classification else None
+        if parent_col_id and parent_col_id not in _visited:
+            log_info(f"UNRANKED record; resolving to classification parent {parent_col_id}")
             return fetch_all_species_from_gbif(
-                gbif_key=parent_key,
+                col_id=parent_col_id,
                 fetch_children=False,
                 fetch_vernacular_names=fetch_vernacular_names,
                 preserve_taxonomic_status=preserve_taxonomic_status,
@@ -446,91 +553,36 @@ def fetch_all_species_from_gbif(
                 _visited=_visited,
                 _depth=_depth + 1,
             )
-        log_info(
-            f"Skipping UNRANKED record (no safe parent) – "
-            f"GBIF key {species_data.get('key') if species_data else None}")
+        log_info(f"Skipping UNRANKED record (no parent) – col_id={col_id}")
         return None
 
-    # if species not found then return nothing
-    if not species_data:
-        log_info('Species not found')
+    if preserve_taxonomic_status and species_status.lower() not in source_taxonomic_status:
         return None
 
-    legacy_name = species
-
-    # Check if nubKey is identical with the key
-    # if not then fetch the species with the nubKey to get a better data
-    rank_key = None
-    if taxonomic_rank:
-        rank_key = '{}Key'.format(taxonomic_rank.lower())
-    if ('nubKey' in species_data or rank_key) and taxonomic_rank:
-        if gbif_key:
-            if isinstance(gbif_key, str):
-                gbif_key = int(gbif_key)
-            temp_key = gbif_key
-        else:
-            temp_key = species_data['key']
-        if 'nubKey' in species_data:
-            nub_key = species_data['nubKey']
-            if nub_key != temp_key:
-                old_key = nub_key
-                new_species_data = get_species(nub_key)
-                if new_species_data['rank']:
-                    if new_species_data['rank'].upper() == taxonomic_rank.upper():
-                        species_data = new_species_data
-                        species_data['oldKey'] = old_key
-        else:
-            if rank_key in species_data:
-                old_key = species_data['key']
-                if old_key != species_data[rank_key]:
-                    new_species_data = get_species(species_data[rank_key])
-                    if (
-                            new_species_data[
-                                'rank'].upper() == taxonomic_rank.upper()
-                    ):
-                        species_data = new_species_data
-                        species_data['oldKey'] = old_key
-
-    logger.debug(species_data)
-    if not species_data:
-        return None
-    if 'authorship' not in species_data and 'nubKey' in species_data:
-        species_data = get_species(species_data['nubKey'])
-    taxonomy = create_or_update_taxonomy(
-        species_data,
-        fetch_vernacular_names,
-        preserve_taxonomic_status)
+    taxonomy = create_or_update_taxonomy(species_data, fetch_vernacular_names, preserve_taxonomic_status)
 
     if not taxonomy:
         log_info('Taxonomy not updated/created')
         return None
-    species_key = taxonomy.gbif_key
-    scientific_name = taxonomy.scientific_name
 
-    gbif_status_lower = (species_data.get('taxonomicStatus') or '').strip().lower()
+    scientific_name = taxonomy.scientific_name
+    gbif_status_lower = species_status.strip().lower()
 
     if parent and not is_synonym:
         taxonomy.parent = parent
         taxonomy.save()
     elif not is_synonym:
-        # For infraspecific ranks (variety, subspecies, form), use speciesKey as parent if available
-        # because parentKey in GBIF often points to genus instead of species for these ranks
-        rank_lower = (taxonomy.rank or '').lower()
-        is_infraspecific = rank_lower in ['variety', 'subspecies', 'subvariety', 'form', 'subform']
-
-        if is_infraspecific and 'speciesKey' in (species_data or {}):
-            desired_parent_key = species_data.get('speciesKey')
-        else:
-            desired_parent_key = (species_data or {}).get('parentKey')
+        classification = species_data.get('classification', [])
+        parent_col_id = _parent_col_id_from_classification(classification)
 
         need_fetch_parent = (
-            desired_parent_key
-            and (not taxonomy.parent or taxonomy.parent.gbif_key != desired_parent_key)
+            parent_col_id
+            and (not taxonomy.parent or taxonomy.parent.col_id != parent_col_id)
         )
-        if need_fetch_parent and desired_parent_key != taxonomy.gbif_key and desired_parent_key not in _visited:
-            log_info(f'Get parent with parentKey : {desired_parent_key}')
+        if need_fetch_parent and parent_col_id != taxonomy.col_id and parent_col_id not in _visited:
+            log_info(f'Get parent with COL ID: {parent_col_id}')
             parent_taxonomy = fetch_all_species_from_gbif(
-                gbif_key=desired_parent_key,
+                col_id=parent_col_id,
                 parent=None,
                 fetch_children=False,
                 fetch_vernacular_names=fetch_vernacular_names,
@@ -550,10 +602,12 @@ def fetch_all_species_from_gbif(
         cursor = taxonomy
         while tries < max_tries and cursor and cursor.rank and cursor.rank.lower() != 'kingdom':
             if not cursor.parent:
-                pk = (cursor.gbif_data or {}).get('parentKey') if hasattr(cursor, 'gbif_data') else None
-                if pk and pk != cursor.gbif_key and pk not in _visited:
+                cursor_data = cursor.gbif_data or {}
+                cursor_classification = cursor_data.get('classification', [])
+                pk = _parent_col_id_from_classification(cursor_classification)
+                if pk and pk != cursor.col_id and pk not in _visited:
                     pt = fetch_all_species_from_gbif(
-                        gbif_key=pk,
+                        col_id=pk,
                         parent=None,
                         fetch_children=False,
                         fetch_vernacular_names=fetch_vernacular_names,
@@ -575,32 +629,42 @@ def fetch_all_species_from_gbif(
     else:
         log_info(
             f'Skipping parent fetch for {gbif_status_lower} taxon '
-            f'(gbif_key={species_key}, name={scientific_name})'
+            f'(col_id={taxonomy.col_id}, name={scientific_name})'
         )
         if taxonomy.parent:
             log_info(
                 f'Detaching parent from {gbif_status_lower} taxon '
-                f'(gbif_key={species_key}, name={scientific_name})'
+                f'(col_id={taxonomy.col_id}, name={scientific_name})'
             )
             taxonomy.parent = None
             taxonomy.save()
 
-    # Check if there is an accepted key
     if (
-            is_synonym and
-            not preserve_taxonomic_status and
-            species_data and
-            'acceptedKey' in species_data and
-            not taxonomy.accepted_taxonomy
+        is_synonym and
+        not preserve_taxonomic_status and
+        species_data and
+        not taxonomy.accepted_taxonomy
     ):
-        ak = species_data['acceptedKey']
-        if ak and ak != taxonomy.gbif_key and ak not in _visited:
-            accepted_preexists = Taxonomy.objects.filter(gbif_key=ak).exists()
+        if col_id:
+            ak = (
+                species_data.get('acceptedUsage', {}).get(
+                    'key', None
+                )
+            )
+        else:
+            usage = species_data.get('usage', {})
+            ak = (
+                usage.get('acceptedKey') or
+                species_data.get('acceptedKey') or
+                species_data.get('acceptedTaxonKey')
+            )
+        if ak and ak != taxonomy.col_id and ak not in _visited:
+            accepted_preexists = Taxonomy.objects.filter(col_id=ak).exists()
             if accepted_preexists:
-                accepted_taxonomy = Taxonomy.objects.filter(gbif_key=ak).first()
+                accepted_taxonomy = Taxonomy.objects.filter(col_id=ak).first()
             else:
                 accepted_taxonomy = fetch_all_species_from_gbif(
-                    gbif_key=ak,
+                    col_id=ak,
                     parent=taxonomy.parent,
                     fetch_children=False,
                     fetch_vernacular_names=fetch_vernacular_names,
@@ -610,44 +674,19 @@ def fetch_all_species_from_gbif(
                     _visited=_visited,
                     _depth=_depth + 1,
                 )
-
             if accepted_taxonomy:
-                # if not accepted_preexists and taxonomy.iucn_status:
-                #     accepted_taxonomy.iucn_status = taxonomy.iucn_status
-                #     accepted_taxonomy.iucn_redlist_id = taxonomy.iucn_redlist_id
-                #     accepted_taxonomy.iucn_data = taxonomy.iucn_data
-                #     accepted_taxonomy.save()
                 taxonomy.accepted_taxonomy = accepted_taxonomy
                 taxonomy.save()
 
-    if not fetch_children:
-        if taxonomy.legacy_canonical_name:
-            legacy_canonical_name = taxonomy.legacy_canonical_name
-            if legacy_name not in legacy_canonical_name:
-                legacy_canonical_name += ';' + legacy_name
-        else:
-            legacy_canonical_name = legacy_name
-        taxonomy.legacy_canonical_name = legacy_canonical_name
-        taxonomy.save()
-        return taxonomy
-
-    if species_key and scientific_name:
-        log_info('Get children from : {}'.format(species_key))
-        children = get_children(species_key)
-        if not children:
-            return taxonomy
-        for child in children:
-            try:
-                children_key = child['nubKey']
-            except KeyError:
-                children_key = child['key']
-            fetch_all_species_from_gbif(
-                gbif_key=children_key,
-                species=child['scientificName'],
-                parent=taxonomy,
-                preserve_taxonomic_status=preserve_taxonomic_status
-            )
-
+    legacy_name = species
+    if taxonomy.legacy_canonical_name:
+        legacy_canonical_name = taxonomy.legacy_canonical_name
+        if legacy_name and legacy_name not in legacy_canonical_name:
+            legacy_canonical_name += ';' + legacy_name
+    else:
+        legacy_canonical_name = legacy_name or ''
+    taxonomy.legacy_canonical_name = legacy_canonical_name
+    taxonomy.save()
     return taxonomy
 
 def harvest_synonyms_for_accepted_taxonomy(
