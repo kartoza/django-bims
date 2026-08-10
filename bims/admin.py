@@ -1559,7 +1559,7 @@ class QualityCheckFilter(django_admin.SimpleListFilter):
 
     def _no_upstream_id_q(self):
         # Missing upstream ID = no GBIF key AND no FADA ID (null or empty)
-        return Q(gbif_key__isnull=True) & (Q(fada_id__isnull=True) | Q(fada_id=''))
+        return Q(col_id__isnull=True) & (Q(fada_id__isnull=True) | Q(fada_id=''))
 
     def lookups(self, request, model_admin):
         return (
@@ -1869,12 +1869,8 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 issues.append('Missing accepted taxon')
 
         # Upstream ID check applies to all statuses
-        if obj.gbif_key:
-            if obj.col_id:
-                checks.append(True)
-            else:
-                checks.append(False)
-                issues.append('Missing COL ID')
+        if obj.col_id:
+            checks.append(True)
         elif obj.fada_id:
             checks.append(True)
         else:
