@@ -201,6 +201,13 @@ class TaxonGroup(models.Model):
         help_text='ID of the taxon group on the upstream BIMS instance.',
     )
 
+    taxonworks_base_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default='',
+        help_text='Base URL of the TaxonWorks instance (e.g. https://plecoptera.speciesfile.org). Used to construct OTU links for taxa in this group.',
+    )
+
     class Meta:
         ordering = ('display_order',)
         permissions = (

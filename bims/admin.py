@@ -1670,6 +1670,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 'fada_id',
                 'aphia_id',
                 'taxonworks_id',
+                'taxonworks_otu_id',
                 'last_modified_by',
                 'subgenus',
                 'verified',

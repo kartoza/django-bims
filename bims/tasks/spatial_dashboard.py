@@ -462,7 +462,8 @@ def spatial_dashboard_map(search_parameters=None, search_process_id=None):
 
 @shared_task(name='bims.tasks.spatial_dashboard_summary', queue='search')
 def spatial_dashboard_summary(search_parameters=None, search_process_id=None):
-    from django.db.models import Case, When, Value, F, Count, CharField
+    from django.db.models import Case, When, Value, F, Count, CharField, IntegerField, Min
+    from django.db.models.functions import Coalesce
     from bims.models import TaxonGroup, IUCNStatus
     from bims.utils.celery import memcache_lock
     from bims.api_views.search import CollectionSearch
@@ -535,14 +536,24 @@ def spatial_dashboard_summary(search_parameters=None, search_process_id=None):
                 default=F('taxonomy__endemism__name'),
                 output_field=CharField()
             )
+            endemism_order_field = Case(
+                When(taxonomy__endemism__isnull=False,
+                     then=F('taxonomy__endemism__display_order')),
+                default=Value(9999),
+                output_field=IntegerField()
+            )
             endemism_counts = collection_results.annotate(
                 module_name=module_field,
-                endemism_name=endemism_field
+                endemism_name=endemism_field,
+                endemism_order=endemism_order_field
             ).values(
                 'module_name', 'endemism_name'
             ).annotate(
-                count=Count('taxonomy_id', distinct=True)
-            ).values('module_name', 'endemism_name', 'count')
+                count=Count('taxonomy_id', distinct=True),
+                min_order=Min('endemism_order')
+            ).order_by('min_order').values(
+                'module_name', 'endemism_name', 'count'
+            )
 
             iucn_labels = dict(IUCNStatus.CATEGORY_CHOICES)
 
@@ -554,27 +565,34 @@ def spatial_dashboard_summary(search_parameters=None, search_process_id=None):
                     When(taxonomy__iucn_status__category__isnull=True, then=Value('NE')),
                     default=F('taxonomy__iucn_status__category'),
                     output_field=CharField()
-                )
+                ),
+                cons_order=Coalesce(F('taxonomy__iucn_status__order'), Value(9999))
             ).values(
                 'module_name', 'cons_name'
             ).annotate(
-                count=Count('taxonomy_id', distinct=True)
-            ).values('module_name', 'cons_name', 'count')
+                count=Count('taxonomy_id', distinct=True),
+                min_order=Min('cons_order')
+            ).order_by('min_order').values('module_name', 'cons_name', 'count')
 
             national_cons_counts = collection_results.filter(
-                taxonomy__iucn_status__national=True
+                taxonomy__national_conservation_status__isnull=False
             ).annotate(
                 module_name=module_field,
                 cons_name=Case(
-                    When(taxonomy__iucn_status__category__isnull=True, then=Value('NE')),
-                    default=F('taxonomy__iucn_status__category'),
+                    When(taxonomy__national_conservation_status__category__isnull=True,
+                         then=Value('NE')),
+                    default=F('taxonomy__national_conservation_status__category'),
                     output_field=CharField()
+                ),
+                cons_order=Coalesce(
+                    F('taxonomy__national_conservation_status__order'), Value(9999)
                 )
             ).values(
                 'module_name', 'cons_name'
             ).annotate(
-                count=Count('taxonomy_id', distinct=True)
-            ).values('module_name', 'cons_name', 'count')
+                count=Count('taxonomy_id', distinct=True),
+                min_order=Min('cons_order')
+            ).order_by('min_order').values('module_name', 'cons_name', 'count')
 
             def rows_from_counts(rows, label_key, label_map=None):
                 matrix = {}

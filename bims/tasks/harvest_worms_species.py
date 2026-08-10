@@ -26,7 +26,6 @@ import logging
 from collections import deque
 
 from celery import shared_task
-from django.core.files.base import ContentFile
 from django.db import transaction
 from django.utils import timezone
 from django_tenants.utils import schema_context
@@ -146,20 +145,31 @@ def harvest_worms_species(session_id: int, schema_name: str):
 
         taxon_group = session.module_group
         harvest_synonyms = session.harvest_synonyms
+        freshwater_only = bool(additional.get("freshwater_only"))
         processor = _SessionWormsTaxaProcessor(_log)
         total_processed = len(processed_ids)
+
+        def _is_freshwater(row: dict) -> bool:
+            return bool(row.get("Fresh"))
+
+        if freshwater_only:
+            _log("Freshwater-only filter enabled - non-freshwater taxa will be skipped")
 
         if aphia_id not in processed_ids:
             root = get_aphia_record(aphia_id)
             if root:
                 row = api_record_to_csv_row(root)
-                try:
-                    processor.process(row, taxon_group, harvest_synonyms, fetch_gbif_key=True)
+                if freshwater_only and not _is_freshwater(row):
+                    _log(f"Skipped root AphiaID={aphia_id} (not flagged as freshwater)")
                     processed_ids.add(aphia_id)
-                    total_processed += 1
-                    _log(f"Processed root AphiaID={aphia_id} ({root.get('scientificname', '')})")
-                except Exception as exc:
-                    _log(f"Error processing root AphiaID={aphia_id}: {exc}")
+                else:
+                    try:
+                        processor.process(row, taxon_group, harvest_synonyms, fetch_gbif_key=True)
+                        processed_ids.add(aphia_id)
+                        total_processed += 1
+                        _log(f"Processed root AphiaID={aphia_id} ({root.get('scientificname', '')})")
+                    except Exception as exc:
+                        _log(f"Error processing root AphiaID={aphia_id}: {exc}")
             else:
                 _log(f"Root AphiaID={aphia_id} not found in WoRMS")
 
@@ -184,14 +194,19 @@ def harvest_worms_species(session_id: int, schema_name: str):
 
                 if not already_processed:
                     row = api_record_to_csv_row(child)
-                    try:
-                        processor.process(row, taxon_group, harvest_synonyms, fetch_gbif_key=True)
+                    if freshwater_only and not _is_freshwater(row):
+                        _log(f"Skipped AphiaID={child_id} (not flagged as freshwater)")
                         processed_ids.add(child_id)
-                        total_processed += 1
                         since_last_save += 1
-                    except Exception as exc:
-                        _log(f"Error processing AphiaID={child_id}: {exc}")
-                        continue
+                    else:
+                        try:
+                            processor.process(row, taxon_group, harvest_synonyms, fetch_gbif_key=True)
+                            processed_ids.add(child_id)
+                            total_processed += 1
+                            since_last_save += 1
+                        except Exception as exc:
+                            _log(f"Error processing AphiaID={child_id}: {exc}")
+                            continue
 
                 if (child.get("status") or "").lower() == "accepted":
                     queue.append(child_id)

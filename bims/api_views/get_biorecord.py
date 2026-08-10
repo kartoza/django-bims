@@ -124,6 +124,13 @@ class BioCollectionSummary(APIView):
         )
         response_data['gbif_id'] = taxonomy.gbif_key
         response_data['col_id'] = taxonomy.col_id
+        response_data['aphia_id'] = taxonomy.aphia_id
+        if taxonomy.aphia_id:
+            response_data['worms_url'] = (
+                f'https://www.marinespecies.org/aphia.php?p=taxdetails&id={taxonomy.aphia_id}'
+            )
+        else:
+            response_data['worms_url'] = ''
         response_data['total_records'] = len(collection_results)
         response_data['conservation_status'] = iucn_status
         if taxonomy.origin:

@@ -774,4 +774,5 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
                   'occurrence_upload_templates',
                   'is_readonly',
                   'upstream_url',
+                  'taxonworks_base_url',
                   ]

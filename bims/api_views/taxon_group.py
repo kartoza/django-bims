@@ -240,6 +240,7 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
         gbif_species = request.POST.get('gbif-species', None)
         parent_taxon_id = request.POST.get('parent-taxon', None)
         meta_group_id = request.POST.get('meta_group', None)
+        taxonworks_base_url = (request.POST.get('taxonworks_base_url') or '').strip()
 
         taxa_upload_template = request.FILES.get('taxa_upload_template', None)
 
@@ -299,6 +300,8 @@ class UpdateTaxonGroup(TaxaUpdateMixin):
                 pass
         else:
             taxon_group.meta_group = None
+
+        taxon_group.taxonworks_base_url = taxonworks_base_url
 
         taxon_group.save()
 

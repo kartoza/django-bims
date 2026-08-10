@@ -5,21 +5,27 @@ class TaxonomicRank(Enum):
     # ─── Top-level ──────────────────────────────────────────────────────
     DOMAIN      = "Domain"
     KINGDOM     = "Kingdom"
+    SUBKINGDOM  = "Sub Kingdom"
 
     # ─── Phylum ─────────────────────────────────────────────────────────
     PHYLUM      = "Phylum"
     SUBPHYLUM   = "SubPhylum"
+    INFRAPHYLUM = "Infra Phylum"
 
     # ─── Class ──────────────────────────────────────────────────────────
+    MEGACLASS   = "Mega Class"
+    GIGACLASS   = "Giga Class"
     SUPERCLASS  = "Super Class"
     CLASS       = "Class"
     SUBCLASS    = "Sub Class"
+    INFRACLASS  = "Infra Class"
 
     # ─── Order ──────────────────────────────────────────────────────────
     SUPERORDER  = "Super Order"
     ORDER       = "Order"
     SUBORDER    = "Sub Order"
     INFRAORDER  = "Infra Order"
+    PARVORDER   = "Parv Order"
 
     # ─── Family & below ────────────────────────────────────────────────
     SUPERFAMILY = "Super Family"
@@ -44,15 +50,21 @@ class TaxonomicRank(Enum):
         return [
             TaxonomicRank.DOMAIN,
             TaxonomicRank.KINGDOM,
+            TaxonomicRank.SUBKINGDOM,
             TaxonomicRank.PHYLUM,
             TaxonomicRank.SUBPHYLUM,
+            TaxonomicRank.INFRAPHYLUM,
+            TaxonomicRank.MEGACLASS,
+            TaxonomicRank.GIGACLASS,
             TaxonomicRank.SUPERCLASS,
             TaxonomicRank.CLASS,
             TaxonomicRank.SUBCLASS,
+            TaxonomicRank.INFRACLASS,
             TaxonomicRank.SUPERORDER,
             TaxonomicRank.ORDER,
             TaxonomicRank.SUBORDER,
             TaxonomicRank.INFRAORDER,
+            TaxonomicRank.PARVORDER,
             TaxonomicRank.SUPERFAMILY,
             TaxonomicRank.FAMILY,
             TaxonomicRank.SUBFAMILY,

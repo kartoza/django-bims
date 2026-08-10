@@ -373,6 +373,8 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
         wetland_site_code += wetland_data['name'].replace(' ', '')[:4]
     elif user_wetland_name:
         wetland_site_code += user_wetland_name.replace(' ', '')[:4]
+    else:
+        wetland_site_code += 'UNSP'
 
     return wetland_data, wetland_site_code
 
