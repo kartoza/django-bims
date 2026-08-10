@@ -55,7 +55,7 @@ def autocomplete(request):
     suggestions = list(
         taxa.filter(
             canonical_name__icontains=q,
-            biologicalcollectionrecord__validated=True,
+            biologicalcollectionrecord__survey__validated=True,
             **taxonomy_additional_filters
         ).distinct('id').
         annotate(
