@@ -28,8 +28,8 @@
                     <div class="help-block-space"></div>
                     <strong>You can download the template here :</strong>
                     {% block download_example_button %}
-                        <a href="{% static "data/physico_chemical_template.csv" %}"
-                           download="physico_chemical_template.csv">Download Template</a>
+                        <a href="{% if preferences.SiteSetting.physico_chemical_upload_template %}{{ preferences.SiteSetting.physico_chemical_upload_template.url }}{% else %}{% static "data/physico_chemical_template.csv" %}{% endif %}"
+                           download>Download Template</a>
                     {% endblock %}
 
                     {% if not upload_sessions %}

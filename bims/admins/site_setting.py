@@ -186,6 +186,7 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "occurrence_upload_guidelines",
                 "occurrence_upload_template",
                 "water_temperature_upload_template",
+                "physico_chemical_upload_template",
                 "auto_validate_taxa_on_upload",
                 "invasion_label",
             ),
