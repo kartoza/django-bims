@@ -21,7 +21,7 @@ from bims.tests.model_factories import (
     LocationSiteF,
     TaxonomyF,
     TaxonGroupF, TaxonImageF,
-    SiteF
+    SiteF, SurveyF
 )
 from bims.api_views.location_site import (
     LocationSiteDetail,
@@ -68,18 +68,19 @@ class TestApiView(FastTenantTestCase):
             rank=TaxonomicRank.SPECIES.name,
             parent=self.taxonomy_class_1
         )
+        survey = SurveyF.create(
+            validated=True
+        )
         self.aves_collection_1 = BiologicalCollectionRecordF.create(
             original_species_name=u'Aves collection 1',
             site=self.location_site,
-            validated=True,
-            ready_for_validation=True,
+            survey=survey,
             taxonomy=self.taxonomy_1
         )
         self.aves_collection_2 = BiologicalCollectionRecordF.create(
             original_species_name=u'Aves collection 2',
             site=self.location_site,
-            validated=True,
-            ready_for_validation=True,
+            survey=survey,
             taxonomy=self.taxonomy_2
         )
 
@@ -217,15 +218,19 @@ class TestApiView(FastTenantTestCase):
             chart_data='conservation status',
         )
 
+        survey = SurveyF.create(
+            validated=True,
+        )
+
         bio1 = BiologicalCollectionRecordF.create(
             taxonomy=taxon_species_1,
-            validated=True,
+            survey=survey,
             site=self.location_site,
         )
 
         bio2 = BiologicalCollectionRecordF.create(
             taxonomy=taxon_species_1,
-            validated=True,
+            survey=survey,
             site=self.location_site,
         )
 
