@@ -198,6 +198,15 @@ class AbioticFormView(UserPassesTestMixin, TemplateView):
                 )
                 updated_record_ids.append(record.id)
                 record.value = float(chemical_record_value)
+                if created:
+                    bio_record = BiologicalCollectionRecord.objects.filter(
+                        survey=survey
+                    ).first()
+                    if bio_record:
+                        if not record.source_reference and bio_record.source_reference:
+                            record.source_reference = bio_record.source_reference
+                        if not record.custodian and bio_record.institution_id:
+                            record.custodian = bio_record.institution_id
                 record.save()
             except Chem.DoesNotExist:
                 continue

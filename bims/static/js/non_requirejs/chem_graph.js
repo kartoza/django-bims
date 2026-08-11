@@ -96,13 +96,21 @@ function getCsvName(title, identifier) {
 
 function onDownloadChemCSVClicked(e) {
     let downloadButton = $(e.target);
-    let csv_name = getCsvName('Chem data', downloadButton.data('identifier'));
     let currentUrl = window.location.href;
     let queryString = currentUrl ? currentUrl.split('?')[1] : window.location.search.slice(1);
-    let url = '/api/chemical-record/download/?' + queryString;
-    downloadButton.html("Processing...");
-    downloadButton.prop("disabled", true);
-    downloadCSV(url, downloadButton, csv_name);
+
+    showDownloadPopup('CSV', 'Physico-chemical Data', function (downloadRequestId) {
+        let url = '/api/chemical-record/download/?' + queryString;
+        url += '&downloadRequestId=' + downloadRequestId;
+        $.get({
+            url: url,
+            dataType: 'json',
+            success: function () {
+                $('#alertModalBody').html(downloadRequestMessage);
+                $('#alertModal').modal({'keyboard': false, 'backdrop': 'static'});
+            }
+        });
+    }, false);
 }
 
 function onDownloadChemChart(e) {
