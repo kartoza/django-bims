@@ -12,6 +12,7 @@ from geonode.people.models import Profile
 from bims.models import Chem, LocationSite, BaseMapLayer, ChemicalRecord, \
     Survey, SourceReference, physico_chemical_chart_data, SiteImage, \
     LocationContext
+from bims.models.biological_collection_record import BiologicalCollectionRecord
 from bims.templatetags import get_unvalidated_site_visits_url
 from bims.utils.get_key import get_key
 from sass.enums.chem_unit import ChemUnit
@@ -238,6 +239,18 @@ class PhysicoChemicalSiteView(TemplateView):
                 'source_reference').distinct(
                 'source_reference').source_references()
         )
+
+        if not source_references:
+            survey_ids = chems.values_list('survey_id', flat=True).distinct()
+            bio_records = BiologicalCollectionRecord.objects.filter(
+                survey_id__in=survey_ids
+            ).exclude(
+                source_reference__isnull=True
+            ).order_by(
+                'source_reference'
+            ).distinct('source_reference')
+            if bio_records.exists():
+                source_references = bio_records.source_references()
 
         ctx['chem_units'] = chems.annotate(
             code=F('chem__chem_code'),
