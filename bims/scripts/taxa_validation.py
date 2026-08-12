@@ -353,7 +353,7 @@ class TaxaValidator:
                 # Same name + rank but different authors: homonymy
                 other_rows = [r - 1 for r in rows_same_name_rank if r != row_number]
                 messages.append(
-                    f"WARNING: Homonymy detected — '{taxon_name}' ({taxon_rank}) appears with different author(s) "
+                    f"WARNING: Homonymy detected - '{taxon_name}' ({taxon_rank}) appears with different author(s) "
                     f"(also in row(s) {', '.join(map(str, other_rows))}). "
                     f"Verify that one is the accepted name and the other is a synonym."
                 )

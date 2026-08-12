@@ -90,8 +90,13 @@ def _bare_subgenus(subgenus_val: str, genus_name: str = '') -> str:
     # Strip surrounding parens first: "(Thraulus)" -> "Thraulus"
     name = name.strip('()')
     # Strip leading genus prefix: "Thraulus Thraulus" -> "Thraulus"
+    # But only when something remains afterwards — a nominotypical subgenus
+    # (subgenus name equal to the genus name, e.g. "Candona (Candona)") has
+    # nothing left after stripping and must keep its bare name as-is.
     if genus_name and name.lower().startswith(genus_name.lower()):
-        name = name[len(genus_name):].strip().strip('()')
+        remainder = name[len(genus_name):].strip().strip('()')
+        if remainder:
+            name = remainder
     return name
 
 
@@ -1094,10 +1099,14 @@ class TaxaProcessor(object):
                         taxa = taxa_with_subgenus
                     elif is_synonym:
                         # A synonym may share a canonical name with an accepted taxon
-                        # of a different subgenus. Prefer existing records that have
-                        # no subgenus set (previously imported synonyms lacking this
-                        # data) over wrongly matching a different-subgenus accepted taxon.
-                        taxa = taxa.filter(subgenus__isnull=True)
+                        # of a different subgenus. Only fall back to a subgenus-less
+                        # record if it is itself a previously imported synonym lacking
+                        # this data - never match onto an accepted taxon (a distinct
+                        # taxonomic concept) just because it has no subgenus set.
+                        taxa = taxa.filter(
+                            subgenus__isnull=True,
+                            taxonomic_status__iexact='SYNONYM',
+                        )
                     else:
                         taxa = taxa_with_subgenus  # empty — new taxon will be created
                 taxa_same_rank = taxa.filter(rank=_safe_upper(rank))
@@ -1116,13 +1125,22 @@ class TaxaProcessor(object):
                         csv_status and candidate_status and
                         candidate_status != csv_status
                     )
-                    if author_conflict or (csv_author and status_conflict and not candidate_author):
+                    candidate_fada_id = (candidate.fada_id or '').strip()
+                    csv_fada_id = (fada_id or '').strip()
+                    # FADA ID is a unique identifier: if both sides have one and they
+                    # differ, this is a different taxonomic concept (e.g. an accepted
+                    # taxon and its synonym sharing the same name), never the same taxon.
+                    fada_id_conflict = (
+                        csv_fada_id and candidate_fada_id and
+                        candidate_fada_id != csv_fada_id
+                    )
+                    if author_conflict or fada_id_conflict or (csv_author and status_conflict and not candidate_author):
                         logger.info(
                             'Homonymy at assignment: %r candidate has '
-                            'author=%r status=%r but CSV has author=%r '
-                            'status=%r — will create a new taxon.',
-                            taxon_name, candidate.author, candidate_status,
-                            authors, csv_status,
+                            'author=%r status=%r fada_id=%r but CSV has '
+                            'author=%r status=%r fada_id=%r - will create a new taxon.',
+                            taxon_name, candidate.author, candidate_status, candidate_fada_id,
+                            authors, csv_status, csv_fada_id,
                         )
                     else:
                         taxonomy = candidate
@@ -1401,12 +1419,20 @@ class TaxaProcessor(object):
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'species_group', species_group)
 
             if fada_id:
-                # fada_id is an identifier and must always be applied directly to
-                # the taxonomy, even when proposals are enabled and the taxon is
-                # not yet validated.
-                taxonomy.fada_id = fada_id
-                if use_proposal and proposal is not None:
-                    proposal.fada_id = fada_id
+                if taxonomy.fada_id and taxonomy.fada_id != fada_id and not new_taxon:
+                    # taxonomy is an existing, matched record with its own FADA ID.
+                    # Refuse to overwrite a differing identifier here - the matching
+                    # logic above should not have merged into this record if the
+                    # CSV row is really a different taxonomic concept.
+                    logger.warning(
+                        'Not overwriting fada_id %r on existing taxon %r with '
+                        'conflicting CSV fada_id %r.',
+                        taxonomy.fada_id, taxon_name, fada_id,
+                    )
+                else:
+                    taxonomy.fada_id = fada_id
+                    if use_proposal and proposal is not None:
+                        proposal.fada_id = fada_id
 
             if col_id:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'col_id', col_id)
