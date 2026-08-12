@@ -122,11 +122,11 @@
                                     <a class="dropdown-item export-coldp-btn" href="#"
                                        data-id="${v.id}">ColDP ZIP</a>
                                     <a class="dropdown-item checklist-dl-csv" href="#"
-                                       data-id="${v.id}">CSV Taxa List</a>
+                                       data-id="${v.id}">CSV Versioned Taxa List</a>
                                     <a class="dropdown-item checklist-dl-pdf" href="#"
-                                       data-id="${v.id}">PDF Checklist</a>
+                                       data-id="${v.id}">PDF Versioned Checklist</a>
                                     <a class="dropdown-item checklist-dl-pdf-family" href="#"
-                                       data-id="${v.id}">PDF Checklist by Family</a>
+                                       data-id="${v.id}">PDF Versioned Checklist by Family</a>
                                 </div>
                             </div>
                             ${canPublishGroup(v.taxon_group) ? `
@@ -653,9 +653,9 @@
         const versionId = $(e.currentTarget).data('id');
         let title;
         if (output === 'pdf') {
-            title = orderBy === 'family' ? 'PDF Checklist by Family' : 'PDF Checklist';
+            title = orderBy === 'family' ? 'PDF Versioned Checklist by Family' : 'PDF Versioned Checklist';
         } else {
-            title = orderBy === 'family' ? 'CSV Taxa List by Family' : 'CSV Taxa List';
+            title = orderBy === 'family' ? 'CSV Versioned Taxa List by Family' : 'CSV Versioned Taxa List';
         }
         showDownloadPopup(output.toUpperCase(), title, function (downloadRequestId) {
             let url = '/download-checklist-snapshot/?checklistVersion=' + versionId +

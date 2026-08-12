@@ -346,26 +346,14 @@ def download_checklist_snapshot(request):
     if not os.path.exists(path_folder):
         os.mkdir(path_folder)
 
-    if os.path.exists(path_file):
-        dr.processing = False
-        dr.request_file = path_file
-        dr.progress_updated_at = timezone.now()
-        dr.save(update_fields=['processing', 'request_file', 'progress_updated_at'])
-        send_csv_via_email(
-            user_id=request.user.id,
-            csv_file=path_file,
-            file_name=filename,
-            approved=True
-        )
-    else:
-        download_checklist_snapshot_task.delay(
-            version_id=str(version_id),
-            output_file=path_file,
-            filename=filename,
-            user_id=request.user.id,
-            output=output,
-            order_by=order_by,
-            download_request_id=download_request_id,
-        )
+    download_checklist_snapshot_task.delay(
+        version_id=str(version_id),
+        output_file=path_file,
+        filename=filename,
+        user_id=request.user.id,
+        output=output,
+        order_by=order_by,
+        download_request_id=download_request_id,
+    )
 
     return JsonResponse({'status': 'processing', 'filename': filename})
