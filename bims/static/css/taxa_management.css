@@ -11,12 +11,21 @@
 }
 
 .badge-taxonworks {
-    background-color: #342d25;
+    background-color: #413A32;
     color: #fff;
 }
 
 .badge-worms {
-    background-color: #256092;
+    background-color: #246092;
+    color: #fff;
+}
+
+.badge-iucn {
+    background-color: #D92A1C;
+    color: #fff;
+}
+.badge-gbif {
+    background-color: #4D9C2E;
     color: #fff;
 }
 
