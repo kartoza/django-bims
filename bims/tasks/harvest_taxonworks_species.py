@@ -90,6 +90,11 @@ def harvest_taxonworks_species(session_id: int, schema_name: str):
         total_processed = len(processed_ids)
         latest_updated_at = additional.get("source_version_latest_updated_at")
 
+        # Tracks the underlying Taxonomy rows already reported in this run
+        seen_taxonomy_ids: set[int] = set()
+        not_added_count = 0
+        duplicate_count = 0
+
         # Mutable caches shared with the processor across pages.
         # records_cache grows as pages are fetched; it also serves as the
         # parent-lookup cache when _ensure_taxonomy recurses up the tree.
@@ -157,22 +162,44 @@ def harvest_taxonworks_species(session_id: int, schema_name: str):
                     processed_ids.add(record_id)
                     continue
 
+                name = record.get("cached") or record.get("name", "")
                 try:
-                    processor.process(
+                    taxonomy = processor.process(
                         record,
                         session.module_group,
                         harvest_synonyms=session.harvest_synonyms,
                     )
                     processed_ids.add(record_id)
-                    total_processed += 1
+
+                    if taxonomy is None:
+                        not_added_count += 1
+                        _log(
+                            f"NOT added: {name} (id={record_id}) - "
+                            f"rank is missing/unrecognised or invalid, see "
+                            f"error above"
+                        )
+                        continue
+
                     updated_at = record.get("updated_at")
                     if updated_at and (
                         not latest_updated_at or updated_at > latest_updated_at
                     ):
                         latest_updated_at = updated_at
+
+                    if taxonomy.id in seen_taxonomy_ids:
+                        duplicate_count += 1
+                        _log(
+                            f"Already processed: {name} (id={record_id}) is "
+                            f"the same taxon as TaxonomyID={taxonomy.id} "
+                            f"({taxonomy.canonical_name}), not counted again"
+                        )
+                        continue
+
+                    seen_taxonomy_ids.add(taxonomy.id)
+                    total_processed += 1
                     _log(
                         f"[{total_processed}] Processed: "
-                        f"{record.get('cached') or record.get('name', '')} "
+                        f"{name} "
                         f"({(record.get('rank') or 'unknown rank').capitalize()}, "
                         f"id={record_id})"
                     )
@@ -211,16 +238,22 @@ def harvest_taxonworks_species(session_id: int, schema_name: str):
             "finished_at": finished_at,
         }
 
+        summary_suffix = (
+            f", {not_added_count} not added (unrecognised rank), "
+            f"{duplicate_count} duplicate record(s) skipped"
+            if (not_added_count or duplicate_count) else ""
+        )
+
         if not canceled:
-            _log(f"Harvest complete - {total_processed} taxa processed")
+            _log(f"Harvest complete - {total_processed} taxa processed{summary_suffix}")
             HarvestSession.objects.filter(id=session_id).update(
-                status=f"Finished ({total_processed} taxa)",
+                status=f"Finished ({total_processed} taxa{summary_suffix})",
                 finished=True,
                 additional_data=final_additional_data,
             )
         else:
             HarvestSession.objects.filter(id=session_id).update(
-                status=f"Canceled ({total_processed} taxa before cancel)",
+                status=f"Canceled ({total_processed} taxa before cancel{summary_suffix})",
                 additional_data=final_additional_data,
             )
 
