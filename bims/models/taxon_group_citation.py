@@ -45,19 +45,23 @@ class TaxonGroupCitation(models.Model):
     def __str__(self):
         return f"{self.taxon_group.name} — {self.year}"
 
-    def formatted_citation(self, access_date=None) -> str:
+    def formatted_citation(self, access_date=None, doi=None) -> str:
         """
         Example:
-        Doe J., Smith A. (2025). Ostracoda Checklist; Freshwater Animal Diversity Assessment (FADA). Accessed 2025-08-22.
+        Doe J., Smith A. (2025). Ostracoda Checklist; Freshwater Animal Diversity Assessment (FADA). Accessed 2025-08-22. https://doi.org/10.XXXX/YYYY
 
         access_date: the date to show as "Accessed". Defaults to today so that
         downloaded checklists always reflect the actual download date.
+        doi: optional DOI (URL) appended at the end of the citation.
         """
         import datetime
         if access_date is None:
             access_date = datetime.date.today()
         ad = access_date.isoformat() if access_date else ""
-        return f"{self.authors} ({self.year}). {self.citation_text}. Accessed {ad}."
+        citation = f"{self.authors} ({self.year}). {self.citation_text}. Accessed {ad}."
+        if doi:
+            citation = f"{citation} {doi}"
+        return citation
 
     def clean(self):
         from django.core.exceptions import ValidationError

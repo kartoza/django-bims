@@ -458,10 +458,13 @@ def _build_checklist_pdf_header(title, taxon_group, styles, subset_note='', doi=
     )
     if doi or citations.exists():
         paragraphs.append(Paragraph('To be cited as:', styles.heading))
-        if doi:
-            paragraphs.append(Paragraph(f'DOI: {doi}', styles.citation))
-        for c in citations:
-            paragraphs.append(Paragraph(c.formatted_citation(), styles.citation))
+        if citations.exists():
+            for c in citations:
+                paragraphs.append(
+                    Paragraph(c.formatted_citation(doi=doi), styles.citation)
+                )
+        elif doi:
+            paragraphs.append(Paragraph(doi, styles.citation))
         paragraphs.append(Spacer(1, 6))
 
     paragraphs.append(Paragraph(
@@ -471,12 +474,52 @@ def _build_checklist_pdf_header(title, taxon_group, styles, subset_note='', doi=
         paragraphs.append(Spacer(1, 6))
         paragraphs.append(Paragraph(
             'Biogeographic distribution: ANT = Antarctic, AT = Afrotropical, AU = '
-            'Australasian, NA = Nearctic, NT = Neotropical, '
+            'Australasian, NA = Nearctic, NT = Neotropical, ', styles.citation
+        ))
+        paragraphs.append(Paragraph(
             'OL = Oriental (Indomalaya), PA = Palaearctic, '
             'PAC = Pacific (Oceania)', styles.citation
         ))
     paragraphs.append(Spacer(1, 12))
     return paragraphs
+
+
+def _render_checklist_groups(groups, styles):
+    """Render normalized checklist groups into a list of PDF paragraphs.
+    """
+    paragraphs = []
+    for info in groups.values():
+        header = f"<i>{info['name']}</i>"
+        author = info.get('author') or ''
+        if author and author not in info['name']:
+            header += f" {author}"
+        paragraphs.append(Paragraph(header, styles.group))
+        paragraphs.append(Spacer(1, 10))
+
+        for sp in info['species']:
+            sp_line = f"<i>{sp['canonical_name']}</i>"
+            if sp.get('author'):
+                sp_line += f" {sp['author']}"
+            if sp.get('type_species'):
+                sp_line += " (Type species for genus)"
+            if sp.get('regions'):
+                sp_line += f": {' '.join(sp['regions'])}"
+            paragraphs.append(Paragraph(sp_line, styles.species))
+
+            for syn in sp.get('synonyms', []):
+                syn_line = f"= <i>{syn['canonical_name']}</i>"
+                if syn.get('author'):
+                    syn_line += f" {syn['author']}"
+                paragraphs.append(Paragraph(syn_line, styles.synonym))
+
+        paragraphs.append(Spacer(1, 10))
+    return paragraphs
+
+
+def _snapshot_display_name(row):
+    """Canonical name to display for a checklist snapshot row."""
+    taxon_name = canonical_with_subgenus(row.canonical_name, row.genus, row.subgenus)
+    return taxon_name or row.scientific_name or ''
 
 
 def process_download_pdf_taxa_list(
@@ -501,13 +544,13 @@ def process_download_pdf_taxa_list(
             f'{taxon_group.name} Checklist', taxon_group, st, subset_note=subset_note
         )
 
-        order_by_dict = {}
         species_qs = taxonomies.filter(
             rank__in=['SPECIES', 'SUBSPECIES']
         ).exclude(
             taxonomic_status__icontains='synonym'
         ).order_by('canonical_name')
 
+        groups = {}
         for s in species_qs:
             if order_by == 'family':
                 key = s.family.canonical_name if s.family else 'No Family'
@@ -519,47 +562,29 @@ def process_download_pdf_taxa_list(
                 key_id = s.genus.id if s.genus else None
             if not key:
                 continue
-            if key_id not in order_by_dict:
-                order_by_dict[key_id] = {
-                    'canonical_name': key,
+            if key_id not in groups:
+                groups[key_id] = {
+                    'name': key,
                     'author': key_author,
                     'species': []
                 }
-            order_by_dict[key_id]['species'].append(s)
+            groups[key_id]['species'].append({
+                'canonical_name': s.canonical_name,
+                'author': s.author or '',
+                'type_species': 'type species' in (s.additional_data or {}),
+                'regions': sorted(
+                    t.name for t in s.biographic_distributions.all()
+                ),
+                'synonyms': [
+                    {'canonical_name': syn.canonical_name, 'author': syn.author or ''}
+                    for syn in Taxonomy.objects.filter(accepted_taxonomy=s)
+                ],
+            })
 
-        order_by_dict = OrderedDict(
-            sorted(order_by_dict.items(), key=lambda item: item[1]['canonical_name']))
+        groups = OrderedDict(
+            sorted(groups.items(), key=lambda item: item[1]['name']))
 
-        for key_id, info in order_by_dict.items():
-            header_line = info['canonical_name']
-            header_author = ''
-            if info['author'] and info['author'] not in header_line:
-                header_author += f" {info['author']}"
-
-            paragraphs.append(Paragraph(f"<i>{header_line}</i>{header_author}", st.group))
-            paragraphs.append(Spacer(1, 10))
-
-            for s_obj in info['species']:
-                sp_line = f'<i>{s_obj.canonical_name}</i>'
-                if s_obj.author:
-                    sp_line += f" {s_obj.author}"
-                if "type species" in (s_obj.additional_data or {}):
-                    sp_line += " (Type species for genus)"
-                regions = sorted(
-                    t.name for t in s_obj.biographic_distributions.all()
-                )
-                if regions:
-                    sp_line += f': {", ".join(regions)}'
-                paragraphs.append(Paragraph(sp_line, st.species))
-
-                for syn in Taxonomy.objects.filter(accepted_taxonomy=s_obj):
-                    syn_lin = f'= <i>{syn.canonical_name}</i>'
-                    if syn.author:
-                        syn_lin += f" {syn.author}"
-                    paragraphs.append(Paragraph(syn_lin, st.synonym))
-
-            paragraphs.append(Spacer(1, 10))
-
+        paragraphs.extend(_render_checklist_groups(groups, st))
         return paragraphs
 
     taxon_group = TaxonGroup.objects.get(id=taxon_group_id)
@@ -699,7 +724,7 @@ def write_snapshot_pdf(snapshots, version, output_file, order_by=None):
     checklist_style = _get_checklist_pdf_styles()
 
     story = _build_checklist_pdf_header(
-        f'{version.taxon_group.name} v{version.version} Checklist',
+        f'{version.taxon_group.name} Checklist v{version.version}',
         version.taxon_group,
         checklist_style,
         doi=version.doi or '',
@@ -720,33 +745,24 @@ def write_snapshot_pdf(snapshots, version, output_file, order_by=None):
         key_name = (s.family if group_key == 'family' else s.genus) or ''
         if not key_name:
             continue
-        groups.setdefault(key_name, []).append(s)
+        group = groups.setdefault(
+            key_name, {'name': key_name, 'author': '', 'species': []}
+        )
+        group['species'].append({
+            'canonical_name': _snapshot_display_name(s),
+            'author': s.authorship or '',
+            'type_species': False,
+            'regions': sorted(
+                d['area'] for d in (s.distributions or []) if d.get('area')
+            ),
+            'synonyms': [
+                {'canonical_name': _snapshot_display_name(syn), 'author': syn.authorship or ''}
+                for syn in synonym_map.get(s.checklist_id, [])
+            ],
+        })
 
-    for group_name, species_list in OrderedDict(sorted(groups.items())).items():
-        story.append(Paragraph(f'<i>{group_name}</i>', checklist_style.group))
-        story.append(Spacer(1, 10))
-        for s in species_list:
-            taxon_name = canonical_with_subgenus(s.canonical_name, s.genus, s.subgenus)
-            sci_name = s.scientific_name or ''
-            if taxon_name and taxon_name not in sci_name:
-                sci_name = taxon_name
-            sp_line = f'<i>{sci_name}</i>'
-            if s.authorship:
-                sp_line += f' {s.authorship}'
-            regions = sorted(d['area'] for d in (s.distributions or []) if d.get('area'))
-            if regions:
-                sp_line += f': {" ".join(regions)}'
-            story.append(Paragraph(sp_line, checklist_style.species))
-            for syn in synonym_map.get(s.checklist_id, []):
-                syn_taxon = canonical_with_subgenus(syn.canonical_name, syn.genus, syn.subgenus)
-                syn_sci = syn.scientific_name or ''
-                if syn_taxon and syn_taxon not in syn_sci:
-                    syn_sci = syn_taxon
-                syn_line = f'= <i>{syn_sci}</i>'
-                if syn.authorship:
-                    syn_line += f' {syn.authorship}'
-                story.append(Paragraph(syn_line, checklist_style.synonym))
-        story.append(Spacer(1, 10))
+    groups = OrderedDict(sorted(groups.items()))
+    story.extend(_render_checklist_groups(groups, checklist_style))
 
     SimpleDocTemplate(
         output_file, pagesize=A4,
@@ -790,28 +806,26 @@ def write_snapshot_csv(snapshots, output_file, order_by=None, version=None):
         if version is not None:
             from bims.models import TaxonGroupCitation
             writer.writerow([])
-            title_text = f'{version.taxon_group.name} v{version.version} Checklist'
+            title_text = f'{version.taxon_group.name} Checklist v{version.version}'
             writer.writerow([title_text])
             generated_text = (
                 f"(generated {datetime.datetime.now().strftime('%a %b %d %H:%M:%S %Y')} "
                 f"from {get_current_domain()})"
             )
             writer.writerow([generated_text])
-            if version.doi:
-                writer.writerow([])
-                writer.writerow(['To be cited as:'])
-                writer.writerow([f'DOI: {version.doi}'])
             citations = (
                 TaxonGroupCitation.objects
                 .filter(taxon_group=version.taxon_group)
                 .order_by('-year', '-access_date', '-updated_at', '-created_at')
             )
-            if citations.exists():
-                if not version.doi:
-                    writer.writerow([])
-                    writer.writerow(['To be cited as:'])
-                for c in citations:
-                    writer.writerow([c.formatted_citation()])
+            if version.doi or citations.exists():
+                writer.writerow([])
+                writer.writerow(['To be cited as:'])
+                if citations.exists():
+                    for c in citations:
+                        writer.writerow([c.formatted_citation(doi=version.doi or None)])
+                elif version.doi:
+                    writer.writerow([version.doi])
 
 
 @shared_task(name='bims.tasks.download_checklist_snapshot', queue='update')
