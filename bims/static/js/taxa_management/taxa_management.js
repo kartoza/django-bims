@@ -579,10 +579,10 @@ export const taxaManagement = (() => {
                 const twBaseUrl = ((currentGroup && currentGroup.taxonworks_base_url) || '').replace(/\/+$/, '');
 
                 const gbifBadge = row.col_id
-                  ? ` <a href="https://www.gbif.org/taxon/${row.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>`
+                  ? ` <a href="https://www.gbif.org/taxon/${row.col_id}" target="_blank"><span class="badge badge-gbif">GBIF</span></a>`
                   : '';
                 const iucnBadge = row.iucn_url
-                  ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>`
+                  ? ` <a href="${row.iucn_url}" target="_blank"><span class="badge badge-iucn">IUCN</span></a>`
                   : '';
                 const wormsBadge = row.aphia_id
                   ? ` <a href="https://www.marinespecies.org/aphia.php?p=taxdetails&id=${row.aphia_id}" target="_blank"><span class="badge badge-worms">WoRMS</span></a>`
@@ -846,8 +846,8 @@ export const taxaManagement = (() => {
                             let name = data.canonical_name || data.scientific_name;
                             let taxonomicStatusHTML = (data.taxonomic_status && data.taxonomic_status.toLowerCase() === 'synonym') ?
                                 ` <span class="badge badge-info">Synonym</span>` : '';
-                            let gbifHTML = data.col_id ? ` <a href="https://www.gbif.org/taxon/${data.col_id}" target="_blank"><span class="badge badge-warning">GBIF</span></a>` : '';
-                            let iucnHTML = data.iucn_url ? ` <a href="${data.iucn_url}" target="_blank"><span class="badge badge-danger">IUCN</span></a>` : '';
+                            let gbifHTML = data.col_id ? ` <a href="https://www.gbif.org/taxon/${data.col_id}" target="_blank"><span class="badge badge-gbif">GBIF</span></a>` : '';
+                            let iucnHTML = data.iucn_url ? ` <a href="${data.iucn_url}" target="_blank"><span class="badge badge-iucn">IUCN</span></a>` : '';
                             let validatedHTML = !data.validated ? '<span class="badge badge-secondary">Unvalidated</span>' : '';
 
                             data.nameHTML = name + '<br/>' + gbifHTML + iucnHTML + validatedHTML + `<input type="hidden" class="proposal-id" value="${data.proposal_id}" />`;
