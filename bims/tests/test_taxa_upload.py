@@ -830,6 +830,85 @@ class TestSubgenusUpload(FastTenantTestCase):
         self.assertEqual(taxon_culex.subgenus, subgenus_a)
         self.assertEqual(taxon_neoculex.subgenus, subgenus_b)
 
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_accepted_and_synonym_same_name_different_fada_id_creates_separate_taxa(
+        self, mock_gbif, mock_finish
+    ):
+        """
+        A FADA-style checklist can list an accepted taxon and a synonym that
+        display the same bare name ("Candona burdurensis") but represent
+        different taxonomic concepts: different FADA IDs, different
+        Taxonomic Status, and different SubGenus placement. These must
+        become two distinct Taxonomy records, not one taxon plus a proposal
+        merged onto it.
+        """
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        taxon_group = TaxonGroupF.create()
+        processor = TaxaProcessor()
+
+        accepted_row = {
+            'Taxon Rank': 'Species',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Ostracoda',
+            'Order': 'Podocopida',
+            'Family': 'Candonidae',
+            'SubFamily': 'Candoninae',
+            'Genus': 'Candona',
+            'Species': 'burdurensis',
+            'Taxon': 'Candona burdurensis',
+            'Author(s)': 'Freels, 1980',
+            'Taxonomic status': 'Accepted',
+            'FADA ID': '500296',
+            'On GBIF': 'No',
+        }
+
+        synonym_row = {
+            'Taxon Rank': 'Species',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Ostracoda',
+            'Order': 'Podocopida',
+            'Genus': 'Candona',
+            'SubGenus': 'Candona',
+            'Species': 'burdurensis',
+            'Taxon': 'Candona burdurensis',
+            'Author(s)': 'Freels, 1980',
+            'Taxonomic status': 'Synonym',
+            'Accepted Taxon': 'Candona burdurensis',
+            'FADA ID': 'SYN-500229',
+            'On GBIF': 'No',
+        }
+
+        with mock.patch('bims.scripts.taxa_upload.preferences') as mock_prefs:
+            mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
+            processor.process_data(accepted_row, taxon_group)
+            processor.process_data(synonym_row, taxon_group)
+
+        matching_taxa = Taxonomy.objects.filter(
+            canonical_name__iexact='Candona burdurensis',
+            rank='SPECIES',
+        )
+        self.assertEqual(
+            matching_taxa.count(), 2,
+            'Expected two distinct Taxonomy records for "Candona burdurensis" '
+            f'(accepted + synonym), got {matching_taxa.count()}: '
+            f'{list(matching_taxa.values("pk", "fada_id", "taxonomic_status"))}'
+        )
+
+        accepted_taxon = matching_taxa.get(fada_id='500296')
+        synonym_taxon = matching_taxa.get(fada_id='SYN-500229')
+
+        self.assertNotEqual(accepted_taxon.pk, synonym_taxon.pk)
+        self.assertEqual(accepted_taxon.taxonomic_status, 'ACCEPTED')
+        self.assertEqual(synonym_taxon.taxonomic_status, 'SYNONYM')
+        self.assertIsNone(accepted_taxon.subgenus)
+        self.assertIsNotNone(synonym_taxon.subgenus)
+        self.assertEqual(synonym_taxon.subgenus.canonical_name, 'Candona (Candona)')
+
     def test_choose_taxon_display_name_formats_subgenus_as_genus_parenthetical(self):
         """
         _choose_taxon_display_name should return "Genus (SubgenusName)" when the
