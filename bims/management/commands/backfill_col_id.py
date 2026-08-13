@@ -188,6 +188,8 @@ class Command(BaseCommand):
             else:
                 self.stdout.write(f'  SKIPPED {label} (no COL match found)')
                 skipped += 1
+                taxon.col_id = col_id
+                taxon.save(update_fields=['col_id'])
 
             if delay:
                 time.sleep(delay)

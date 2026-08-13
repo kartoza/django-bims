@@ -151,6 +151,17 @@ def find_species(
     if 'usage' not in data:
         return None
 
+    usage = data.get('usage', {})
+
+    if data.get('diagnostics', {}).get('matchType', '') != 'EXACT':
+        if (usage.get('canonicalName', '') != original_species_name or
+            usage.get('name', '') != original_species_name):
+            return None
+
+    if rank:
+        if data.get('usage', {}).get('rank').upper() != rank.upper():
+            return None
+
     return data
 
 

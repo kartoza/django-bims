@@ -1812,11 +1812,6 @@ class TaxonomyAdmin(admin.ModelAdmin):
             label = obj.col_id
             return format_html(
                 '<a href="{}" target="_blank">{}</a>', link, label)
-        elif obj.gbif_key:
-            link = 'https://gbif.org/species/{}'.format(obj.gbif_key)
-            label = obj.gbif_key
-            return format_html(
-                '<a href="{}" target="_blank">{}</a>', link, label)
         else:
             return '-'
 

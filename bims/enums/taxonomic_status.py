@@ -11,6 +11,8 @@ class TaxonomicStatus(Enum):
     """
     ACCEPTED = 'Accepted'
 
+    PROVISIONALLY_ACCEPTED = 'Provisionally Accepted'
+
     # Treated as accepted, but doubtful whether this is correct.
     DOUBTFUL = 'Doubtful'
 
