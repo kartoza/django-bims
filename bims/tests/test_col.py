@@ -18,10 +18,13 @@ def _make_response(status_code=200, json_data=None, raises=None):
     return mock
 
 
-def _match_payload(usage_key='Q2M4', match_type='EXACT', canonical_name=None, **extra):
+def _match_payload(usage_key='Q2M4', match_type='EXACT', canonical_name=None,
+                    rank=None, **extra):
     payload = {'usage': {'key': usage_key}, 'matchType': match_type, **extra}
     if canonical_name is not None:
         payload['usage']['canonicalName'] = canonical_name
+    if rank is not None:
+        payload['usage']['rank'] = rank
     return payload
 
 
@@ -137,6 +140,59 @@ class ResolveColIdTest(TestCase):
         col_id, _ = resolve_col_id(1427067)
         self.assertEqual(col_id, 'Q2M4')
         mock_get.assert_called_once()
+
+    # --- rank validation (canonical name fallback) ---
+
+    @patch('bims.utils.col.requests.get')
+    def test_rank_match_returns_name_lookup_result(self, mock_get):
+        """When rank matches the API response, the name-lookup col_id is returned."""
+        mock_get.return_value = _make_response(
+            json_data=_match_payload('CRLT8', canonical_name='Felidae', rank='FAMILY')
+        )
+        col_id, _ = resolve_col_id(None, canonical_name='Felidae', rank='FAMILY')
+        self.assertEqual(col_id, 'CRLT8')
+
+    @patch('bims.utils.col.requests.get')
+    def test_rank_match_is_case_insensitive(self, mock_get):
+        """Rank comparison ignores case."""
+        mock_get.return_value = _make_response(
+            json_data=_match_payload('CRLT8', canonical_name='Felidae', rank='family')
+        )
+        col_id, _ = resolve_col_id(None, canonical_name='Felidae', rank='FAMILY')
+        self.assertEqual(col_id, 'CRLT8')
+
+    @patch('bims.utils.col.requests.get')
+    def test_rank_mismatch_discards_name_lookup_result(self, mock_get):
+        """When rank doesn't match the API response, the name-lookup match is discarded."""
+        mock_get.return_value = _make_response(
+            json_data=_match_payload('CRLT8', canonical_name='Felidae', rank='GENUS')
+        )
+        col_id, _ = resolve_col_id(None, canonical_name='Felidae', rank='SPECIES')
+        self.assertIsNone(col_id)
+
+    @patch('bims.utils.col.requests.get')
+    def test_no_rank_skips_rank_validation(self, mock_get):
+        """When rank is not provided, the name-lookup result is returned without validation."""
+        mock_get.return_value = _make_response(
+            json_data=_match_payload('CRLT8', canonical_name='Felidae', rank='GENUS')
+        )
+        col_id, _ = resolve_col_id(None, canonical_name='Felidae')
+        self.assertEqual(col_id, 'CRLT8')
+
+    @patch('bims.utils.col.requests.get')
+    def test_rank_mismatch_after_gbif_key_fallback(self, mock_get):
+        """Rank validation also applies to the name lookup reached via gbif_key fallback."""
+        gbif_response = _make_response(
+            json_data=_match_payload('Q2M4', canonical_name='Canidae')
+        )
+        name_response = _make_response(
+            json_data=_match_payload('CRLT8', canonical_name='Felidae', rank='GENUS')
+        )
+        mock_get.side_effect = [gbif_response, name_response]
+
+        col_id, _ = resolve_col_id(1427067, canonical_name='Felidae', rank='SPECIES')
+        self.assertIsNone(col_id)
+        self.assertEqual(mock_get.call_count, 2)
 
     # --- no match ---
 

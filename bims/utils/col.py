@@ -47,7 +47,7 @@ def _call_match_api(params, label=''):
     return str(col_id), payload
 
 
-def resolve_col_id(gbif_key, canonical_name=''):
+def resolve_col_id(gbif_key, canonical_name='', rank=None):
     """
     Resolve a taxon to its COL XR identifier.
 
@@ -56,6 +56,10 @@ def resolve_col_id(gbif_key, canonical_name=''):
        If canonical_name is also provided, verify that payload["usage"]["canonicalName"]
        matches it (case-insensitive). A mismatch discards the result and falls through.
     2. If no col_id yet and canonical_name is provided, query by scientificName=canonical_name.
+       Because a bare name search can match a different rank (e.g. a genus name
+       colliding with a species epithet), if *rank* is also provided the result is
+       verified against payload["usage"]["rank"] (case-insensitive). A mismatch
+       discards the result.
 
     Returns (col_id, payload) where col_id is a str and payload is the full API
     response dict from whichever lookup succeeded. Returns (None, None) on no match,
@@ -64,6 +68,8 @@ def resolve_col_id(gbif_key, canonical_name=''):
     :param gbif_key: int or str or None - legacy GBIF backbone taxon key
     :param canonical_name: str - canonical name (without author) used for validation
                            and as scientificName fallback
+    :param rank: str or None - expected taxon rank (e.g. "SPECIES"), used to
+                validate name-based matches
     :return: (col_id: str | None, payload: dict | None)
     """
     if not gbif_key and not canonical_name:
@@ -94,5 +100,14 @@ def resolve_col_id(gbif_key, canonical_name=''):
             'scientificName': canonical_name,
         }
         col_id, payload = _call_match_api(params, label=f'name {canonical_name!r}')
+        if col_id and rank:
+            rank_from_api = payload.get('usage', {}).get('rank') or ''
+            if rank_from_api.strip().lower() != rank.strip().lower():
+                logger.info(
+                    'COL resolver: rank mismatch for name %r '
+                    '(api=%r, expected=%r), discarding match',
+                    canonical_name, rank_from_api, rank,
+                )
+                col_id = None
 
     return col_id, payload
