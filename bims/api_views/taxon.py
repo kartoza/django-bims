@@ -1166,6 +1166,36 @@ class IUCNStatusFetchView(APIView):
             status=status.HTTP_404_NOT_FOUND)
 
 
+class COLSearchView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        taxonomy_id = self.kwargs.get('pk')
+
+        if not taxonomy_id:
+            return Response(
+                {"detail": "Missing taxon_id"},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        taxon = get_object_or_404(Taxonomy, id=taxonomy_id)
+
+        if not taxon.scientific_name:
+            return Response(
+                {"detail": "Taxon has no scientific name"},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        results = species_search(
+            {'limit': 20, 'q': taxon.scientific_name}
+        )
+
+        if not results:
+            return Response(
+                {"detail": "Not found"},
+                status=status.HTTP_404_NOT_FOUND)
+
+        return Response(results)
+
+
 class TaxonTreeJsonView(APIView):
     permission_classes = [IsAuthenticated]
 

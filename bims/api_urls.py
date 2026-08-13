@@ -50,7 +50,7 @@ from bims.api_views.taxon import (
     TaxaGroupSummary,
     TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
     HarvestIUCNStatus, ApproveTaxonGroupProposalsView, ClearTaxaNotAssociatedInTaxonGroup,
-    ClearGbifDeletedOccurrences
+    ClearGbifDeletedOccurrences, COLSearchView
 )
 from bims.api_views.dataset import DatasetAutocompleteAPIView
 from bims.api_views.cluster import ClusterList
@@ -474,6 +474,9 @@ urlpatterns = [
     path('taxonomy-iucn-status/<int:pk>/',
          IUCNStatusFetchView.as_view(),
          name='taxonomy-iucn-status'),
+    path('taxonomy-col-search/<int:pk>/',
+         COLSearchView.as_view(),
+         name='taxonomy-col-search'),
     path('wetland-data/<str:lon>/<str:lat>/',
          WetlandDataApiView.as_view(),
          name='wetland-data'),
