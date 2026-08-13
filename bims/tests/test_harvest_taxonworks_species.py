@@ -7,6 +7,8 @@ from django_tenants.test.cases import FastTenantTestCase
 
 from bims.models import Taxonomy
 from bims.models.harvest_session import HarvestSession
+from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
+from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.scripts.taxa_upload_taxonworks import TaxonWorksTaxaProcessor
 from bims.tasks.harvest_taxonworks_species import harvest_taxonworks_species
 from bims.tests.model_factories import TaxonGroupF, UserF
@@ -225,6 +227,40 @@ class TestHarvestTaxonWorksSpeciesTask(FastTenantTestCase):
         taxon = Taxonomy.objects.get(canonical_name='Animalia', rank='KINGDOM')
         self.assertEqual(taxon.additional_data['_taxonworks_taxon_name_id'], 909335)
         self.assertTrue(Taxonomy.objects.filter(canonical_name='Osmylites', rank='GENUS').exists())
+
+    # ------------------------------------------------------------------
+    # Not auto-validated: harvested taxa are unvalidated and get a
+    # pending TaxonomyUpdateProposal for review, instead of being
+    # silently added as validated.
+    # ------------------------------------------------------------------
+
+    @mock.patch(_PATCH_PREFS)
+    @mock.patch(_PATCH_SLEEP, return_value=None)
+    @mock.patch(_PATCH_HTTP_GET)
+    @mock.patch(_PATCH_CONNECT)
+    @mock.patch(_PATCH_DISCONNECT)
+    def test_not_auto_validated_creates_proposal(
+        self, mock_dis, mock_con, mock_http_get, mock_sleep, mock_prefs
+    ):
+        mock_prefs.SiteSetting.auto_validate_taxa_on_upload = False
+        mock_http_get.side_effect = self._mock_http_get([self.SAMPLE_PAGE_1])
+
+        session = self._make_session()
+        harvest_taxonworks_species(session.id, schema_name=self.schema_name)
+
+        taxon = Taxonomy.objects.get(canonical_name='Osmylites', rank='GENUS')
+
+        tgt = TaxonGroupTaxonomy.objects.get(
+            taxonomy=taxon, taxongroup=self.taxon_group
+        )
+        self.assertFalse(tgt.is_validated)
+
+        proposal = TaxonomyUpdateProposal.objects.get(
+            original_taxonomy=taxon,
+            taxon_group=self.taxon_group,
+            status='pending',
+        )
+        self.assertEqual(proposal.canonical_name, 'Osmylites')
 
     # ------------------------------------------------------------------
     # Extinct taxa are skipped; valid taxa are created

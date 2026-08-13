@@ -6,6 +6,7 @@ import logging
 from django.db import transaction
 from preferences import preferences
 
+from bims.api_views.taxon_update import create_taxon_proposal
 from bims.models import Taxonomy
 from bims.scripts.taxa_upload import TaxaProcessor
 from bims.utils.fetch_gbif import harvest_synonyms_for_accepted_taxonomy
@@ -46,6 +47,14 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
         pass
 
     def _infer_rank(self, record: dict) -> str | None:
+        # Without a `name` (the record's own name element) there is no
+        # structured signal to infer a rank from - guessing purely from the
+        # word count of the cached display string is unreliable (e.g. a
+        # trinomial isn't necessarily a SUBSPECIES). Treat these as unknown
+        # rank rather than silently minting one.
+        if not record.get("name"):
+            return None
+
         cached = (record.get("cached") or "").strip()
         if not cached:
             return None
@@ -404,7 +413,12 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
             return None
 
         auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
-        self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=auto_validate)
+        use_proposal = not auto_validate
+        self.add_taxon_to_taxon_group(
+            taxonomy, taxon_group, validated=auto_validate, use_proposal=use_proposal
+        )
+        if use_proposal:
+            create_taxon_proposal(taxonomy, taxon_group)
 
         if harvest_synonyms and taxonomy.taxonomic_status == "ACCEPTED":
             try:
@@ -415,8 +429,11 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
                 ) or []
                 for syn in syn_taxa:
                     self.add_taxon_to_taxon_group(
-                        syn, taxon_group, validated=auto_validate
+                        syn, taxon_group, validated=auto_validate,
+                        use_proposal=use_proposal,
                     )
+                    if use_proposal:
+                        create_taxon_proposal(syn, taxon_group)
             except Exception as syn_exc:
                 logger.exception(
                     "Error harvesting synonyms for %s: %s",
