@@ -11,7 +11,6 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.utils.timezone import localtime
 from django.db import connection
-from django_tenants.utils import schema_context, get_public_schema_name
 from rangefilter.filters import DateRangeFilterBuilder
 from preferences.admin import PreferencesAdmin
 from preferences import preferences
@@ -21,7 +20,6 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.contrib import admin as django_admin
-from django.contrib import messages
 from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import Permission
@@ -41,9 +39,6 @@ from taggit.models import Tag
 
 from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
-import bims.admin_site
-import bims.admins.gbif_admin
-import bims.admins.licence
 from bims.api_views.taxon_update import create_taxon_proposal
 from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
@@ -156,7 +151,6 @@ from bims.models.taxonomy import TaxonTag
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile, Role
-from bims.utils.gbif import suggest_search
 from bims.utils.col import resolve_col_id
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
@@ -1286,6 +1280,7 @@ class TaxonomyAdminForm(forms.ModelForm):
         widgets = {
             'gbif_data': JSONEditorWidget,
             'additional_data': JSONEditorWidget,
+            'col_id': forms.TextInput(attrs={'style': 'width: 100px;'}),
         }
         exclude = (
             'reliability_of_sources',
@@ -1814,23 +1809,6 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 '<a href="{}" target="_blank">{}</a>', link, label)
         else:
             return '-'
-
-    def change_view(self, request, object_id, form_url='', extra_context=None):
-        extra_context = extra_context or {}
-        scientific_name = Taxonomy.objects.get(pk=object_id).scientific_name
-
-        if scientific_name is None:
-            extra_context['results'] = None
-            return super().change_view(
-                request, object_id, form_url, extra_context=extra_context,
-            )
-        name = Taxonomy.objects.get(pk=object_id).scientific_name
-        parameter = {'limit': 20, 'q': name}
-        results = suggest_search(parameter)
-        extra_context['results'] = json.dumps(results)
-        return super().change_view(
-            request, object_id, form_url, extra_context=extra_context,
-        )
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related('tags')
