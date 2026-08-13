@@ -965,7 +965,7 @@ class Taxonomy(AbstractTaxonomy):
             from bims.utils.fetch_gbif import fetch_all_species_from_gbif
             fetch_all_species_from_gbif(
                 species=self.scientific_name,
-                gbif_key=self.gbif_key,
+                col_id=self.col_id,
                 fetch_vernacular_names=True)
 
     def get_experts_email(self, taxon_group, max_depth=10):

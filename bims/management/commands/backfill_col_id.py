@@ -55,6 +55,16 @@ class Command(BaseCommand):
             default=0.0,
             help='Seconds to sleep between API calls to avoid rate limiting (default: 0).',
         )
+        parser.add_argument(
+            '--override',
+            dest='override',
+            action='store_true',
+            default=False,
+            help=(
+                'Re-resolve every taxon with a name/gbif_key, including those that '
+                'already have a col_id, instead of only ones missing it.'
+            ),
+        )
 
     def handle(self, *args, **options):
         tenant = options.get('tenant')
@@ -107,12 +117,14 @@ class Command(BaseCommand):
     def _backfill(self, options):
         chunk_size = options.get('chunk_size', 200)
         delay = options.get('delay', 0.0)
+        override = options.get('override', False)
 
         qs = Taxonomy.objects.filter(
-            Q(col_id__isnull=True) | Q(col_id='')
-        ).filter(
             Q(gbif_key__isnull=False) | ~Q(canonical_name='')
-        ).order_by('id')
+        )
+        if not override:
+            qs = qs.filter(Q(col_id__isnull=True) | Q(col_id=''))
+        qs = qs.order_by('id')
 
         total = qs.count()
         if not total:
@@ -121,9 +133,16 @@ class Command(BaseCommand):
             )
             return
 
-        self.stdout.write(f'Found {total} taxa missing col_id. Starting backfill...\n')
+        if override:
+            self.stdout.write(
+                f'Found {total} taxa with a name/gbif_key. '
+                f'Re-resolving all (override) col_id...\n'
+            )
+        else:
+            self.stdout.write(f'Found {total} taxa missing col_id. Starting backfill...\n')
 
         updated = 0
+        unchanged = 0
         skipped = 0
         errors = 0
         processed = 0
@@ -132,13 +151,14 @@ class Command(BaseCommand):
             processed += 1
             label = (
                 f'[{processed}/{total}] id={taxon.id} '
-                f'"{taxon.canonical_name}" (gbif_key={taxon.gbif_key})'
+                f'"{taxon.canonical_name}" ({taxon.rank}, gbif_key={taxon.gbif_key})'
             )
 
             try:
                 col_id, _ = resolve_col_id(
                     taxon.gbif_key,
                     taxon.canonical_name or '',
+                    rank=taxon.rank or None,
                 )
             except Exception as exc:
                 self.stderr.write(f'  ERROR {label}: {exc}')
@@ -147,23 +167,36 @@ class Command(BaseCommand):
                 continue
 
             if col_id:
-                taxon.col_id = col_id
-                taxon.save(update_fields=['col_id'])
-                self.stdout.write(
-                    self.style.SUCCESS(f'  UPDATED {label} -> col_id={col_id}')
-                )
-                updated += 1
+                if override and taxon.col_id == col_id:
+                    self.stdout.write(f'  UNCHANGED {label} -> col_id={col_id}')
+                    unchanged += 1
+                else:
+                    previous = taxon.col_id
+                    taxon.col_id = col_id
+                    taxon.save(update_fields=['col_id'])
+                    if override and previous:
+                        self.stdout.write(
+                            self.style.SUCCESS(
+                                f'  UPDATED {label} -> col_id={col_id} (was {previous})'
+                            )
+                        )
+                    else:
+                        self.stdout.write(
+                            self.style.SUCCESS(f'  UPDATED {label} -> col_id={col_id}')
+                        )
+                    updated += 1
             else:
                 self.stdout.write(f'  SKIPPED {label} (no COL match found)')
                 skipped += 1
+                taxon.col_id = col_id
+                taxon.save(update_fields=['col_id'])
 
             if delay:
                 time.sleep(delay)
 
         self.stdout.write('\n' + '-' * 60)
-        self.stdout.write(
-            self.style.SUCCESS(
-                f'Backfill complete. '
-                f'total={total}, updated={updated}, skipped={skipped}, errors={errors}'
-            )
-        )
+        summary = f'total={total}, updated={updated}'
+        if override:
+            summary += f', unchanged={unchanged}'
+        summary += f', skipped={skipped}, errors={errors}'
+        self.stdout.write(self.style.SUCCESS(f'Backfill complete. {summary}'))

@@ -512,8 +512,12 @@ def fetch_all_species_from_gbif(
                 (species_data.get('usage') or {}).get('canonicalName') or
                 species_data.get('canonicalName') or ''
             ).strip().lower()
+            col_name = (
+                (species_data.get('usage') or {}).get('name') or
+                species_data.get('name') or ''
+            ).strip().lower()
             input_name = species.strip().lower()
-            if col_canonical and input_name and col_canonical != input_name:
+            if col_canonical and input_name and col_canonical != input_name and col_name != input_name:
                 log_info(
                     f"COL name mismatch: input '{species}' does not match "
                     f"COL canonical name '{col_canonical}' - skipping"
