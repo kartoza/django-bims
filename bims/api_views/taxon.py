@@ -212,6 +212,23 @@ class FindTaxon(APIView):
         )
         return taxon_group, phylum_keys
 
+    @staticmethod
+    def _get_taxon_group_kingdom(taxon_group):
+        """
+        Kingdom name for the taxon group's scope, inferred from its
+        `gbif_parent_species` (the root taxon used to fetch/scope species
+        for this module), so taxon search can be narrowed to the right
+        kingdom without requiring the user to specify one.
+        """
+        if not taxon_group:
+            return None
+        if taxon_group.gbif_parent_species:
+            return taxon_group.gbif_parent_species.kingdom_name
+        taxon = taxon_group.taxonomies.first()
+        if taxon:
+            return taxon.kingdom_name
+        return None
+
     def get(self, request, *args, **kwargs):
         taxon_list = []
         seen_keys = set()
@@ -226,6 +243,9 @@ class FindTaxon(APIView):
             taxon_group_name=taxon_group_name,
             taxon_group_id=taxon_group_id
         )
+        taxon_group_kingdom = self._get_taxon_group_kingdom(taxon_group)
+        if taxon_group_kingdom:
+            query_dict['kingdom'] = taxon_group_kingdom
 
         if 'limit' not in query_dict:
             query_dict['limit'] = self.limit_default
@@ -246,6 +266,9 @@ class FindTaxon(APIView):
                 continue
 
             seen_keys.add(key)
+
+            if taxon_group_kingdom and gbif.get('kingdom', '').lower() != taxon_group_kingdom.lower():
+                continue
 
             taxa_qs = Taxonomy.objects.filter(col_id=col_id)
             stored_local = taxa_qs.exists()

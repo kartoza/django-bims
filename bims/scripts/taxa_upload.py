@@ -1283,14 +1283,16 @@ class TaxaProcessor(object):
                 taxonomy.parent = parent
 
             if on_gbif and taxonomy and not _safe_strip(getattr(taxonomy, 'author', '')):
+                csv_kingdom = _safe_strip(self.get_row_value(row, KINGDOM))
                 refreshed = fetch_all_species_from_gbif(
                     species=taxon_name,
                     taxonomic_rank=rank,
                     fetch_children=False,
                     fetch_vernacular_names=should_fetch_vernacular_names,
-                    use_name_lookup=False,
+                    use_name_lookup=bool(csv_kingdom),
                     is_synonym=is_synonym,
                     preserve_taxonomic_status=is_fada_site(),
+                    **({'kingdom': csv_kingdom} if csv_kingdom else {})
                 )
                 taxonomy = refreshed or taxonomy
 

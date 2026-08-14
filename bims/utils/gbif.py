@@ -132,6 +132,9 @@ def find_species(
     if rank:
         params['rank'] = rank.upper()
 
+    if classifier and isinstance(classifier, dict):
+        params.update(classifier)
+
     try:
         response = requests.get(
             f'{GBIF_API_V2}/species/match', params=params, timeout=10)
@@ -450,6 +453,7 @@ def gbif_name_suggest(**kwargs):
     """COL-based name suggest using the GBIF v2 species/match endpoint."""
     name = kwargs.get('q', '')
     rank = kwargs.get('rank', None)
+    kingdom = kwargs.get('kingdom', None)
 
     params = {
         'checklistKey': COL_CHECKLIST_KEY,
@@ -457,6 +461,9 @@ def gbif_name_suggest(**kwargs):
     }
     if rank:
         params['rank'] = rank.upper()
+
+    if kingdom:
+        params['kingdom'] = kingdom
 
     try:
         response = requests.get(
