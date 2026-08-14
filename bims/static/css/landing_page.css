@@ -599,6 +599,14 @@ html, body {
     image-rendering: crisp-edges;
 }
 
+.meta-organism-icon {
+    width: 100px !important;
+    height: auto;
+    position: absolute;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+}
+
 .module-name {
     margin-top: 15px;
     color: #525351;

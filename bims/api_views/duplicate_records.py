@@ -1,9 +1,5 @@
 import logging
-import os
-import errno
-from datetime import datetime
-from django.conf import settings
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from rest_framework.views import APIView
 from bims.tasks.duplicate_records import download_duplicated_records_to_csv
 from bims.helpers.get_duplicates import get_duplicate_records
@@ -12,49 +8,45 @@ logger = logging.getLogger('bims')
 
 
 class DuplicateRecordsApiView(APIView):
-    """ Get Duplicate Records"""
+    """Queue a download request for duplicate records.
 
-    def get(self, request, *args):
+    Instead of returning the CSV directly, this creates a ``DownloadRequest``
+    and queues a background task that writes the file and attaches it to the
+    request. Admins can then track the progress and download the file from the
+    Download Requests page.
+    """
 
-        response = HttpResponse(content_type='text/csv')
-        response['Content-Disposition'] = 'attachment; filename="download.csv"'
+    def post(self, request, *args):
+        from django.contrib.sites.models import Site
+        from bims.models.download_request import DownloadRequest
 
-        duplicated_values = get_duplicate_records()
-
-        if not duplicated_values:
+        user = request.user
+        if not user.is_authenticated or not (
+                user.is_staff or user.is_superuser):
             return JsonResponse({
                 'status': 'failed',
-                'message': 'Data is empty'
-            })
+                'message': 'You do not have permission to perform this action.'
+            }, status=403)
 
-        filename = 'duplicate_records_{}.csv'.format(
-            datetime.now().date()
-        )
-
-        # Check if filename exists
-        path_folder = os.path.join(settings.MEDIA_ROOT,
-                                   settings.PROCESSED_CSV_PATH)
-        path_file = os.path.join(path_folder, filename)
-
-        try:
-            os.mkdir(path_folder)
-        except OSError as exc:
-            if exc.errno != errno.EEXIST:
-                raise
-            pass
-
-        if duplicated_values.count() > 1:
-            download_duplicated_records_to_csv.delay(
-                path_file,
-                self.request.user.email
-            )
-        else:
+        if not get_duplicate_records().exists():
             return JsonResponse({
                 'status': 'failed',
                 'message': 'No duplicated records'
             })
 
+        download_request = DownloadRequest.objects.create(
+            requester=user,
+            resource_name='Duplicate Records',
+            resource_type=DownloadRequest.CSV,
+            request_category='Duplicate Records',
+            processing=True,
+            approved=True,
+            source_site=Site.objects.get_current(),
+        )
+
+        download_duplicated_records_to_csv.delay(download_request.id)
+
         return JsonResponse({
             'status': 'processing',
-            'filename': filename
+            'download_request_id': download_request.id
         })

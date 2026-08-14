@@ -55,7 +55,7 @@ def autocomplete(request):
     suggestions = list(
         taxa.filter(
             canonical_name__icontains=q,
-            biologicalcollectionrecord__validated=True,
+            biologicalcollectionrecord__survey__validated=True,
             **taxonomy_additional_filters
         ).distinct('id').
         annotate(
@@ -237,6 +237,7 @@ def species_autocomplete(request):
     exclude_list = filter(None, exclude_list)
     taxon_group_request = request.GET.get('taxonGroup', '')
     taxon_group_id = request.GET.get('taxonGroupId', '')
+    parent_id = request.GET.get('parentId', '')
     taxon_group_species = None
 
     optional_query = {}
@@ -265,6 +266,12 @@ def species_autocomplete(request):
                 Q(scientific_name__icontains=q)
             )
         except TaxonGroup.DoesNotExist:
+            pass
+
+    if parent_id:
+        try:
+            taxa_list = taxa_list.filter(parent_id=int(parent_id))
+        except (ValueError, TypeError):
             pass
 
     if rank:

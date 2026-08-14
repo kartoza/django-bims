@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
 from django.forms import model_to_dict
 from django.http import Http404, JsonResponse
-from django.db.models import Count, Case, Value, When, F, CharField, Prefetch, Q
+from django.db.models import Count, Case, Value, When, F, CharField, Q
 from django.contrib.auth.mixins import LoginRequiredMixin
 from rest_framework import status
 from rest_framework.generics import UpdateAPIView, get_object_or_404
@@ -23,7 +23,7 @@ from taggit.models import Tag
 
 from bims.api_views.merge_sites import IsSuperUser
 from bims.api_views.taxon_update import is_expert, is_contributor
-from bims.models.taxonomy import Taxonomy, TaxonTag, CustomTaggedTaxonomy
+from bims.models.taxonomy import Taxonomy, TaxonTag
 from bims.serializers.taxon_detail_serializer import TaxonDetailSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.models.biological_collection_record import (
@@ -31,7 +31,9 @@ from bims.models.biological_collection_record import (
 )
 from bims.models import TaxonGroup, VernacularName, TaxonGroupTaxonomy
 from bims.enums.taxonomic_rank import TaxonomicRank
-from bims.utils.gbif import suggest_search, update_taxonomy_from_gbif, get_vernacular_names
+from bims.utils.gbif import suggest_search, get_vernacular_names, species_search
+from bims.utils.fetch_gbif import fetch_all_species_from_gbif
+from bims.utils.col import resolve_col_id
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
@@ -210,6 +212,23 @@ class FindTaxon(APIView):
         )
         return taxon_group, phylum_keys
 
+    @staticmethod
+    def _get_taxon_group_kingdom(taxon_group):
+        """
+        Kingdom name for the taxon group's scope, inferred from its
+        `gbif_parent_species` (the root taxon used to fetch/scope species
+        for this module), so taxon search can be narrowed to the right
+        kingdom without requiring the user to specify one.
+        """
+        if not taxon_group:
+            return None
+        if taxon_group.gbif_parent_species:
+            return taxon_group.gbif_parent_species.kingdom_name
+        taxon = taxon_group.taxonomies.first()
+        if taxon:
+            return taxon.kingdom_name
+        return None
+
     def get(self, request, *args, **kwargs):
         taxon_list = []
         seen_keys = set()
@@ -224,11 +243,14 @@ class FindTaxon(APIView):
             taxon_group_name=taxon_group_name,
             taxon_group_id=taxon_group_id
         )
+        taxon_group_kingdom = self._get_taxon_group_kingdom(taxon_group)
+        if taxon_group_kingdom:
+            query_dict['kingdom'] = taxon_group_kingdom
 
         if 'limit' not in query_dict:
             query_dict['limit'] = self.limit_default
 
-        gbif_response = suggest_search(query_dict) or []
+        gbif_response = species_search(query_dict) or []
 
         for gbif in gbif_response:
             key = gbif.get('key')
@@ -239,19 +261,26 @@ class FindTaxon(APIView):
             if phylum_keys and phylum_key not in phylum_keys:
                 continue
 
+            col_id = gbif.get('taxonID', None)
+            if not col_id:
+                continue
+
             seen_keys.add(key)
 
-            taxa_qs = Taxonomy.objects.filter(gbif_key=key)
+            if taxon_group_kingdom and gbif.get('kingdom', '').lower() != taxon_group_kingdom.lower():
+                continue
+
+            taxa_qs = Taxonomy.objects.filter(col_id=col_id)
             stored_local = taxa_qs.exists()
             taxa_id = None
             validated = False
             taxon_group_ids = []
-            status = gbif.get('status', '')
+            taxon_status = gbif.get('taxonomicStatus', '')
 
             if stored_local:
                 taxon = taxa_qs.first()
                 taxa_id = taxon.id
-                status = taxon.taxonomic_status
+                taxon_status = taxon.taxonomic_status
 
                 taxon_group_ids = list(
                     taxon.taxongrouptaxonomy_set.values_list('taxongroup_id', flat=True)
@@ -269,19 +298,19 @@ class FindTaxon(APIView):
                         is_validated=True
                     ).exists()
 
-            canonical_name = gbif.get('canonicalName') or gbif.get('scientificName', '')
+            canonical_name = gbif.get('canonicalName')
 
             taxon_list.append({
                 self.scientific_name: gbif.get('scientificName', ''),
                 self.canonical_name: canonical_name,
                 self.rank: gbif.get('rank', ''),
-                self.key: key,
+                self.key: col_id,
                 self.taxa_id: taxa_id or '',
                 self.source: 'gbif',
                 self.stored_local: stored_local,
                 self.validated: validated,
                 self.taxon_group_ids: taxon_group_ids,
-                self.status: status,
+                self.status: taxon_status,
             })
 
         if not taxon_list and taxon_name:
@@ -310,8 +339,8 @@ class FindTaxon(APIView):
                     self.scientific_name: taxon.scientific_name,
                     self.canonical_name: taxon.canonical_name,
                     self.rank: taxon.rank,
-                    self.key: taxon.gbif_key,
-                    self.source: 'local' if not taxon.gbif_key else 'gbif',
+                    self.key: taxon.col_id,
+                    self.source: 'local' if not taxon.col_id else 'gbif',
                     self.stored_local: True,
                     self.taxa_id: taxon.id,
                     self.validated: validated,
@@ -349,6 +378,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
             'taxon_name': '',
         }
         taxonomy = None
+        col_id = self.request.POST.get('colId', None)
         gbif_key = self.request.POST.get('gbifKey', None)
         taxon_name = self.request.POST.get('taxonName', None)
         taxon_group = self.request.POST.get('taxonGroup', None)
@@ -357,6 +387,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         rank = self.request.POST.get('rank', None)
         family_id = self.request.POST.get('familyId', None)
         accepted_taxonomy_id = self.request.POST.get('acceptedTaxonomyId', None)
+        subgenus_id = self.request.POST.get('subgenusId', None)
         taxonomic_status = (self.request.POST.get('taxonomicStatus') or '').strip().upper()
         is_synonym = 'SYNONYM' in taxonomic_status
         parent = None
@@ -367,11 +398,19 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
         if parent_id:
             parent = Taxonomy.objects.get(id=int(parent_id))
 
-        if gbif_key:
-            taxonomy = update_taxonomy_from_gbif(
-                key=gbif_key,
-                fetch_parent=not is_synonym,
-                get_vernacular=not is_synonym
+        if not col_id and gbif_key:
+            col_id, _ = resolve_col_id(gbif_key, canonical_name=taxon_name or '')
+            if not col_id:
+                return Response(
+                    {'error': f'Could not resolve a Catalogue of Life id for GBIF key {gbif_key}.'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+        if col_id:
+            taxonomy = fetch_all_species_from_gbif(
+                col_id=col_id,
+                fetch_vernacular_names=not is_synonym,
+                is_synonym=is_synonym,
             )
 
         elif taxon_name and rank:
@@ -466,6 +505,13 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 except (Taxonomy.DoesNotExist, ValueError):
                     pass
 
+            if subgenus_id:
+                try:
+                    taxonomy.subgenus = Taxonomy.objects.get(id=int(subgenus_id), rank='SUBGENUS')
+                    taxonomy.save(update_fields=['subgenus'])
+                except (Taxonomy.DoesNotExist, ValueError):
+                    pass
+
             from bims.templatetags.site import is_fada_site
             if is_fada_site() and not taxonomy.fada_id:
                 taxonomy.fada_id = f'FADA-{taxonomy.id}'
@@ -489,6 +535,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     'accepted_taxonomy',
                     'owner',
                     'parent',
+                    'subgenus',
                     'last_modified_by',
                     'origin',
                     'endemism',
@@ -506,6 +553,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                     new_data=True,
                     owner=taxonomy.owner,
                     parent=taxonomy.parent,
+                    subgenus=taxonomy.subgenus,
                     accepted_taxonomy=taxonomy.accepted_taxonomy,
                     taxon_group_under_review=taxon_group,
                     author=proposal_author,
@@ -745,14 +793,14 @@ class TaxaList(APIView):
         if is_gbif:
             try:
                 is_gbif = is_gbif.lower() == 'true'
+                no_gbif_or_col = (
+                    Q(gbif_key__isnull=True) &
+                    (Q(col_id__isnull=True) | Q(col_id=''))
+                )
                 if is_gbif:
-                    taxon_list = taxon_list.exclude(
-                        gbif_key__isnull=True
-                    )
+                    taxon_list = taxon_list.exclude(no_gbif_or_col)
                 else:
-                    taxon_list = taxon_list.filter(
-                        gbif_key__isnull=True
-                    )
+                    taxon_list = taxon_list.filter(no_gbif_or_col)
             except ValueError:
                 pass
         if is_iucn:
@@ -1141,6 +1189,36 @@ class IUCNStatusFetchView(APIView):
             status=status.HTTP_404_NOT_FOUND)
 
 
+class COLSearchView(APIView):
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, *args, **kwargs):
+        taxonomy_id = self.kwargs.get('pk')
+
+        if not taxonomy_id:
+            return Response(
+                {"detail": "Missing taxon_id"},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        taxon = get_object_or_404(Taxonomy, id=taxonomy_id)
+
+        if not taxon.scientific_name:
+            return Response(
+                {"detail": "Taxon has no scientific name"},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        results = species_search(
+            {'limit': 20, 'q': taxon.scientific_name}
+        )
+
+        if not results:
+            return Response(
+                {"detail": "Not found"},
+                status=status.HTTP_404_NOT_FOUND)
+
+        return Response(results)
+
+
 class TaxonTreeJsonView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -1195,19 +1273,52 @@ class HarvestIUCNStatus(APIView):
     """
     Enqueue a Celery task that pulls/refreshes IUCN Red-List info
     for all taxa still missing a status (or for an optional list of IDs).
+
+    POST: starts a new harvest and returns a session_id for polling.
+    GET:  returns the status of the most recent IUCN harvest session.
     """
     permission_classes = (IsAdminUser,)
+
+    def get(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({"error": "Permission denied."}, status=HTTP_403_FORBIDDEN)
+        from bims.models import HarvestSession
+        session = (
+            HarvestSession.objects.filter(category="iucn")
+            .order_by("-start_time")
+            .first()
+        )
+        if not session:
+            return Response({"status": None, "session_id": None}, status=HTTP_200_OK)
+        return Response({
+            "session_id": session.id,
+            "status": session.status,
+            "finished": session.finished,
+            "start_time": str(session.start_time),
+            "additional_data": session.additional_data,
+        }, status=HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         if not request.user.is_superuser:
             return Response({"error": "Permission denied."},
                             status=HTTP_403_FORBIDDEN)
 
+        from bims.models import HarvestSession
         taxa_ids = request.data.get("taxa_ids")
-        fetch_iucn_status.delay(taxa_ids or None)
+
+        session = HarvestSession.objects.create(
+            harvester=request.user,
+            category="iucn",
+            status="queued",
+        )
+
+        fetch_iucn_status.delay(taxa_ids or None, session_id=session.id)
 
         return Response(
-            {"message": "Harvesting IUCN status in the background."},
+            {
+                "message": "Harvesting IUCN status in the background.",
+                "session_id": session.id,
+            },
             status=HTTP_200_OK
         )
 

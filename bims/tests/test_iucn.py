@@ -87,12 +87,14 @@ class FetchIUCNStatusTaskTest(FastTenantTestCase):
         )
 
     @patch("bims.tasks.taxa.get_iucn_assessments")
-    @patch("bims.tasks.taxa.get_iucn_status")
+    @patch("bims.tasks.taxa.parse_latest_global_status")
+    @patch("bims.tasks.taxa.fetch_iucn_data")
     def test_fetch_iucn_status_creates_and_updates_assessments(
-        self, mock_get_status, mock_get_assessments
+        self, mock_fetch_data, mock_parse_status, mock_get_assessments
     ):
         status_obj = IUCNStatus.objects.create(category="VU", national=False)
-        mock_get_status.return_value = (
+        mock_fetch_data.return_value = {"taxon": {"sis_id": 219}, "assessments": []}
+        mock_parse_status.return_value = (
             status_obj, 219, "https://www.iucnredlist.org/species/219/1"
         )
 
@@ -194,43 +196,43 @@ class FetchIUCNStatusNonNativeTest(FastTenantTestCase):
             origin=self._make_origin('indigenous', 'Native'),
         )
 
-    @patch("bims.tasks.taxa.get_iucn_assessments", return_value=([], None))
-    @patch("bims.tasks.taxa.get_iucn_status")
-    def test_non_native_taxon_is_skipped(self, mock_get_status, mock_get_assessments):
+    @patch("bims.tasks.taxa.fetch_iucn_data")
+    def test_non_native_taxon_is_skipped(self, mock_fetch_data):
         """fetch_iucn_status must not call the IUCN API for non-native taxa."""
-        status_obj = IUCNStatus.objects.create(category="LC", national=False)
-        mock_get_status.return_value = (status_obj, 1, "https://iucnredlist.org/1")
-
         fetch_iucn_status(taxa_ids=[self.non_native_taxon.id])
 
-        mock_get_status.assert_not_called()
+        mock_fetch_data.assert_not_called()
         self.non_native_taxon.refresh_from_db()
         self.assertIsNone(self.non_native_taxon.iucn_status)
 
     @patch("bims.tasks.taxa.get_iucn_assessments", return_value=([], None))
-    @patch("bims.tasks.taxa.get_iucn_status")
-    def test_native_taxon_is_processed(self, mock_get_status, mock_get_assessments):
+    @patch("bims.tasks.taxa.parse_latest_global_status")
+    @patch("bims.tasks.taxa.fetch_iucn_data")
+    def test_native_taxon_is_processed(self, mock_fetch_data, mock_parse_status, mock_get_assessments):
         """fetch_iucn_status must call the IUCN API for native taxa."""
         status_obj = IUCNStatus.objects.create(category="NT", national=False)
-        mock_get_status.return_value = (status_obj, 2, "https://iucnredlist.org/2")
+        mock_fetch_data.return_value = {"taxon": {"sis_id": 2}, "assessments": []}
+        mock_parse_status.return_value = (status_obj, 2, "https://iucnredlist.org/2")
 
         fetch_iucn_status(taxa_ids=[self.native_taxon.id])
 
-        mock_get_status.assert_called_once()
+        mock_fetch_data.assert_called_once()
         self.native_taxon.refresh_from_db()
         self.assertEqual(self.native_taxon.iucn_status.category, "NT")
 
     @patch("bims.tasks.taxa.get_iucn_assessments", return_value=([], None))
-    @patch("bims.tasks.taxa.get_iucn_status")
-    def test_mixed_taxa_only_native_processed(self, mock_get_status, mock_get_assessments):
+    @patch("bims.tasks.taxa.parse_latest_global_status")
+    @patch("bims.tasks.taxa.fetch_iucn_data")
+    def test_mixed_taxa_only_native_processed(self, mock_fetch_data, mock_parse_status, mock_get_assessments):
         """fetch_iucn_status processes native taxa and skips non-native taxa in the same run."""
         status_obj = IUCNStatus.objects.create(category="VU", national=False)
-        mock_get_status.return_value = (status_obj, 3, "https://iucnredlist.org/3")
+        mock_fetch_data.return_value = {"taxon": {"sis_id": 3}, "assessments": []}
+        mock_parse_status.return_value = (status_obj, 3, "https://iucnredlist.org/3")
 
         fetch_iucn_status(taxa_ids=[self.non_native_taxon.id, self.native_taxon.id])
 
         # Only the native taxon should have triggered an API call
-        mock_get_status.assert_called_once()
+        mock_fetch_data.assert_called_once()
         self.native_taxon.refresh_from_db()
         self.assertEqual(self.native_taxon.iucn_status.category, "VU")
 

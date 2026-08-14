@@ -164,6 +164,7 @@ export const taxaSidebar = (() => {
         $('.taxon-group-contributors-container select').val(null).trigger('change');
         $('#edit-module-img-container').empty();
         $('#edit-module-meta-group').val('');
+        $('#taxonworks-base-url').val('');
 
         $('#editModuleModal').modal({
             keyboard: false
@@ -184,6 +185,7 @@ export const taxaSidebar = (() => {
         if (isReadonly && upstreamUrl) {
             html += `<small class="text-muted"><i class="fa fa-link" aria-hidden="true"></i> Source: <a href="${upstreamUrl}" target="_blank" rel="noopener">${upstreamUrl}</a> &middot; Synced monthly</small>`;
         }
+        html += `<div id="checklist-version-notice"></div>`;
         return html;
     }
 
@@ -313,6 +315,10 @@ export const taxaSidebar = (() => {
             selectHTML.val(selectedParent.id).change()
         }
         $('#parent-taxon-module-container').html(selectHTML);
+
+        // TaxonWorks source
+        const taxonworksBaseUrl = _element.find('.taxon-group-title').data('taxonworks-base-url') || '';
+        $editTaxonGroupModal.find('#taxonworks-base-url').val(taxonworksBaseUrl);
 
         // Upload template
         let taxaUploadTemplate = _element.find('.taxon-group-title').data('taxa-upload-template');

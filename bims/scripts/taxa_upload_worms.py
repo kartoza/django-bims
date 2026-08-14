@@ -10,7 +10,7 @@ from taggit.models import Tag
 from bims.scripts.data_upload import DataCSVUpload
 from bims.scripts.species_keys import *  # noqa
 from bims.models import (
-    Taxonomy, SourceReference
+    Taxonomy,
 )
 from .taxa_upload import TaxaProcessor
 from bims.utils.fetch_gbif import harvest_synonyms_for_accepted_taxonomy
@@ -100,18 +100,32 @@ class WormsTaxaProcessor(TaxaProcessor):
 
     RANK_MAP = {
         "kingdom": "KINGDOM",
+        "subkingdom": "SUBKINGDOM",
         "phylum": "PHYLUM",
+        "subphylum": "SUBPHYLUM",
+        "infraphylum": "INFRAPHYLUM",
+        "megaclass": "MEGACLASS",
+        "gigaclass": "GIGACLASS",
+        "superclass": "SUPERCLASS",
         "class": "CLASS",
+        "subclass": "SUBCLASS",
         "infraclass": "INFRACLASS",
+        "superorder": "SUPERORDER",
         "order": "ORDER",
+        "suborder": "SUBORDER",
+        "infraorder": "INFRAORDER",
+        "parvorder": "PARVORDER",
+        "superfamily": "SUPERFAMILY",
         "family": "FAMILY",
         "subfamily": "SUBFAMILY",
-        "superfamily": "SUPERFAMILY",
-        "infraorder": "INFRAORDER",
+        "tribe": "TRIBE",
+        "subtribe": "SUBTRIBE",
         "genus": "GENUS",
         "subgenus": "SUBGENUS",
         "species": "SPECIES",
         "subspecies": "SUBSPECIES",
+        "variety": "VARIETY",
+        "forma": "FORMA",
     }
 
     STATUS_MAP = {
@@ -123,15 +137,19 @@ class WormsTaxaProcessor(TaxaProcessor):
         "junior subjective synonym": "SYNONYM",
         "senior objective synonym": "SYNONYM",
         "senior subjective synonym": "SYNONYM",
-        "temporary name": "TEMPORARY NAME",
         "unavailable name": "UNAVAILABLE NAME",
     }
 
+    SKIP_STATUSES = {
+        "misspelling - incorrect subsequent spelling",
+        "temporary name",
+    }
+
     HABITAT_TAGS = [
-        ("Marine", "Marine"),
-        ("Brackish", "Brackish"),
-        ("Fresh", "Freshwater"),
-        ("Terrestrial", "Terrestrial"),
+        ("Marine", "marine"),
+        ("Brackish", "brackish"),
+        ("Fresh", "freshwater"),
+        ("Terrestrial", "terrestrial"),
     ]
 
     def _boolish(self, v):
@@ -211,18 +229,35 @@ class WormsTaxaProcessor(TaxaProcessor):
         Build/find parents up to immediate parent of `for_rank`.
         Returns the immediate parent Taxonomy or None.
         """
+        _none = None
         lineage = [
-            ("KINGDOM", row.get(WORMS_COLUMN_NAMES["kingdom"])),
-            ("PHYLUM", row.get(WORMS_COLUMN_NAMES["phylum"])),
-            ("CLASS", row.get(WORMS_COLUMN_NAMES["clazz"])),
-            ("INFRACLASS", row.get(WORMS_COLUMN_NAMES["clazz"]) and None),
-            ("ORDER", row.get(WORMS_COLUMN_NAMES["order"])),
-            ("FAMILY", row.get(WORMS_COLUMN_NAMES["family"])),
-            ("SUBFAMILY", row.get(WORMS_COLUMN_NAMES["family"]) and None),
-            ("GENUS", row.get(WORMS_COLUMN_NAMES["genus"])),
-            ("SUBGENUS", row.get(WORMS_COLUMN_NAMES["subgenus"])),
-            ("SPECIES", self._lineage_species_name(row)),
-            ("SUBSPECIES", row.get(WORMS_COLUMN_NAMES["subspecies"]))
+            ("KINGDOM",     row.get(WORMS_COLUMN_NAMES["kingdom"])),
+            ("SUBKINGDOM",  _none),
+            ("PHYLUM",      row.get(WORMS_COLUMN_NAMES["phylum"])),
+            ("SUBPHYLUM",   _none),
+            ("INFRAPHYLUM", _none),
+            ("MEGACLASS",   _none),
+            ("GIGACLASS",   _none),
+            ("SUPERCLASS",  _none),
+            ("CLASS",       row.get(WORMS_COLUMN_NAMES["clazz"])),
+            ("SUBCLASS",    _none),
+            ("INFRACLASS",  _none),
+            ("SUPERORDER",  _none),
+            ("ORDER",       row.get(WORMS_COLUMN_NAMES["order"])),
+            ("SUBORDER",    _none),
+            ("INFRAORDER",  _none),
+            ("PARVORDER",   _none),
+            ("SUPERFAMILY", _none),
+            ("FAMILY",      row.get(WORMS_COLUMN_NAMES["family"])),
+            ("SUBFAMILY",   _none),
+            ("TRIBE",       _none),
+            ("SUBTRIBE",    _none),
+            ("GENUS",       row.get(WORMS_COLUMN_NAMES["genus"])),
+            ("SUBGENUS",    row.get(WORMS_COLUMN_NAMES["subgenus"])),
+            ("SPECIES",     self._lineage_species_name(row)),
+            ("SUBSPECIES",  row.get(WORMS_COLUMN_NAMES["subspecies"])),
+            ("VARIETY",     _none),
+            ("FORMA",       _none),
         ]
         idx = {r: i for i, (r, _) in enumerate(lineage)}
         if for_rank not in idx:
@@ -257,22 +292,39 @@ class WormsTaxaProcessor(TaxaProcessor):
 
         return parent
 
-    def _attach_habitat_tags(self, taxonomy: Taxonomy, row: dict):
-        """Turn habitat flags into tags."""
+    def _attach_habitat_tags(self, taxonomy: Taxonomy, row: dict, is_new: bool):
+        """Turn habitat flags into tags.
+
+        Only applied on the first harvest of a taxon. On re-harvest the tags
+        are left untouched so experts can edit them freely.
+        """
+        if not is_new:
+            return
         for col, tag_label in self.HABITAT_TAGS:
             val = row.get(col) if col in row else row.get(WORMS_COLUMN_NAMES[col.lower()])
             if self._boolish(val):
                 tag, _ = Tag.objects.get_or_create(name=tag_label)
                 taxonomy.tags.add(tag)
 
+    def _maybe_add_aquatic_tag(self, taxonomy: Taxonomy, row: dict, is_new: bool):
+        """Add 'aquatic' tag only on first harvest of a freshwater taxon.
+
+        On re-harvest the tag is left untouched so experts can edit it freely.
+        """
+        if not is_new:
+            return
+        fresh_val = row.get('Fresh') if 'Fresh' in row else row.get(WORMS_COLUMN_NAMES['fresh'])
+        if self._boolish(fresh_val):
+            tag, _ = Tag.objects.get_or_create(name='aquatic')
+            taxonomy.tags.add(tag)
+
     def _attach_citation(self, taxonomy: Taxonomy, row: dict):
         citation = _strip_html(row.get(WORMS_COLUMN_NAMES["citation"]))
         if not citation:
             return
-        ref = SourceReference.create_source_reference(
-            category=None, source_id=None, note=citation
-        )
-        taxonomy.source_reference = ref
+        additional_data = taxonomy.additional_data or {}
+        additional_data["Taxonomic References"] = citation
+        taxonomy.additional_data = additional_data
 
     def process_worms_data(self, row: dict, taxon_group, harvest_synonyms: bool = False,
                            fetch_gbif_key: bool = False):
@@ -286,13 +338,16 @@ class WormsTaxaProcessor(TaxaProcessor):
             taxon and store the result in gbif_key / gbif_data if the taxon
             does not already have a GBIF key.
         """
+        status_raw = (row.get(WORMS_COLUMN_NAMES["status"]) or "").strip()
+        if status_raw.lower() in self.SKIP_STATUSES:
+            logger.debug("Skipping AphiaID=%s: status %r", row.get(WORMS_COLUMN_NAMES["aphia_id"]), status_raw)
+            return
+
         worms_rank = row.get(WORMS_COLUMN_NAMES["rank"])
         rank = self._map_rank(worms_rank)
         if not rank:
             self.handle_error(row, f"Unsupported/empty taxonRank: {worms_rank}")
             return
-
-        status_raw = (row.get(WORMS_COLUMN_NAMES["status"]) or "").strip()
         taxonomic_status = self.STATUS_MAP.get(status_raw.lower(), status_raw.upper() or None)
 
         is_accepted = status_raw.lower() == "accepted"
@@ -307,10 +362,23 @@ class WormsTaxaProcessor(TaxaProcessor):
             self.handle_error(row, "Parent cannot have the same name as the taxon")
             return
 
-        taxonomy = Taxonomy.objects.filter(
-            canonical_name__iexact=canonical_name
-        ).first()
-        if not taxonomy:
+        aphia_id_int = None
+        aphia_id_val = row.get(WORMS_COLUMN_NAMES["aphia_id"])
+        if aphia_id_val is not None:
+            try:
+                aphia_id_int = int(aphia_id_val)
+            except (ValueError, TypeError):
+                pass
+
+        existing = None
+        if aphia_id_int:
+            existing = Taxonomy.objects.filter(aphia_id=aphia_id_int).first()
+        if not existing:
+            existing = Taxonomy.objects.filter(
+                canonical_name__iexact=canonical_name
+            ).first()
+        is_new = existing is None
+        if is_new:
             taxonomy = Taxonomy.objects.create(
                 canonical_name=canonical_name,
                 scientific_name=scientific_name,
@@ -319,6 +387,7 @@ class WormsTaxaProcessor(TaxaProcessor):
                 parent=parent
             )
         else:
+            taxonomy = existing
             taxonomy.canonical_name = canonical_name
             taxonomy.scientific_name = scientific_name
             taxonomy.legacy_canonical_name = canonical_name
@@ -384,18 +453,15 @@ class WormsTaxaProcessor(TaxaProcessor):
 
             taxonomy.accepted_taxonomy = acc
 
-        self._attach_habitat_tags(taxonomy, row)
-        self._attach_citation(taxonomy, row)
+        self._attach_habitat_tags(taxonomy, row, is_new)
+        self._maybe_add_aquatic_tag(taxonomy, row, is_new)
 
-        aphia_id_val = row.get(WORMS_COLUMN_NAMES["aphia_id"])
-        if aphia_id_val is not None:
-            try:
-                taxonomy.aphia_id = int(aphia_id_val)
-            except (ValueError, TypeError):
-                pass
+        if aphia_id_int is not None:
+            taxonomy.aphia_id = aphia_id_int
 
         extras = dict(row)
-        taxonomy.additional_data = json.dumps(extras)
+        taxonomy.additional_data = extras
+        self._attach_citation(taxonomy, row)
 
         taxonomy.save()
 

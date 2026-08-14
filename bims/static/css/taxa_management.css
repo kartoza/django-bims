@@ -10,6 +10,25 @@
     padding-top: 4px;
 }
 
+.badge-taxonworks {
+    background-color: #413A32;
+    color: #fff;
+}
+
+.badge-worms {
+    background-color: #246092;
+    color: #fff;
+}
+
+.badge-iucn {
+    background-color: #D92A1C;
+    color: #fff;
+}
+.badge-gbif {
+    background-color: #4D9C2E;
+    color: #fff;
+}
+
 .total-data {
     color: #444444;
     border-radius: 10px;

@@ -179,20 +179,26 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
             let chartCanvas = chartData['canvas'];
             let legends = chartData['legends'];
             $.each(data, function (key, value) {
-                labels.push(value['name']);
+                let labelName = ""
+                if (value.hasOwnProperty('name')) {
+                    labelName = value['name'];
+                } else if (value.hasOwnProperty('endemism_name')) {
+                    labelName = value['endemism_name'];
+                }
+                labels.push(labelName);
                 dataset.push(value['count']);
 
                 if(value.hasOwnProperty('colour')) {
                     colours.push(value['colour']);
-                    legends[value['name']] = value['colour'];
+                    legends[labelName] = value['colour'];
                 } else {
-                    if (legends.hasOwnProperty(value['name'])) {
-                        colours.push(legends[value['name']]);
+                    if (legends.hasOwnProperty(labelName)) {
+                        colours.push(legends[labelName]);
                     } else {
                         let length = Object.keys(legends).length;
                         let chartColors = self.chartColors || self.chartBackgroundColours;
                         colours.push(chartColors[length]);
-                        legends[value['name']] = chartColors[length];
+                        legends[labelName] = chartColors[length];
                     }
                 }
             });
@@ -212,6 +218,44 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                     title: {display: false},
                     hover: {mode: 'nearest', intersect: false},
                     borderWidth: 0,
+                    tooltips: {
+                        enabled: false,
+                        custom: function (tooltipModel) {
+                            let tooltipEl = document.getElementById('chartjs-pie-tooltip');
+                            if (!tooltipEl) {
+                                tooltipEl = document.createElement('div');
+                                tooltipEl.id = 'chartjs-pie-tooltip';
+                                tooltipEl.style.cssText = [
+                                    'position:fixed',
+                                    'background:rgba(0,0,0,0.7)',
+                                    'color:#fff',
+                                    'border-radius:4px',
+                                    'padding:4px 8px',
+                                    'font-size:11px',
+                                    'pointer-events:none',
+                                    'z-index:9999',
+                                    'white-space:nowrap',
+                                    'transition:opacity 0.1s'
+                                ].join(';');
+                                document.body.appendChild(tooltipEl);
+                            }
+
+                            if (tooltipModel.opacity === 0) {
+                                tooltipEl.style.opacity = '0';
+                                return;
+                            }
+
+                            if (tooltipModel.body) {
+                                tooltipEl.innerHTML = tooltipModel.body[0] && tooltipModel.body[0].lines[0] || '';
+                            }
+
+                            let canvas = this._chart.canvas;
+                            let rect = canvas.getBoundingClientRect();
+                            tooltipEl.style.opacity = '1';
+                            tooltipEl.style.left = (rect.left + tooltipModel.caretX) + 'px';
+                            tooltipEl.style.top = (rect.top + tooltipModel.caretY - tooltipEl.offsetHeight - 6) + 'px';
+                        }
+                    }
                 }
             };
             let ctx = chartCanvas[0].getContext('2d');

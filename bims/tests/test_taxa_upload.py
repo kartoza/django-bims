@@ -830,6 +830,85 @@ class TestSubgenusUpload(FastTenantTestCase):
         self.assertEqual(taxon_culex.subgenus, subgenus_a)
         self.assertEqual(taxon_neoculex.subgenus, subgenus_b)
 
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_accepted_and_synonym_same_name_different_fada_id_creates_separate_taxa(
+        self, mock_gbif, mock_finish
+    ):
+        """
+        A FADA-style checklist can list an accepted taxon and a synonym that
+        display the same bare name ("Candona burdurensis") but represent
+        different taxonomic concepts: different FADA IDs, different
+        Taxonomic Status, and different SubGenus placement. These must
+        become two distinct Taxonomy records, not one taxon plus a proposal
+        merged onto it.
+        """
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        taxon_group = TaxonGroupF.create()
+        processor = TaxaProcessor()
+
+        accepted_row = {
+            'Taxon Rank': 'Species',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Ostracoda',
+            'Order': 'Podocopida',
+            'Family': 'Candonidae',
+            'SubFamily': 'Candoninae',
+            'Genus': 'Candona',
+            'Species': 'burdurensis',
+            'Taxon': 'Candona burdurensis',
+            'Author(s)': 'Freels, 1980',
+            'Taxonomic status': 'Accepted',
+            'FADA ID': '500296',
+            'On GBIF': 'No',
+        }
+
+        synonym_row = {
+            'Taxon Rank': 'Species',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Ostracoda',
+            'Order': 'Podocopida',
+            'Genus': 'Candona',
+            'SubGenus': 'Candona',
+            'Species': 'burdurensis',
+            'Taxon': 'Candona burdurensis',
+            'Author(s)': 'Freels, 1980',
+            'Taxonomic status': 'Synonym',
+            'Accepted Taxon': 'Candona burdurensis',
+            'FADA ID': 'SYN-500229',
+            'On GBIF': 'No',
+        }
+
+        with mock.patch('bims.scripts.taxa_upload.preferences') as mock_prefs:
+            mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
+            processor.process_data(accepted_row, taxon_group)
+            processor.process_data(synonym_row, taxon_group)
+
+        matching_taxa = Taxonomy.objects.filter(
+            canonical_name__iexact='Candona burdurensis',
+            rank='SPECIES',
+        )
+        self.assertEqual(
+            matching_taxa.count(), 2,
+            'Expected two distinct Taxonomy records for "Candona burdurensis" '
+            f'(accepted + synonym), got {matching_taxa.count()}: '
+            f'{list(matching_taxa.values("pk", "fada_id", "taxonomic_status"))}'
+        )
+
+        accepted_taxon = matching_taxa.get(fada_id='500296')
+        synonym_taxon = matching_taxa.get(fada_id='SYN-500229')
+
+        self.assertNotEqual(accepted_taxon.pk, synonym_taxon.pk)
+        self.assertEqual(accepted_taxon.taxonomic_status, 'ACCEPTED')
+        self.assertEqual(synonym_taxon.taxonomic_status, 'SYNONYM')
+        self.assertIsNone(accepted_taxon.subgenus)
+        self.assertIsNotNone(synonym_taxon.subgenus)
+        self.assertEqual(synonym_taxon.subgenus.canonical_name, 'Candona (Candona)')
+
     def test_choose_taxon_display_name_formats_subgenus_as_genus_parenthetical(self):
         """
         _choose_taxon_display_name should return "Genus (SubgenusName)" when the
@@ -994,6 +1073,103 @@ class TestSubgenusUpload(FastTenantTestCase):
             len(species_calls), 0,
             'GBIF should be consulted for synonym SPECIES with subgenus — '
             'should_fetch_from_gbif must not be suppressed for synonyms.'
+        )
+
+    @mock.patch('bims.scripts.taxa_upload.get_species_by_col_id')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_col_link_parsed_and_passed_as_col_id(
+        self, mock_fetch_gbif, mock_get_species_by_col_id
+    ):
+        """
+        A GBIF Link pointing at gbif.org/taxon/<id> is a Catalogue of Life
+        link; the id must be validated via COL and routed through as
+        col_id, never gbif_key.
+        """
+        mock_fetch_gbif.return_value = None
+        mock_get_species_by_col_id.return_value = {
+            'usage': {
+                'key': 'ABC123',
+                'canonicalName': 'Aedes aegypti',
+                'name': 'Aedes aegypti',
+                'rank': 'SPECIES',
+            },
+            'classification': [
+                {'rank': 'GENUS', 'name': 'Aedes'},
+            ],
+        }
+
+        row = {
+            'Taxon Rank': 'Species',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Insecta',
+            'Order': 'Diptera',
+            'Family': 'Culicidae',
+            'Genus': 'Aedes',
+            'Taxon': 'Aedes aegypti',
+            'Taxonomic status': 'accepted',
+            'On GBIF': 'Yes',
+            'GBIF Link': 'https://www.gbif.org/taxon/ABC123',
+            'Author(s)': '',
+        }
+
+        processor = TaxaProcessor()
+        processor.all_keys = {}
+        with mock.patch('bims.scripts.taxa_upload.preferences') as mock_prefs:
+            mock_prefs.SiteSetting.auto_validate_taxa_on_upload = True
+            processor.process_data(row, TaxonGroupF.create())
+
+        mock_get_species_by_col_id.assert_called_with('ABC123')
+
+        col_id_calls = [
+            c for c in mock_fetch_gbif.call_args_list
+            if c.kwargs.get('col_id') == 'ABC123'
+        ]
+        self.assertGreater(
+            len(col_id_calls), 0,
+            'fetch_all_species_from_gbif should be called with col_id, not gbif_key.'
+        )
+        for c in mock_fetch_gbif.call_args_list:
+            self.assertNotIn('gbif_key', c.kwargs)
+
+    @mock.patch('bims.scripts.taxa_upload.get_species_by_col_id')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_gbif_species_link_rejected_when_on_gbif(
+        self, mock_fetch_gbif, mock_get_species_by_col_id
+    ):
+        """
+        The legacy gbif.org/species/<gbif_key> link form is no longer
+        accepted upload input; when 'On GBIF' is set the row must be
+        rejected with an error and not processed further.
+        """
+        errors = []
+
+        row = {
+            'Taxon Rank': 'Species',
+            'Kingdom': 'Animalia',
+            'Phylum': 'Arthropoda',
+            'Class': 'Insecta',
+            'Order': 'Diptera',
+            'Family': 'Culicidae',
+            'Genus': 'Aedes',
+            'Taxon': 'Aedes rejectus',
+            'Taxonomic status': 'accepted',
+            'On GBIF': 'Yes',
+            'GBIF Link': 'https://www.gbif.org/species/99999',
+            'Author(s)': '',
+        }
+
+        processor = TaxaProcessor()
+        processor.all_keys = {}
+        processor.handle_error = lambda row, message: errors.append(message)
+        processor.process_data(row, TaxonGroupF.create())
+
+        self.assertTrue(errors, 'A gbif.org/species/ link must raise an error.')
+        self.assertIn('99999', errors[0])
+        mock_get_species_by_col_id.assert_not_called()
+        mock_fetch_gbif.assert_not_called()
+        self.assertFalse(
+            Taxonomy.objects.filter(canonical_name='Aedes rejectus').exists()
         )
 
     @mock.patch('bims.scripts.taxa_upload.get_species')

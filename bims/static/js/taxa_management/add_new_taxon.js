@@ -5,8 +5,62 @@ export const addNewTaxon = (() => {
     const $taxonForm = $('.new-taxon-form');
     const $addNewTaxonBtn = $taxonForm.find('.add-new-taxon-btn');
     const $newTaxonNameInput = $('#new-taxon-name');
+    const $subgenusHeader = $('#subgenus-column-header');
+    const $subgenusCell = $('#subgenus-column-cell');
+    const $subgenusHintCell = $('#subgenus-hint-cell');
+    const $newTaxonSubgenus = $('#new-taxon-subgenus');
 
     let selectedTaxonGroup = '';
+    let subgenusSelect2Initialized = false;
+
+    function initSubgenusSelect2() {
+        if (subgenusSelect2Initialized) return;
+        $newTaxonSubgenus.select2({
+            dropdownParent: $('#addNewTaxonModal'),
+            ajax: {
+                url: '/species-autocomplete/',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    return {
+                        term: params.term,
+                        rank: 'subgenus',
+                        taxonGroupId: currentSelectedTaxonGroup,
+                        parentId: $newTaxonParent.val() || '',
+                    };
+                },
+                processResults: function (data) {
+                    return { results: data };
+                },
+                cache: false
+            },
+            allowClear: true,
+            placeholder: 'Search for a Subgenus',
+            minimumInputLength: 2,
+            templateResult: function (item) {
+                if (item.loading) return item.text;
+                return item.species || item.text;
+            },
+            templateSelection: function (item) {
+                return item.species || item.text;
+            },
+        });
+        subgenusSelect2Initialized = true;
+    }
+
+    function showSubgenusColumn() {
+        initSubgenusSelect2();
+        $subgenusHeader.show();
+        $subgenusCell.show();
+        $subgenusHintCell.show();
+    }
+
+    function hideSubgenusColumn() {
+        $subgenusHeader.hide();
+        $subgenusCell.hide();
+        $subgenusHintCell.hide();
+        $newTaxonSubgenus.val(null).trigger('change');
+    }
 
     function showNewTaxonForm(taxonName) {
         let capitalizedTaxonName = taxonName.substr(0, 1).toUpperCase() + taxonName.substr(1).toLowerCase();
@@ -39,12 +93,15 @@ export const addNewTaxon = (() => {
         }
     }
 
-    function addNewTaxonToObservedList(name, gbifKey, rank, taxaId = null, parentId = "", authorName = "", taxonomicStatus = "") {
+    function addNewTaxonToObservedList(name, colId, rank, taxaId = null, parentId = "", authorName = "", taxonomicStatus = "", subgenusId = "") {
         const status = taxonomicStatus || $('#new-taxon-status').val() || '';
         const normalizedStatus = normalizeStatus(status);
         const finalStatus = normalizedStatus || 'ACCEPTED';
+        // gbifKey here is the raw GBIF suggest key from the search table (there's
+        // no COL equivalent for as-you-type suggestions); the backend resolves it
+        // to a Catalogue of Life col_id before the taxon is created/stored.
         let postData = {
-            'gbifKey': gbifKey,
+            'colId': colId,
             'taxonName': name,
             'rank': rank,
             'taxonGroupId': currentSelectedTaxonGroup,
@@ -57,6 +114,9 @@ export const addNewTaxon = (() => {
             } else {
                 postData['acceptedTaxonomyId'] = parentId;
             }
+        }
+        if (subgenusId) {
+            postData['subgenusId'] = subgenusId;
         }
         let table = $('.find-taxon-table');
         table.hide();
@@ -123,8 +183,8 @@ export const addNewTaxon = (() => {
             let status = value['status'];
 
             if (source === 'gbif') {
-                source = `<a href="https://www.gbif.org/species/${key}" target="_blank">${gbifImage}</a>`;
-                scientificName = `<a href="https://www.gbif.org/species/${key}" target="_blank">${scientificName}</a>`;
+                source = `<a href="https://www.gbif.org/taxon/${key}" target="_blank">${gbifImage}</a>`;
+                scientificName = `<a href="https://www.gbif.org/taxon/${key}" target="_blank">${scientificName}</a>`;
             } else if (source === 'local') {
                 source = fontAwesomeIcon('database');
             }
@@ -210,7 +270,8 @@ export const addNewTaxon = (() => {
             }
             return;
         }
-        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, parentId, $author.val(), status);
+        const subgenusId = $subgenusCell.is(':visible') ? ($newTaxonSubgenus.val() || '') : '';
+        addNewTaxonToObservedList($newTaxonNameInput.val(), '', $rank.val(), null, parentId, $author.val(), status, subgenusId);
         $taxonForm.hide();
         $newTaxonFamilyInput.val("");
         $newTaxonParentIdInput.val("");
@@ -232,6 +293,8 @@ export const addNewTaxon = (() => {
 
         $newTaxonParent.empty();
         $newTaxonParent.val(null).trigger('change');
+
+        hideSubgenusColumn();
 
         const authorAutoComplete = $('.author-auto-complete');
         authorAutoComplete.val(null).trigger('change');
@@ -258,14 +321,23 @@ export const addNewTaxon = (() => {
         $('#find-taxon-button').on('click', handleFindTaxonButton);
         $addNewTaxonBtn.on('click', handleAddNewTaxon);
 
+        $newTaxonParent.on('change', function () {
+            const data = $newTaxonParent.select2('data');
+            if (data && data.length > 0 && (data[0].rank || '').toUpperCase() === 'GENUS') {
+                showSubgenusColumn();
+            } else {
+                hideSubgenusColumn();
+            }
+        });
+
         $(document).on('click', '.add-taxon-btn', function() {
             const button = $(this);
             const name = button.data('canonical-name');
-            const gbifKey = button.data('key');
+            const colId = button.data('key');
             const rank = button.data('rank');
             const taxaId = button.data('taxa-id');
             const status = button.data('status') || '';
-            addNewTaxonToObservedList(name, gbifKey, rank, taxaId, "", "", status);
+            addNewTaxonToObservedList(name, colId, rank, taxaId, "", "", status);
         });
 
         $('#new-taxon-status').on('change', function () {

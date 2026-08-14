@@ -34,7 +34,8 @@
              data-extra-attributes="{{ taxon_group.extra_attributes }}"
              data-taxa-upload-template="{{ taxon_group.taxa_upload_template }}"
              data-occurrence-upload-template="{{ taxon_group.occurrence_upload_template }}"
-             data-occurrence-uploads='{{ taxon_group.occurrence_upload_templates | safe }}'>
+             data-occurrence-uploads='{{ taxon_group.occurrence_upload_templates | safe }}'
+             data-taxonworks-base-url="{{ taxon_group.taxonworks_base_url }}">
           <span class="taxon-group-name">{{ taxon_group.name }}</span>
 
 

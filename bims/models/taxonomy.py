@@ -140,6 +140,21 @@ class AbstractTaxonomy(AbstractValidation):
         db_index=True,
     )
 
+    taxonworks_otu_id = models.IntegerField(
+        verbose_name='TaxonWorks OTU ID',
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
+    col_id = models.CharField(
+        verbose_name='Catalogue of Life ID',
+        max_length=50,
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     verified = models.BooleanField(
         help_text='The data has been verified',
         default=False
@@ -950,7 +965,7 @@ class Taxonomy(AbstractTaxonomy):
             from bims.utils.fetch_gbif import fetch_all_species_from_gbif
             fetch_all_species_from_gbif(
                 species=self.scientific_name,
-                gbif_key=self.gbif_key,
+                col_id=self.col_id,
                 fetch_vernacular_names=True)
 
     def get_experts_email(self, taxon_group, max_depth=10):

@@ -48,10 +48,31 @@ class ChemicalRecordsOneRowSerializer(serializers.ModelSerializer):
         return obj.chem.chem_code
 
     def get_source_references(self, obj):
-        try:
-            return obj.source_reference.get_source_unicode()
-        except AttributeError:
-            return '-'
+        label = None
+        if obj.source_reference:
+            label = (
+                obj.source_reference.get_source_unicode()
+                or str(obj.source_reference)
+            )
+        if not label and obj.survey_id:
+            bio_source_by_survey = self.context.get('bio_source_by_survey')
+            if bio_source_by_survey is not None:
+                label = bio_source_by_survey.get(obj.survey_id)
+            else:
+                from bims.models.biological_collection_record import (
+                    BiologicalCollectionRecord
+                )
+                bio = BiologicalCollectionRecord.objects.filter(
+                    survey_id=obj.survey_id
+                ).exclude(
+                    source_reference__isnull=True
+                ).select_related('source_reference').first()
+                if bio:
+                    label = (
+                        bio.source_reference.get_source_unicode()
+                        or str(bio.source_reference)
+                    )
+        return label or '-'
 
     def get_location_site(self, obj):
         if obj.location_site:

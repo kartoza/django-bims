@@ -49,6 +49,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             this.csvDownloadsUrl = '';
             this.imagesCard = this.$el.find('#fsdd-images-card-body');
             this.iucnLink = this.$el.find('#fsdd-iucn-link');
+            this.wormsLink = this.$el.find('#fsdd-worms-link');
             this.iucnAssessmentsBody = this.$el.find('#fsdd-iucn-assessments-body');
             this.metadataTableList = this.$el.find('#metadata-table-list-taxon');
             this.sourceReferenceIds = [];
@@ -359,7 +360,6 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             if (data['common_name'] !== '') {
                 this.dashboardTitleContainer.append('<div class="common-name-title">' + data['common_name'] + '</div>');
             }
-            var gbif_key = data['gbif_id'];
             var taxonomy_id = data['process_id'];
             var canonicalName = data['taxon'];
             var common_name = data['common_name'];
@@ -370,6 +370,14 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
             if (iucn_url) {
                 this.iucnLink.attr('href', iucn_url);
             }
+
+            var worms_url = data['worms_url'];
+            if (worms_url) {
+                this.wormsLink.attr('href', worms_url).show();
+            } else {
+                this.wormsLink.hide();
+            }
+
 
             var origin_block_data = {};
             var origin_dict = {
@@ -406,7 +414,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
                 csv_downloads_url: self.csvDownloadsUrl,
                 count: data['total_records'],
                 taxon_class: data['taxon'],
-                gbif_id: gbif_key,
+                col_id: data['col_id'],
                 common_name: data['common_name'],
                 additional_data: data['taxon_additional_data'],
                 taxonomic_status: data['taxonomic_status'] || '',

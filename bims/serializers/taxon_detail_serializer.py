@@ -123,7 +123,15 @@ class TaxonHierarchySerializer(serializers.ModelSerializer):
         return sub_species_name
 
     def get_subgenus(self, obj: Taxonomy):
-        return obj.sub_genus_name
+        subgenus_name = obj.sub_genus_name
+        if not subgenus_name and obj.subgenus:
+            subgenus_name = obj.subgenus.canonical_name
+        if not subgenus_name:
+            return subgenus_name
+        genus_name = self.get_genus(obj)
+        if genus_name and subgenus_name.startswith(genus_name):
+            subgenus_name = subgenus_name[len(genus_name):].strip().strip('()')
+        return subgenus_name
 
 
 class TaxonDetailSerializer(TaxonSerializer, TaxonHierarchySerializer):

@@ -103,6 +103,22 @@ class SiteSetting(Preferences):
         )
     )
 
+    water_temperature_upload_template = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File template for water temperature uploader'
+        )
+    )
+
+    physico_chemical_upload_template = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File template for physico-chemical data uploader'
+        )
+    )
+
     landing_page_partners_title = models.CharField(
         default='PARTNERS',
         help_text='Header title for Partners section in landing page',

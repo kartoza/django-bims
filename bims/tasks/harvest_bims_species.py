@@ -151,13 +151,15 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
                               remote_cache: dict,
                               target_group=None,
                               is_readonly: bool = False,
-                              _log=None) -> object | None:
+                              _log=None,
+                              _visiting: set[int] | None = None) -> object | None:
     """
     Ensure a local Taxonomy record exists for *taxon_data* fetched from a
     remote BIMS instance.  Parents are resolved recursively.
 
-    remote_cache maps remote_id → local Taxonomy (avoids redundant API calls
-    and prevents infinite recursion).
+    remote_cache maps remote_id → local Taxonomy (avoids redundant API calls).
+    _visiting tracks the active remote-id stack and prevents parent /
+    accepted-taxonomy cycles from recursing indefinitely.
 
     Matching priority
     -----------------
@@ -189,12 +191,21 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
         else:
             logger.debug(msg)
 
+    if _visiting is None:
+        _visiting = set()
+
     remote_id = taxon_data.get('id')
     if remote_id is not None:
         remote_id = int(remote_id)
         cached = remote_cache.get(remote_id)
         if cached is not None:
             return cached
+        if remote_id in _visiting:
+            _emit(
+                f"[CYCLE] Remote taxon id={remote_id} is already being "
+                f"resolved; skipping recursive relation"
+            )
+            return None
 
     canonical_name = (taxon_data.get('canonical_name') or '').strip()
     rank = (taxon_data.get('rank') or '').strip().upper()
@@ -211,33 +222,94 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
     if not canonical_name:
         return None
 
+    if remote_id is not None:
+        _visiting.add(remote_id)
+
+    def _is_remote_synonym(remote_taxon: dict) -> bool:
+        return 'SYNONYM' in (
+            remote_taxon.get('taxonomic_status') or 'ACCEPTED'
+        ).strip().upper()
+
+    def _remote_int(value):
+        if value in (None, ''):
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
+
     # ------------------------------------------------------------------
     # Resolve parent first (depth-first, recursive)
     # ------------------------------------------------------------------
     parent_taxonomy = None
+    _is_synonym = 'SYNONYM' in taxonomic_status
     remote_parent_id = taxon_data.get('parent')
+    if _is_synonym:
+        remote_parent_id = None
     if remote_parent_id:
-        remote_parent_id = int(remote_parent_id)
+        remote_parent_id = _remote_int(remote_parent_id)
+    if remote_parent_id:
         if remote_parent_id in remote_cache:
             parent_taxonomy = remote_cache[remote_parent_id]
+            if getattr(parent_taxonomy, 'is_synonym', False):
+                accepted_parent = getattr(parent_taxonomy, 'accepted_taxonomy', None)
+                if accepted_parent and accepted_parent.pk != getattr(parent_taxonomy, 'pk', None):
+                    parent_taxonomy = accepted_parent
+                else:
+                    _emit(
+                        f"[CYCLE] Skipping cached synonym parent "
+                        f"{parent_taxonomy.canonical_name!r} "
+                        f"for {canonical_name!r}"
+                    )
+                    parent_taxonomy = None
         else:
             parent_data = get_taxon_by_id(base_url, remote_parent_id)
+            if parent_data:
+                if _is_remote_synonym(parent_data):
+                    accepted_parent_id = _remote_int(
+                        parent_data.get('accepted_taxonomy')
+                    )
+                    if accepted_parent_id == remote_id:
+                        _emit(
+                            f"[CYCLE] Skipping synonym parent "
+                            f"{parent_data.get('canonical_name')!r} "
+                            f"for {canonical_name!r}; its accepted taxonomy "
+                            f"is the current taxon"
+                        )
+                        parent_data = None
+                    elif accepted_parent_id in remote_cache:
+                        parent_taxonomy = remote_cache[accepted_parent_id]
+                        parent_data = None
+                    elif accepted_parent_id:
+                        parent_data = get_taxon_by_id(
+                            base_url, accepted_parent_id
+                        )
+                    else:
+                        _emit(
+                            f"[CYCLE] Skipping synonym parent "
+                            f"{parent_data.get('canonical_name')!r} "
+                            f"for {canonical_name!r}; no accepted taxonomy "
+                            f"was provided"
+                        )
+                        parent_data = None
+
             if parent_data:
                 parent_taxonomy = _find_or_create_taxonomy(
                     parent_data, base_url, remote_cache,
                     target_group=target_group,
                     is_readonly=is_readonly,
                     _log=_log,
+                    _visiting=_visiting,
                 )
 
     # ------------------------------------------------------------------
     # Resolve accepted taxonomy for synonyms (depth-first, recursive)
     # ------------------------------------------------------------------
     accepted_taxonomy = None
-    _is_synonym = 'SYNONYM' in taxonomic_status
     remote_accepted_id = taxon_data.get('accepted_taxonomy')
     if _is_synonym and remote_accepted_id:
-        remote_accepted_id = int(remote_accepted_id)
+        remote_accepted_id = _remote_int(remote_accepted_id)
+    if _is_synonym and remote_accepted_id:
         if remote_accepted_id in remote_cache:
             accepted_taxonomy = remote_cache[remote_accepted_id]
         else:
@@ -248,6 +320,7 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
                     target_group=target_group,
                     is_readonly=is_readonly,
                     _log=_log,
+                    _visiting=_visiting,
                 )
 
     # ------------------------------------------------------------------
@@ -272,6 +345,17 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
             rank=rank,
         ).first()
 
+    if (
+        taxonomy is not None
+        and parent_taxonomy is not None
+        and parent_taxonomy.pk == taxonomy.pk
+    ):
+        _emit(
+            f"[CYCLE] Skipping self parent for {canonical_name!r} "
+            f"(id={taxonomy.pk})"
+        )
+        parent_taxonomy = None
+
     # ------------------------------------------------------------------
     # Resolve IUCN status from the remote category string
     # ------------------------------------------------------------------
@@ -286,8 +370,12 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
     local_iucn_status = None
     if iucn_status_name:
         from bims.models.iucn_status import IUCNStatus
+        # This value populates the global iucn_status field, so only match
+        # global (national=False) statuses. National-only categories have no
+        # global equivalent and must not leak into the global field.
         local_iucn_status = IUCNStatus.objects.filter(
-            category__iexact=iucn_status_name
+            category__iexact=iucn_status_name,
+            national=False
         ).first()
 
     # ------------------------------------------------------------------
@@ -366,6 +454,15 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
                 taxonomy.accepted_taxonomy = accepted_taxonomy
                 update_fields.append('accepted_taxonomy')
 
+            if _is_synonym and taxonomy.parent_id:
+                _emit(
+                    f"[DIVERGENCE] {taxonomy.canonical_name} (id={taxonomy.pk}): "
+                    f"parent local={taxonomy.parent_id!r} remote=None — clearing "
+                    f"because synonyms use accepted_taxonomy"
+                )
+                taxonomy.parent = None
+                update_fields.append('parent')
+
             if local_iucn_status and taxonomy.iucn_status_id != local_iucn_status.pk:
                 taxonomy.iucn_status = local_iucn_status
                 update_fields.append('iucn_status')
@@ -434,6 +531,7 @@ def _find_or_create_taxonomy(taxon_data: dict, base_url: str,
     # Cache and return
     if remote_id is not None:
         remote_cache[remote_id] = taxonomy
+        _visiting.discard(remote_id)
     return taxonomy
 
 

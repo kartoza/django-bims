@@ -227,7 +227,11 @@
             <div class="row" style="margin-right: 0 !important;">
                 <div class="col-lg-3 pull-left fbis-icon">
                     <a href="#" class="pull-left">
-                        <img src="{% static 'img/FBIS v2 Logo.png' %}" width="230">
+                        {% if custom_theme.navbar_logo %}
+                            <img src="{{ custom_theme.navbar_logo.url }}" width="300">
+                        {% else %}
+                            <img src="{% static 'img/FBIS v2 Logo.png' %}" width="230">
+                        {% endif %}
                     </a>
                 </div>
                 <div class="col-lg-6 about-links">

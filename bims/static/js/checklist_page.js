@@ -122,11 +122,11 @@
                                     <a class="dropdown-item export-coldp-btn" href="#"
                                        data-id="${v.id}">ColDP ZIP</a>
                                     <a class="dropdown-item checklist-dl-csv" href="#"
-                                       data-id="${v.id}">CSV Taxa List</a>
-                                    <a class="dropdown-item checklist-dl-csv-family" href="#"
-                                       data-id="${v.id}">CSV Taxa List by Family</a>
+                                       data-id="${v.id}">CSV Versioned Taxa List</a>
                                     <a class="dropdown-item checklist-dl-pdf" href="#"
-                                       data-id="${v.id}">PDF</a>
+                                       data-id="${v.id}">PDF Versioned Checklist</a>
+                                    <a class="dropdown-item checklist-dl-pdf-family" href="#"
+                                       data-id="${v.id}">PDF Versioned Checklist by Family</a>
                                 </div>
                             </div>
                             ${canPublishGroup(v.taxon_group) ? `
@@ -165,7 +165,7 @@
         }).join('');
     }
 
-    async function loadVersions(url) {
+    async function loadVersions(url, highlightVersionId) {
         $loading.show();
         $table.hide();
         $empty.hide();
@@ -187,6 +187,15 @@
             if (results.length) {
                 $tbody.html(renderRows(results));
                 $table.show();
+                if (highlightVersionId) {
+                    const $row = $tbody.find(`a.version-detail-link[data-id="${highlightVersionId}"]`).closest('tr');
+                    if ($row.length) {
+                        $row.addClass('table-warning');
+                        setTimeout(function () {
+                            $row[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }, 100);
+                    }
+                }
             } else {
                 $empty.show();
             }
@@ -224,11 +233,12 @@
 
     const initGroup = getParam('module') || $groupSelect.find('option:first').val();
     const initStatus = getParam('status') || '';
+    const initVersion = getParam('version') || '';
     $groupSelect.val(initGroup);
     if ($statusSelect.length) {
         $statusSelect.val(initStatus);
     }
-    loadVersions(buildUrl(initGroup, initStatus, 1));
+    loadVersions(buildUrl(initGroup, initStatus, 1), initVersion);
 
     $groupSelect.on('change', reload);
     if ($statusSelect.length) {
@@ -524,12 +534,14 @@
                 });
                 if (!resp.ok) {
                     const err = await resp.json().catch(function () { return {}; });
+                    const fieldMessages = [];
+                    Object.keys(err).forEach(function (key) {
+                        if (key === 'non_field_errors') return;
+                        const msgs = Array.isArray(err[key]) ? err[key] : [err[key]];
+                        msgs.forEach(function (m) { if (m) fieldMessages.push(String(m)); });
+                    });
                     const nonField = (err.non_field_errors || []).join(' ');
-                    if (nonField.includes('taxon_group') && nonField.includes('version')) {
-                        showError('Version "' + payload.version + '" already exists for this module. Please use a different version string.');
-                    } else {
-                        showError(err.detail || nonField || JSON.stringify(err));
-                    }
+                    showError(err.detail || fieldMessages.join(' ') || nonField || 'An unexpected error occurred.');
                     return;
                 }
                 const data = await resp.json();
@@ -639,7 +651,12 @@
     function handleChecklistVersionDownload(e, output, orderBy) {
         e.preventDefault();
         const versionId = $(e.currentTarget).data('id');
-        const title = output === 'pdf' ? 'PDF' : (orderBy === 'family' ? 'CSV Taxa List by Family' : 'CSV Taxa List');
+        let title;
+        if (output === 'pdf') {
+            title = orderBy === 'family' ? 'PDF Versioned Checklist by Family' : 'PDF Versioned Checklist';
+        } else {
+            title = orderBy === 'family' ? 'CSV Versioned Taxa List by Family' : 'CSV Versioned Taxa List';
+        }
         showDownloadPopup(output.toUpperCase(), title, function (downloadRequestId) {
             let url = '/download-checklist-snapshot/?checklistVersion=' + versionId +
                 '&output=' + output +
@@ -661,12 +678,12 @@
         handleChecklistVersionDownload(e, 'csv', null);
     });
 
-    $(document).on('click', '.checklist-dl-csv-family', function (e) {
-        handleChecklistVersionDownload(e, 'csv', 'family');
-    });
-
     $(document).on('click', '.checklist-dl-pdf', function (e) {
         handleChecklistVersionDownload(e, 'pdf', 'genus');
+    });
+
+    $(document).on('click', '.checklist-dl-pdf-family', function (e) {
+        handleChecklistVersionDownload(e, 'pdf', 'family');
     });
 
     $(document).on('click', '.export-coldp-btn', function () {

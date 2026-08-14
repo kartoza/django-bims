@@ -183,8 +183,10 @@ class SiteSettingAdmin(PreferencesAdmin):
             "fields": (
                 "readme_download",
                 "taxonomic_upload_template",
-                "occurrence_upload_guidelines",  # NEW
+                "occurrence_upload_guidelines",
                 "occurrence_upload_template",
+                "water_temperature_upload_template",
+                "physico_chemical_upload_template",
                 "auto_validate_taxa_on_upload",
                 "invasion_label",
             ),
@@ -202,6 +204,7 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "download_request_expiry_months",
                 "show_module_summary_on_dashboard",
                 "show_general_summary_on_landing",
+                "show_metagroup_on_landing",
                 "enable_remove_all_occurrences_tool",
                 "allow_taxa_edit_in_admin",
                 "allow_public_taxa_view",

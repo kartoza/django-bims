@@ -64,6 +64,26 @@
                             {% trans "Download" %}
                         </a>
                     </li>
+                    {% if preferences.SiteSetting.physico_chemical_upload_template %}
+                    <li class="list-group-item">
+                        <span>{% trans 'Template for "Uploading Physico-Chemical Data"' %}</span>
+                        <a class="btn btn-outline-secondary btn-sm"
+                           href="{{ preferences.SiteSetting.physico_chemical_upload_template.url }}"
+                           download>
+                            {% trans "Download" %}
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if preferences.SiteSetting.water_temperature_upload_template %}
+                    <li class="list-group-item">
+                        <span>{% trans 'Template for "Uploading Water Temperature (Logged) Data"' %}</span>
+                        <a class="btn btn-outline-secondary btn-sm"
+                           href="{{ preferences.SiteSetting.water_temperature_upload_template.url }}"
+                           download>
+                            {% trans "Download" %}
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
 

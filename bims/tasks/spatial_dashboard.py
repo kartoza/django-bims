@@ -462,7 +462,8 @@ def spatial_dashboard_map(search_parameters=None, search_process_id=None):
 
 @shared_task(name='bims.tasks.spatial_dashboard_summary', queue='search')
 def spatial_dashboard_summary(search_parameters=None, search_process_id=None):
-    from django.db.models import Case, When, Value, F, Count, CharField
+    from django.db.models import Case, When, Value, F, Count, CharField, IntegerField, Min
+    from django.db.models.functions import Coalesce
     from bims.models import TaxonGroup, IUCNStatus
     from bims.utils.celery import memcache_lock
     from bims.api_views.search import CollectionSearch
@@ -535,14 +536,24 @@ def spatial_dashboard_summary(search_parameters=None, search_process_id=None):
                 default=F('taxonomy__endemism__name'),
                 output_field=CharField()
             )
+            endemism_order_field = Case(
+                When(taxonomy__endemism__isnull=False,
+                     then=F('taxonomy__endemism__display_order')),
+                default=Value(9999),
+                output_field=IntegerField()
+            )
             endemism_counts = collection_results.annotate(
                 module_name=module_field,
-                endemism_name=endemism_field
+                endemism_name=endemism_field,
+                endemism_order=endemism_order_field
             ).values(
                 'module_name', 'endemism_name'
             ).annotate(
-                count=Count('taxonomy_id', distinct=True)
-            ).values('module_name', 'endemism_name', 'count')
+                count=Count('taxonomy_id', distinct=True),
+                min_order=Min('endemism_order')
+            ).order_by('min_order').values(
+                'module_name', 'endemism_name', 'count'
+            )
 
             iucn_labels = dict(IUCNStatus.CATEGORY_CHOICES)
 
@@ -554,27 +565,34 @@ def spatial_dashboard_summary(search_parameters=None, search_process_id=None):
                     When(taxonomy__iucn_status__category__isnull=True, then=Value('NE')),
                     default=F('taxonomy__iucn_status__category'),
                     output_field=CharField()
-                )
+                ),
+                cons_order=Coalesce(F('taxonomy__iucn_status__order'), Value(9999))
             ).values(
                 'module_name', 'cons_name'
             ).annotate(
-                count=Count('taxonomy_id', distinct=True)
-            ).values('module_name', 'cons_name', 'count')
+                count=Count('taxonomy_id', distinct=True),
+                min_order=Min('cons_order')
+            ).order_by('min_order').values('module_name', 'cons_name', 'count')
 
             national_cons_counts = collection_results.filter(
-                taxonomy__iucn_status__national=True
+                taxonomy__national_conservation_status__isnull=False
             ).annotate(
                 module_name=module_field,
                 cons_name=Case(
-                    When(taxonomy__iucn_status__category__isnull=True, then=Value('NE')),
-                    default=F('taxonomy__iucn_status__category'),
+                    When(taxonomy__national_conservation_status__category__isnull=True,
+                         then=Value('NE')),
+                    default=F('taxonomy__national_conservation_status__category'),
                     output_field=CharField()
+                ),
+                cons_order=Coalesce(
+                    F('taxonomy__national_conservation_status__order'), Value(9999)
                 )
             ).values(
                 'module_name', 'cons_name'
             ).annotate(
-                count=Count('taxonomy_id', distinct=True)
-            ).values('module_name', 'cons_name', 'count')
+                count=Count('taxonomy_id', distinct=True),
+                min_order=Min('cons_order')
+            ).order_by('min_order').values('module_name', 'cons_name', 'count')
 
             def rows_from_counts(rows, label_key, label_map=None):
                 matrix = {}
@@ -694,10 +712,10 @@ def spatial_dashboard_species_download(search_parameters=None, search_process_id
                         taxon_parks.setdefault(tid, set()).add(park)
             else:
                 for row in collection_results.values(
-                    'taxonomy_id', 'site__name'
+                    'taxonomy_id', 'site__site_code'
                 ).distinct():
                     tid = row['taxonomy_id']
-                    name = (row['site__name'] or '').strip()
+                    name = (row['site__site_code'] or '').strip()
                     if name:
                         taxon_parks.setdefault(tid, set()).add(name)
 
@@ -713,10 +731,13 @@ def spatial_dashboard_species_download(search_parameters=None, search_process_id
                 'iucn_status',
             ).order_by('canonical_name')
 
-            location_col = 'Park Name' if is_sanparks_project() else 'Site Name'
+            location_col = 'Park Name' if is_sanparks_project() else 'Site'
 
             csv_path = search_process.file_path + '.csv'
-            headers = ['Scientific Name', location_col, 'Conservation Status Global']
+            headers = [
+                'Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Species', 'SubSpecies',
+                'Taxon', 'Scientific Name', 'Taxon rank', location_col,
+                'Conservation Status Global', 'Origin', 'Endemism', 'Invasion']
 
             with open(csv_path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.DictWriter(f, fieldnames=headers)
@@ -729,9 +750,21 @@ def spatial_dashboard_species_download(search_parameters=None, search_process_id
                             taxon.iucn_status.category
                         )
                     writer.writerow({
-                        'Scientific Name': taxon.canonical_name or '',
+                        'Kingdom': taxon.kingdom_name,
+                        'Phylum': taxon.phylum_name,
+                        'Class': taxon.class_name,
+                        'Order': taxon.order_name,
+                        'Family': taxon.family_name,
+                        'Species': taxon.species_name,
+                        'SubSpecies': taxon.sub_species_name,
+                        'Taxon': taxon.canonical_name or '',
+                        'Scientific Name': taxon.scientific_name or '',
+                        'Taxon rank': taxon.rank,
                         location_col: ', '.join(sorted(taxon_parks.get(taxon.id, set()))),
                         'Conservation Status Global': iucn_global,
+                        'Origin': taxon.origin.category if taxon.origin else '',
+                        'Endemism': taxon.endemism.name if taxon.endemism else '',
+                        'Invasion': taxon.invasion.category if taxon.invasion else '',
                     })
 
             if search_process.requester:

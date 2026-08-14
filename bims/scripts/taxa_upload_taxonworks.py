@@ -6,6 +6,7 @@ import logging
 from django.db import transaction
 from preferences import preferences
 
+from bims.api_views.taxon_update import create_taxon_proposal
 from bims.models import Taxonomy
 from bims.scripts.taxa_upload import TaxaProcessor
 from bims.utils.fetch_gbif import harvest_synonyms_for_accepted_taxonomy
@@ -29,10 +30,14 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
 
     def __init__(self, base_url: str | None = None,
                  project_token: str | None = None,
-                 records_by_id: dict[int, dict] | None = None):
+                 records_by_id: dict[int, dict] | None = None,
+                 otus_by_taxon_name_id: dict[int, int] | None = None):
         self.base_url = base_url
         self.project_token = project_token
-        self.records_by_id = records_by_id or {}
+        # Use `is not None` so that an empty dict passed by the caller keeps its
+        # identity - the harvester updates these dicts in-place per page.
+        self.records_by_id: dict[int, dict] = records_by_id if records_by_id is not None else {}
+        self.otus_by_taxon_name_id: dict[int, int] = otus_by_taxon_name_id if otus_by_taxon_name_id is not None else {}
         self.taxonomies_by_taxonworks_id: dict[int, Taxonomy] = {}
 
     def handle_error(self, row, message):
@@ -42,6 +47,14 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
         pass
 
     def _infer_rank(self, record: dict) -> str | None:
+        # Without a `name` (the record's own name element) there is no
+        # structured signal to infer a rank from - guessing purely from the
+        # word count of the cached display string is unreliable (e.g. a
+        # trinomial isn't necessarily a SUBSPECIES). Treat these as unknown
+        # rank rather than silently minting one.
+        if not record.get("name"):
+            return None
+
         cached = (record.get("cached") or "").strip()
         if not cached:
             return None
@@ -378,6 +391,9 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
         taxonomy.additional_data = taxonworks_record_to_additional_data(record, self.base_url or "")
         if record_id:
             taxonomy.taxonworks_id = record_id
+            otu_id = self.otus_by_taxon_name_id.get(record_id)
+            if otu_id:
+                taxonomy.taxonworks_otu_id = otu_id
         taxonomy.save()
 
         is_synonym = taxonomy.taxonomic_status == "SYNONYM"
@@ -397,7 +413,12 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
             return None
 
         auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
-        self.add_taxon_to_taxon_group(taxonomy, taxon_group, validated=auto_validate)
+        use_proposal = not auto_validate
+        self.add_taxon_to_taxon_group(
+            taxonomy, taxon_group, validated=auto_validate, use_proposal=use_proposal
+        )
+        if use_proposal:
+            create_taxon_proposal(taxonomy, taxon_group)
 
         if harvest_synonyms and taxonomy.taxonomic_status == "ACCEPTED":
             try:
@@ -408,8 +429,11 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
                 ) or []
                 for syn in syn_taxa:
                     self.add_taxon_to_taxon_group(
-                        syn, taxon_group, validated=auto_validate
+                        syn, taxon_group, validated=auto_validate,
+                        use_proposal=use_proposal,
                     )
+                    if use_proposal:
+                        create_taxon_proposal(syn, taxon_group)
             except Exception as syn_exc:
                 logger.exception(
                     "Error harvesting synonyms for %s: %s",
@@ -420,7 +444,8 @@ class TaxonWorksTaxaProcessor(TaxaProcessor):
 
 class SessionTaxonWorksTaxaProcessor:
     def __init__(self, log_fn, base_url: str, project_token: str,
-                 records_by_id: dict[int, dict] | None = None):
+                 records_by_id: dict[int, dict] | None = None,
+                 otus_by_taxon_name_id: dict[int, int] | None = None):
         class _Processor(TaxonWorksTaxaProcessor):
             def handle_error(self_, row, message):  # noqa: N805
                 log_fn(f"Row error TaxonWorksID={row.get('id')}: {message}")
@@ -432,6 +457,7 @@ class SessionTaxonWorksTaxaProcessor:
             base_url=base_url,
             project_token=project_token,
             records_by_id=records_by_id,
+            otus_by_taxon_name_id=otus_by_taxon_name_id,
         )
 
     def process(self, record: dict, taxon_group, harvest_synonyms: bool):

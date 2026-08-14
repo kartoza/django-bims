@@ -27,6 +27,7 @@ from bims.api_views.boundary import (
 )
 from bims.api_views.celery_status import CeleryStatus
 from bims.api_views.duplicate_records import DuplicateRecordsApiView
+from bims.api_views.duplicate_sites import DuplicateSitesApiView
 from bims.api_views.location_site import (
     LocationSiteList,
     LocationSitesSummary,
@@ -49,7 +50,7 @@ from bims.api_views.taxon import (
     TaxaGroupSummary,
     TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
     HarvestIUCNStatus, ApproveTaxonGroupProposalsView, ClearTaxaNotAssociatedInTaxonGroup,
-    ClearGbifDeletedOccurrences
+    ClearGbifDeletedOccurrences, COLSearchView
 )
 from bims.api_views.dataset import DatasetAutocompleteAPIView
 from bims.api_views.cluster import ClusterList
@@ -407,6 +408,9 @@ urlpatterns = [
     re_path(r'^duplicate-records/download/$',
         DuplicateRecordsApiView.as_view(),
         ),
+    re_path(r'^duplicate-sites/download/$',
+        DuplicateSitesApiView.as_view(),
+        ),
     re_path(r'^thermal-data/$',
         ThermalDataApiView.as_view(),
         ),
@@ -470,6 +474,9 @@ urlpatterns = [
     path('taxonomy-iucn-status/<int:pk>/',
          IUCNStatusFetchView.as_view(),
          name='taxonomy-iucn-status'),
+    path('taxonomy-col-search/<int:pk>/',
+         COLSearchView.as_view(),
+         name='taxonomy-col-search'),
     path('wetland-data/<str:lon>/<str:lat>/',
          WetlandDataApiView.as_view(),
          name='wetland-data'),

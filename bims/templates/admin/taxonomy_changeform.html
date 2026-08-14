@@ -64,7 +64,7 @@
             });
         }
 
-        function confirmGBIF(payload) {
+        function confirmCOL(payload) {
             if (!payload) {
                 return;
             }
@@ -72,7 +72,8 @@
             document.getElementById('id_scientific_name').value = payload.scientificName || '';
             document.getElementById('id_canonical_name').value = payload.canonicalName || '';
             document.getElementById('id_taxonomic_status').value = payload.taxonomicStatus || '';
-            document.getElementById('id_gbif_key').value = payload.key || '';
+            document.getElementById('id_col_id').value = payload.colId || '';
+            document.getElementById('id_gbif_key').value = payload.gbifKey || '';
             updateGbifJsonField(payload.gbifData);
         }
 
@@ -130,69 +131,80 @@
                     });
                 });
 
-                $('#grp-content').find('.gbif_key').find('.c-2').append(
-                    `<button class="grp-button" style="width: 150px; margin-left: 10px" id="find-gbif">Find GBIF</button>`
+                $('#grp-content').find('.col_id').find('.c-2').append(
+                    `<button class="grp-button" style="width: 150px; margin-left: 10px" id="find-col-id">Find COL ID</button>`
                 );
 
-                $('#find-gbif').click(function(e) {
+                $('#find-col-id').click(function(e) {
                     e.preventDefault();
                     const $target = $(e.target);
                     const originalButtonText = $target.html();
+                    const taxonomyId = '{{ original.pk|default:"" }}';
                     $target.html('Fetching...');
-                    let results = '{{ results|safe }}';
-                    if(results === "None") results = "";
-                    if(results !== "") {
-                        let row = `<table class="grp-table grp-sortable" id="list-gbif" style="border: none; display: block"><tbody style="border: none">` +
-                                   `<th>Key</th><th>Kingdom</th><th>Scientific Name</th><th>Canonical Name</th><th>Rank</th><th>Status</th><th>Parent</th><th>Action</th>`
-                        let suggest = JSON.parse(results);
-                        suggest.forEach(function (value){
-                            const encodedPayload = encodeURIComponent(JSON.stringify(value));
-                            row += `<tr><td>`+value.key+`</td>
-                                    <td>`+value.kingdom+`</td>
-                                    <td>`+value.scientificName+`</td>
-                                    <td>`+value.canonicalName+`</td>
-                                    <td>`+value.rank+`</td>
-                                    <td>`+value.status+`</td>
-                                    <td>`+value.parent+`</td>
-                                    <td><button class="grp-button confirm-gbif-button" style="width: 150px; margin-left: 10px"
-                                    data-gbif="`+encodedPayload+`">
-                                    Update</button></td></tr>`
 
-                        });
-                        row += '</tbody></table>'
-                        $('#grp-content').find('.gbif_key').find('.c-2').append(
-                            row
-                        );
-                        $target.html(originalButtonText);
-                        $target.attr('disabled', 'disabled')
+                    $.ajax({
+                        type: 'GET',
+                        url: `/api/taxonomy-col-search/${taxonomyId}/`,
+                        success: function (suggest) {
+                            if (!suggest || !suggest.length) {
+                                $target.html("COL ID not found");
+                                $target.attr('disabled', 'disabled');
+                                $target.css('background', '#adadad');
+                                $target.css('border-color', '#adadad');
+                                return;
+                            }
 
-                    }
-                    else{
-                        $target.html("GBIF Key not found");
-                        $target.attr('disabled', 'disabled')
-                        $target.css('background', '#adadad');
-                        $target.css('border-color', '#adadad')
-                    }
+                            let row = `<table class="grp-table grp-sortable" id="list-col" style="border: none; display: block"><tbody style="border: none">` +
+                                       `<th>COL ID</th><th>GBIF Key</th><th>Kingdom</th><th>Scientific Name</th><th>Canonical Name</th><th>Rank</th><th>Status</th><th>Parent</th><th>Action</th>`
+                            suggest.forEach(function (value){
+                                const encodedPayload = encodeURIComponent(JSON.stringify(value));
+                                row += `<tr><td>`+value.taxonID+`</td>
+                                        <td>`+(value.nubKey || '')+`</td>
+                                        <td>`+value.kingdom+`</td>
+                                        <td>`+value.scientificName+`</td>
+                                        <td>`+value.canonicalName+`</td>
+                                        <td>`+value.rank+`</td>
+                                        <td>`+value.taxonomicStatus+`</td>
+                                        <td>`+value.parent+`</td>
+                                        <td><button class="grp-button confirm-col-button" style="width: 150px; margin-left: 10px"
+                                        data-col="`+encodedPayload+`">
+                                        Update</button></td></tr>`
 
+                            });
+                            row += '</tbody></table>'
+                            $('#grp-content').find('.col_id').find('.c-2').append(
+                                row
+                            );
+                            $target.html(originalButtonText);
+                            $target.attr('disabled', 'disabled');
+                        },
+                        error: function () {
+                            $target.html("COL ID not found");
+                            $target.attr('disabled', 'disabled');
+                            $target.css('background', '#adadad');
+                            $target.css('border-color', '#adadad');
+                        }
+                    });
                 });
 
-                $('#grp-content').on('click', '.confirm-gbif-button', function(e) {
+                $('#grp-content').on('click', '.confirm-col-button', function(e) {
                     e.preventDefault();
-                    const encoded = $(this).data('gbif');
+                    const encoded = $(this).data('col');
                     if (!encoded) {
                         return;
                     }
                     try {
                         const payload = JSON.parse(decodeURIComponent(encoded));
-                        confirmGBIF({
-                            key: payload.key,
+                        confirmCOL({
+                            colId: payload.taxonID,
+                            gbifKey: payload.nubKey,
                             scientificName: payload.scientificName,
                             canonicalName: payload.canonicalName,
-                            taxonomicStatus: payload.status,
+                            taxonomicStatus: payload.taxonomicStatus,
                             gbifData: payload
                         });
                     } catch (err) {
-                        console.error('Failed to parse GBIF payload', err);
+                        console.error('Failed to parse COL payload', err);
                     }
                 });
             }

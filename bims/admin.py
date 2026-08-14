@@ -11,7 +11,6 @@ from django.http import HttpResponse, HttpResponseRedirect
 from django.conf import settings
 from django.utils.timezone import localtime
 from django.db import connection
-from django_tenants.utils import schema_context, get_public_schema_name
 from rangefilter.filters import DateRangeFilterBuilder
 from preferences.admin import PreferencesAdmin
 from preferences import preferences
@@ -21,7 +20,6 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.contrib.gis import admin
 from django.contrib import admin as django_admin
-from django.contrib import messages
 from django.core.mail import send_mail
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import Permission
@@ -41,9 +39,6 @@ from taggit.models import Tag
 
 from bims.admins.custom_ckeditor_admin import DynamicCKEditorUploadingWidget, CustomCKEditorAdmin
 from bims.admins.site_setting import SiteSettingAdmin
-import bims.admin_site
-import bims.admins.gbif_admin
-import bims.admins.licence
 from bims.api_views.taxon_update import create_taxon_proposal
 from bims.enums import TaxonomicGroupCategory, TaxonomicStatus, TaxonomicRank
 from bims.models.harvest_schedule import HarvestPeriod
@@ -156,7 +151,7 @@ from bims.models.taxonomy import TaxonTag
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.conf import TRACK_PAGEVIEWS
 from bims.models.profile import Profile as BimsProfile, Role
-from bims.utils.gbif import suggest_search
+from bims.utils.col import resolve_col_id
 from bims.utils.location_context import merge_context_group
 from bims.utils.user import merge_users
 from bims.tasks.location_site import (
@@ -1285,6 +1280,7 @@ class TaxonomyAdminForm(forms.ModelForm):
         widgets = {
             'gbif_data': JSONEditorWidget,
             'additional_data': JSONEditorWidget,
+            'col_id': forms.TextInput(attrs={'style': 'width: 100px;'}),
         }
         exclude = (
             'reliability_of_sources',
@@ -1558,7 +1554,7 @@ class QualityCheckFilter(django_admin.SimpleListFilter):
 
     def _no_upstream_id_q(self):
         # Missing upstream ID = no GBIF key AND no FADA ID (null or empty)
-        return Q(gbif_key__isnull=True) & (Q(fada_id__isnull=True) | Q(fada_id=''))
+        return Q(col_id__isnull=True) & (Q(fada_id__isnull=True) | Q(fada_id=''))
 
     def lookups(self, request, model_admin):
         return (
@@ -1652,6 +1648,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         'fetch_iucn_assessments',
         'harvest_synonyms_for_accepted',
         'export_taxa_list',
+        'find_col_id',
     ]
     fieldsets = (
         (_('Taxon Details'), {
@@ -1663,10 +1660,12 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 'parent',
                 'parent_hierarchy',
                 'species_group',
+                'col_id',
                 'gbif_key',
                 'fada_id',
                 'aphia_id',
                 'taxonworks_id',
+                'taxonworks_otu_id',
                 'last_modified_by',
                 'subgenus',
                 'verified',
@@ -1803,30 +1802,13 @@ class TaxonomyAdmin(admin.ModelAdmin):
     merge_taxa.short_description = 'Merge taxa'
 
     def link_to_gbif(self, obj):
-        if obj.gbif_key:
-            link = 'https://gbif.org/species/{}'.format(obj.gbif_key)
-            label = obj.gbif_key
+        if obj.col_id:
+            link = 'https://gbif.org/taxon/{}'.format(obj.col_id)
+            label = obj.col_id
             return format_html(
                 '<a href="{}" target="_blank">{}</a>', link, label)
         else:
             return '-'
-
-    def change_view(self, request, object_id, form_url='', extra_context=None):
-        extra_context = extra_context or {}
-        scientific_name = Taxonomy.objects.get(pk=object_id).scientific_name
-
-        if scientific_name is None:
-            extra_context['results'] = None
-            return super().change_view(
-                request, object_id, form_url, extra_context=extra_context,
-            )
-        name = Taxonomy.objects.get(pk=object_id).scientific_name
-        parameter = {'limit': 20, 'q': name}
-        results = suggest_search(parameter)
-        extra_context['results'] = json.dumps(results)
-        return super().change_view(
-            request, object_id, form_url, extra_context=extra_context,
-        )
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related('tags')
@@ -1860,7 +1842,9 @@ class TaxonomyAdmin(admin.ModelAdmin):
                 issues.append('Missing accepted taxon')
 
         # Upstream ID check applies to all statuses
-        if obj.gbif_key or obj.fada_id:
+        if obj.col_id:
+            checks.append(True)
+        elif obj.fada_id:
             checks.append(True)
         else:
             checks.append(False)
@@ -1971,6 +1955,41 @@ class TaxonomyAdmin(admin.ModelAdmin):
     harvest_synonyms_for_accepted.short_description = (
         "Harvest synonyms for accepted taxa (GBIF)"
     )
+
+    def find_col_id(self, request, queryset):
+        updated = 0
+        skipped = 0
+        errors = 0
+
+        for taxon in queryset.iterator(chunk_size=100):
+            try:
+                col_id, _ = resolve_col_id(
+                    taxon.gbif_key,
+                    taxon.canonical_name or '',
+                )
+            except Exception as e:
+                logger.exception(
+                    "find_col_id: error for taxon id=%s: %s",
+                    taxon.id, e,
+                )
+                errors += 1
+                continue
+
+            if col_id:
+                taxon.col_id = col_id
+                taxon.save(update_fields=['col_id'])
+                updated += 1
+            else:
+                skipped += 1
+
+        level = messages.INFO if errors == 0 else messages.WARNING
+        self.message_user(
+            request,
+            f"COL ID lookup completed. Updated: {updated}; skipped/not found: {skipped}; errors: {errors}.",
+            level=level,
+        )
+
+    find_col_id.short_description = "Find COL ID"
 
     def export_taxa_list(self, request, queryset):
         import os
@@ -2881,6 +2900,7 @@ class HarvestSessionAdmin(admin.ModelAdmin):
 
     actions = [
         'resume_harvest',
+        'reprocess_gbif_download',
     ]
 
     autocomplete_fields = [
@@ -2927,6 +2947,73 @@ class HarvestSessionAdmin(admin.ModelAdmin):
             )
 
         self.message_user(request, full_message)
+
+    def reprocess_gbif_download(self, request, queryset):
+        import re
+        import json as _json
+        from django.conf import settings
+        from pathlib import Path
+        from bims.utils.gbif_download import _species_reset, _col_ids_reset
+        from bims.tasks.harvest_gbif_species import harvest_gbif_species
+
+        if queryset.count() > 1:
+            self.message_user(
+                request, 'You can only reprocess one session at a time',
+                level=messages.ERROR)
+            return
+
+        harvest_session = queryset.first()
+        additional_data = harvest_session.additional_data or {}
+        download_keys = additional_data.get('gbif_download_keys', {})
+
+        if not download_keys:
+            # Fallback: extract download keys from the session log file
+            try:
+                log_path = harvest_session.log_file.path
+                pattern = re.compile(r'^(\S+)\s+status=SUCCEEDED')
+                with open(log_path, 'r', encoding='utf-8') as fh:
+                    for line in fh:
+                        m = pattern.match(line.strip())
+                        if m:
+                            gbif_key = m.group(1)
+                            zip_path = (
+                                Path(settings.MEDIA_ROOT) / 'gbif_downloads' / f'{gbif_key}.zip'
+                            )
+                            if zip_path.exists():
+                                batch_no = str(len(download_keys) + 1)
+                                download_keys[batch_no] = gbif_key
+            except Exception:
+                pass
+
+        if not download_keys:
+            self.message_user(
+                request,
+                'No cached download keys found. '
+                'Check that the GBIF zip files exist in gbif_downloads/ and the log file is intact.',
+                level=messages.ERROR)
+            return
+
+        state = {
+            'next_batch': 1,
+            'download_keys': download_keys,
+            'meta': additional_data.get('gbif_download_meta', {}),
+        }
+        harvest_session.status = _json.dumps(state)
+        harvest_session.finished = False
+        harvest_session.canceled = False
+        harvest_session.save()
+
+        _species_reset(harvest_session)
+        _col_ids_reset(harvest_session)
+
+        harvest_gbif_species.delay(harvest_session.id, connection.schema_name)
+
+        self.message_user(
+            request,
+            f'Reprocessing started for session {harvest_session.id} '
+            f'using {len(download_keys)} cached GBIF download(s).')
+
+    reprocess_gbif_download.short_description = 'Re-process cached GBIF species list download'
 
 
 class TaxonGroupTaxonomyAdmin(admin.ModelAdmin):
@@ -3257,7 +3344,7 @@ class TaxonGroupCitationAdmin(admin.ModelAdmin):
     exclude = ("created_at", "updated_at")
 
     def formatted_citation(self, obj):
-        return obj.formatted_citation
+        return obj.formatted_citation()
 
     formatted_citation.short_description = "Citation"
 

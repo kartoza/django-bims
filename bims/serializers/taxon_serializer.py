@@ -381,7 +381,7 @@ class TaxonSerializer(serializers.ModelSerializer):
                     len(canonical_name.split(' ')) > 1
                     and canonical_name.lower().startswith(genus_name.lower())
                 ):
-                    subgenus_name = canonical_name[len(genus_name):].strip()
+                    subgenus_name = canonical_name[len(genus_name):].strip().strip('()')
                 return f"{genus_name} ({subgenus_name})"
             return canonical_name
 
@@ -389,9 +389,19 @@ class TaxonSerializer(serializers.ModelSerializer):
         if subgenus_name:
             genus_name = self._get_genus_name(obj)
             if genus_name:
+                # Strip genus prefix already embedded in the subgenus canonical name
+                # e.g. "Thraulus (Thraulus)" -> "Thraulus"
+                if subgenus_name.lower().startswith(genus_name.lower()):
+                    subgenus_name = subgenus_name[len(genus_name):].strip().strip('()')
                 name_parts = canonical_name.split()
                 if len(name_parts) > 1:
-                    epithet = ' '.join(name_parts[1:])
+                    # Skip genus token and drop any parenthetical subgenus tokens
+                    # already present in the canonical name to avoid doubling
+                    remaining = [
+                        p for p in name_parts[1:]
+                        if not (p.startswith('(') and p.endswith(')'))
+                    ]
+                    epithet = ' '.join(remaining)
                     if epithet.lower().startswith(subgenus_name.lower()):
                         epithet = epithet[len(subgenus_name):].strip()
                     return f"{genus_name} ({subgenus_name}) {epithet}"
@@ -764,4 +774,5 @@ class TaxonGroupSerializer(serializers.ModelSerializer):
                   'occurrence_upload_templates',
                   'is_readonly',
                   'upstream_url',
+                  'taxonworks_base_url',
                   ]

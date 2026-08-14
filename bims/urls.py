@@ -96,12 +96,14 @@ from bims.views.water_temperature import WaterTemperatureView, \
     WaterTemperatureUploadView, WaterTemperatureValidateView, \
     WaterTemperatureSiteView, WaterTemperatureEditView
 from bims.views.download_taxa_template import download_taxa_template
+from bims.views.download_water_temperature_template import download_water_temperature_template
 from bims.views.physico_chemical import PhysicoChemicalView, \
     PhysicoChemicalSiteView
 from bims.views.harvest_gbif_species import HarvestGbifSpeciesView
 from bims.views.harvest_worms_species import HarvestWormsSpeciesView
 from bims.views.harvest_taxonworks_species import HarvestTaxonWorksSpeciesView
 from bims.views.harvest_bims_species import HarvestBimsSpeciesView
+from bims.views.harvest_iucn_status import HarvestIUCNStatusView
 from bims.views.layer_upload import (
     BoundaryUploadView,
     UserBoundaryUploadView
@@ -242,6 +244,7 @@ urlpatterns = [
     path('harvest-worms/', HarvestWormsSpeciesView.as_view(), name='harvest-worms-species'),
     path('harvest-taxonworks/', HarvestTaxonWorksSpeciesView.as_view(), name='harvest-taxonworks-species'),
     path('harvest-bims/', HarvestBimsSpeciesView.as_view(), name='harvest-bims-species'),
+    path('harvest-iucn/', HarvestIUCNStatusView.as_view(), name='harvest-iucn-status'),
     re_path(r'^source-references/$', SourceReferenceListView.as_view(),
             name='source-references'),
     re_path(r'^delete-source-reference/$', DeleteSourceReferenceView.as_view(),
@@ -285,6 +288,9 @@ urlpatterns = [
     re_path(r'^download-occurrence-template/',
             download_occurrence_template,
             name='download-occurrence-template'),
+    re_path(r'^download-water-temperature-template/$',
+            download_water_temperature_template,
+            name='download-water-temperature-template'),
     re_path(r'^water-temperature-form/$',
             WaterTemperatureView.as_view(),
             name='water-temperature-form'),

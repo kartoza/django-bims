@@ -32,6 +32,7 @@
         const approveUrl = '/api/review-taxon/';
         let userAutocompletePlaceholder = 'Search for a user';
         const taxaGroups = {{ taxa_groups_json | safe }};
+        const checklistVersions = {{ checklist_versions_json | default:"{}" | safe }};
         let currentSelectedTaxonGroup = "";
         {% if selected_taxon_group %}
         currentSelectedTaxonGroup = "{{ selected_taxon_group.id }}";
@@ -339,6 +340,7 @@
                     {% else %}
                         <h2>Taxon Management</h2>
                     {% endif %}
+                    <div id="checklist-version-notice"></div>
                 </div>
                 <div class="dashboard-body">
                     <hr class="db-hr"/>
@@ -540,10 +542,11 @@
                             <thead>
                                 <tr>
                                     <th scope="col" style="width: 12%">Status</th>
-                                    <th scope="col" style="width: 25%"><span id="accepted-taxon-column-label">Accepted Taxon</span></th>
-                                    <th scope="col" style="width: 25%">Taxon Name</th>
-                                    <th scope="col" style="width: 18%">Author</th>
-                                    <th scope="col" style="width: 20%">Rank</th>
+                                    <th scope="col" style="width: 20%"><span id="accepted-taxon-column-label">Accepted Taxon</span></th>
+                                    <th scope="col" id="subgenus-column-header" style="width: 18%; display: none;">Subgenus</th>
+                                    <th scope="col" style="width: 20%">Taxon Name</th>
+                                    <th scope="col" style="width: 15%">Author</th>
+                                    <th scope="col" style="width: 15%">Rank</th>
                                     <th scope="col">Action</th>
                                 </tr>
                             </thead>
@@ -564,11 +567,13 @@
                                     <select name="newTaxonFamilyName" class="taxon-auto-complete form-control" id="new-taxon-parent" style="width: 100%"></select>
                                     <input type="hidden" class="new-taxon-parent-id">
                                 </td>
+                                <td id="subgenus-column-cell" style="display: none;">
+                                    <select id="new-taxon-subgenus" style="width: 100%"></select>
+                                </td>
                                 <td>
                                     <input type="text" class="form-control" placeholder="Taxon Name" id="new-taxon-name">
                                 </td>
                                 <td>
-
                                     <div>
                                         <select id="author-auto-complete" name="authorName" class="author-auto-complete form-control" data-add-new-tag="true"></select>
                                     </div>
@@ -594,6 +599,7 @@
                                 <td style="border-top-width: 0" colspan="1"><span class="text-muted" style="font-size: 10pt; font-style: italic">
                                     This is an autocomplete search, if the taxon does not exist in the system, please add it first.</span>
                                 </td>
+                                <td id="subgenus-hint-cell" style="border-top-width: 0; display: none;"></td>
                                 <td style="border-top-width: 0; vertical-align: top !important;" colspan="1">
                                     <small class="text-muted" style="font-size: 10pt; font-style: italic" id="taxon-name-helper">Provide the binomial or epithet depending on the status.</small>
                                 </td>
@@ -693,6 +699,13 @@
                                 </select>
                             </div>
                         </div>
+                        {% if preferences.SiteSetting.enable_harvest_taxonworks %}
+                        <div class="form-group">
+                            <label for="taxonworks-base-url" class="col-form-label">TaxonWorks URL</label>
+                            <input type="url" class="form-control" id="taxonworks-base-url" name="taxonworks_base_url" placeholder="https://plecoptera.speciesfile.org">
+                            <small class="form-text text-muted">Used to construct OTU links for taxa in this group.</small>
+                        </div>
+                        {% endif %}
                         <div class="form-group">
                             <label for="taxa-upload-template" class="col-form-label">Taxa Upload Template</label>
                             <div>

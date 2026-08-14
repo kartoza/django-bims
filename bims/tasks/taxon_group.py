@@ -30,8 +30,9 @@ def delete_occurrences_by_taxon_group(self, taxon_module_id):
     # Surveys associated with the collections
     survey_ids = collections.values_list('survey_id', flat=True).distinct()
 
-    # Taxa associated with the taxon group
-    taxa_ids = taxon_group.taxonomies.all().values_list('id', flat=True)
+    # Taxa associated with the taxon group - evaluate to a list immediately
+    # so the IDs are preserved after taxonomies.clear() is called below.
+    taxa_ids = list(taxon_group.taxonomies.all().values_list('id', flat=True))
     taxa = Taxonomy.objects.filter(id__in=taxa_ids)
     total_taxa = taxa.count()
 
