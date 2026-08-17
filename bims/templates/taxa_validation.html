@@ -307,6 +307,43 @@
     </div>
 </div>
 
+<!-- Fix from IUCN comparison modal -->
+<div class="modal fade" id="fix-iucn-modal" tabindex="-1" role="dialog" aria-labelledby="fix-iucn-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fix-iucn-modal-title">Fix from IUCN Red List</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-2" id="fix-iucn-taxon-name" style="font-size:0.9rem;"></p>
+                <div id="fix-iucn-loading" class="text-muted p-3 text-center">Looking up on the IUCN Red List&hellip;</div>
+                <div id="fix-iucn-not-found" class="alert alert-warning" style="display:none;"></div>
+                <div id="fix-iucn-compare" style="display:none;">
+                    <div class="fix-compare-row fix-compare-head">
+                        <div></div>
+                        <div class="fix-box-label">Current (BIMS)</div>
+                        <div></div>
+                        <div class="fix-box-label">IUCN Red List</div>
+                    </div>
+                    <div id="fix-iucn-fields"></div>
+                    <div id="fix-iucn-nochange" class="fix-nochange-note" style="display:none;">
+                        No differences found &ndash; local data already matches the IUCN Red List.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="fix-iucn-confirm-btn" disabled onclick="confirmIucnFix()">
+                    Confirm update
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const PAGE_SIZE = 50;
     const CHECKS_META = JSON.parse(document.getElementById('taxa-checks-data').textContent);
@@ -401,6 +438,7 @@
         const isMissingParent = currentCheck === 'missing_parent';
         const isSynonymNoAccepted = currentCheck === 'synonym_no_accepted';
         const isDuplicateCanonical = currentCheck === 'duplicate_canonical';
+        const isMissingIucn = currentCheck === 'missing_iucn_global';
         if (!rows.length) {
             tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted p-3">No issues found.</td></tr>';
             return;
@@ -436,6 +474,15 @@
                        Merge duplicates
                    </button>`
                 : '';
+            const iucnBtn = isMissingIucn
+                ? `<button class="btn btn-outline-danger btn-sm ml-1"
+                           style="white-space:nowrap;font-size:0.75rem;padding:2px 8px;"
+                           data-taxon-id="${r.id}"
+                           data-canonical="${esc(r.canonical_name)}"
+                           onclick="openFixIucnModal(this)">
+                       Fix from IUCN
+                   </button>`
+                : '';
             tbody.innerHTML += `
                 <tr id="taxon-row-${r.id}">
                     <td>${offset + i + 1}</td>
@@ -459,7 +506,7 @@
                                 data-canonical="${esc(r.canonical_name)}"
                                 onclick="openFixGbifModal(this)">
                             Fix from GBIF
-                        </button>`}${assignBtn}${mergeBtn}
+                        </button>`}${assignBtn}${mergeBtn}${iucnBtn}
                     </td>
                 </tr>`;
         });
@@ -1047,6 +1094,132 @@
             alert('Request failed.');
             btn.disabled = false;
             btn.textContent = 'Merge into selected';
+        });
+    }
+
+    // ---- Fix from IUCN (missing_iucn_global check) ----
+
+    let fixIucnTaxonId = null;
+    let fixIucnPayload = null;
+
+    const FIX_IUCN_FIELDS = [
+        { key: 'category', label: 'Category' },
+        { key: 'sis_id', label: 'IUCN taxon id' },
+        { key: 'url', label: 'Assessment URL' },
+    ];
+
+    function openFixIucnModal(btnEl) {
+        const taxonId = parseInt(btnEl.dataset.taxonId, 10);
+        const canonicalName = btnEl.dataset.canonical || '';
+        fixIucnTaxonId = taxonId;
+        fixIucnPayload = null;
+
+        document.getElementById('fix-iucn-taxon-name').textContent = `Taxon: ${canonicalName}`;
+        document.getElementById('fix-iucn-loading').style.display = 'block';
+        document.getElementById('fix-iucn-not-found').style.display = 'none';
+        document.getElementById('fix-iucn-compare').style.display = 'none';
+        document.getElementById('fix-iucn-nochange').style.display = 'none';
+        document.getElementById('fix-iucn-fields').innerHTML = '';
+        document.getElementById('fix-iucn-confirm-btn').disabled = true;
+
+        $('#fix-iucn-modal').modal('show');
+
+        fetch(`/taxa-validation/iucn-lookup/${taxonId}/`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('fix-iucn-loading').style.display = 'none';
+                if (!data.ok) {
+                    document.getElementById('fix-iucn-not-found').textContent = data.error || 'Lookup failed.';
+                    document.getElementById('fix-iucn-not-found').style.display = 'block';
+                    return;
+                }
+                if (!data.iucn) {
+                    document.getElementById('fix-iucn-not-found').textContent =
+                        'No global Red List assessment found on the IUCN API for this name.';
+                    document.getElementById('fix-iucn-not-found').style.display = 'block';
+                    return;
+                }
+                renderIucnCompare(data.original, data.iucn);
+            })
+            .catch(() => {
+                document.getElementById('fix-iucn-loading').style.display = 'none';
+                document.getElementById('fix-iucn-not-found').textContent = 'Lookup failed.';
+                document.getElementById('fix-iucn-not-found').style.display = 'block';
+            });
+    }
+
+    function formatIucnValue(key, value) {
+        if (key === 'url' && value) {
+            return `<a href="${esc(value)}" target="_blank" rel="noopener">${esc(value)}</a>`;
+        }
+        return esc(value) || '&nbsp;';
+    }
+
+    function renderIucnCompare(original, iucn) {
+        const oldValues = {
+            category: original.category ? `${original.category} (${original.label})` : '',
+            sis_id: original.sis_id || '',
+            url: original.url || '',
+        };
+        const newValues = {
+            category: iucn.category ? `${iucn.category} (${iucn.label})` : '',
+            sis_id: iucn.sis_id || '',
+            url: iucn.url || '',
+        };
+
+        let hasChanges = false;
+        let html = '';
+        FIX_IUCN_FIELDS.forEach(f => {
+            const oldVal = oldValues[f.key] || '';
+            const newVal = newValues[f.key] || '';
+            const changed = newVal && (oldVal !== newVal);
+            if (changed) hasChanges = true;
+            html += `
+                <div class="fix-field-row ${changed ? 'changed' : ''}">
+                    <div class="fix-field-label">${esc(f.label)}</div>
+                    <div class="fix-box">${formatIucnValue(f.key, oldVal)}</div>
+                    <div class="fix-arrow">${changed ? '&#8594;' : ''}</div>
+                    <div class="fix-box ${changed ? 'fix-box-gbif-highlight' : ''}">${formatIucnValue(f.key, newVal)}</div>
+                </div>`;
+        });
+
+        document.getElementById('fix-iucn-fields').innerHTML = html;
+        document.getElementById('fix-iucn-compare').style.display = 'block';
+        document.getElementById('fix-iucn-nochange').style.display = hasChanges ? 'none' : 'block';
+        document.getElementById('fix-iucn-confirm-btn').disabled = !hasChanges;
+
+        fixIucnPayload = iucn;
+    }
+
+    function confirmIucnFix() {
+        if (!fixIucnTaxonId || !fixIucnPayload) return;
+        const btn = document.getElementById('fix-iucn-confirm-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        fetch('/taxa-validation/apply-iucn-fix/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ taxon_id: fixIucnTaxonId, iucn: fixIucnPayload }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.textContent = 'Confirm update';
+            if (data.ok) {
+                $('#fix-iucn-modal').modal('hide');
+                fetchPage();
+            } else {
+                alert(data.error || 'Failed to apply update.');
+                btn.disabled = false;
+            }
+        })
+        .catch(() => {
+            alert('Request failed.');
+            btn.disabled = false;
+            btn.textContent = 'Confirm update';
         });
     }
 

@@ -11,6 +11,8 @@ from bims.views.taxa_validation import (
     TaxaApplyGbifFixView,
     TaxaDuplicateGroupView,
     TaxaMergeDuplicatesView,
+    TaxaIucnLookupView,
+    TaxaApplyIucnFixView,
 )
 
 urlpatterns = [
@@ -41,4 +43,10 @@ urlpatterns = [
     re_path(r'^merge-duplicates/$',
             TaxaMergeDuplicatesView.as_view(),
             name='taxa-validation-merge-duplicates'),
+    re_path(r'^iucn-lookup/(?P<taxon_id>\d+)/$',
+            TaxaIucnLookupView.as_view(),
+            name='taxa-validation-iucn-lookup'),
+    re_path(r'^apply-iucn-fix/$',
+            TaxaApplyIucnFixView.as_view(),
+            name='taxa-validation-apply-iucn-fix'),
 ]
