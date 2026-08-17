@@ -5,6 +5,7 @@
 
 {% block head %}
     <link href="{% static "css/taxa_management.css" %}" rel="stylesheet">
+    <link rel="stylesheet" href="{% static "lib/select2-4.1.0/css/select2.min.css" %}">
     <style>
         .validation-summary {
             display: grid;
@@ -54,6 +55,57 @@
         #gbif-search-status { font-size: 0.85rem; color: #6c757d; min-height: 1.2em; }
         .selected-gbif-row { background: #d4edda !important; }
         .row-assigned { opacity: 0.5; pointer-events: none; }
+
+        /* Inline parent autocomplete */
+        .parent-autocomplete-wrap { min-width: 220px; }
+        .parent-autocomplete { width: 100%; }
+        .parent-assign-status { font-size: 0.75rem; margin-top: 2px; }
+        .parent-assign-status.saving { color: #6c757d; }
+        .parent-assign-status.error { color: #dc3545; }
+
+        .result-table.hide-parent-cols .col-parent,
+        .result-table.hide-parent-cols .col-parent-rank { display: none; }
+
+        /* Fix from GBIF comparison modal */
+        .fix-compare-row, .fix-field-row {
+            display: grid;
+            grid-template-columns: 130px 1fr 32px 1fr;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .fix-compare-head {
+            border-bottom: 2px solid #dee2e6;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #495057;
+        }
+        .fix-compare-head .fix-box-label { grid-column: 2; }
+        .fix-compare-head .fix-box-label:last-child { grid-column: 4; }
+        .fix-field-label { font-size: 0.8rem; font-weight: 600; color: #6c757d; }
+        .fix-box {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            min-height: 1.4em;
+            word-break: break-word;
+        }
+        .fix-box-gbif-highlight {
+            background: #fff8e1;
+            border-color: #ffca28;
+            font-weight: 600;
+        }
+        .fix-arrow {
+            text-align: center;
+            font-size: 1.1rem;
+            color: #adb5bd;
+        }
+        .fix-field-row.changed .fix-arrow { color: #fd7e14; font-weight: 700; }
+        #fix-gbif-loading, #fix-gbif-not-found { font-size: 0.9rem; }
+        .fix-nochange-note { font-size: 0.8rem; color: #6c757d; margin-top: 0.5rem; }
     </style>
 {% endblock %}
 
@@ -105,16 +157,17 @@
         </div>
         <div class="card-body p-0">
             <div id="detail-loading" class="p-3 text-muted" style="display:none;">Loading...</div>
-            <div id="detail-table-wrap" style="overflow-x: auto; max-height: 480px; overflow-y: auto;">
-                <table class="result-table">
+            <div id="detail-table-wrap" style="overflow-x: auto; max-height: 480px; overflow-y: auto; position: relative;">
+                <table class="result-table" id="detail-table">
                     <thead id="detail-thead">
                         <tr>
                             <th>#</th>
                             <th>Canonical name</th>
+                            <th>CoL ID</th>
                             <th>Rank</th>
                             <th>Status</th>
-                            <th>Parent</th>
-                            <th>Parent rank</th>
+                            <th class="col-parent">Parent</th>
+                            <th class="col-parent-rank">Parent rank</th>
                             <th>Accepted taxon</th>
                             <th>Accepted status</th>
                             <th></th>
@@ -166,6 +219,45 @@
     </div>
 </div>
 
+<!-- Fix from GBIF / Catalogue of Life comparison modal -->
+<div class="modal fade" id="fix-gbif-modal" tabindex="-1" role="dialog" aria-labelledby="fix-gbif-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="fix-gbif-modal-title">Fix from GBIF / Catalogue of Life</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-2" id="fix-gbif-taxon-name" style="font-size:0.9rem;"></p>
+                <div id="fix-gbif-loading" class="text-muted p-3 text-center">Looking up on GBIF (Catalogue of Life checklist)&hellip;</div>
+                <div id="fix-gbif-not-found" class="alert alert-warning" style="display:none;">
+                    No matching record found on GBIF's Catalogue of Life checklist for this name.
+                </div>
+                <div id="fix-gbif-compare" style="display:none;">
+                    <div class="fix-compare-row fix-compare-head">
+                        <div></div>
+                        <div class="fix-box-label">Current (BIMS)</div>
+                        <div></div>
+                        <div class="fix-box-label">GBIF / Catalogue of Life</div>
+                    </div>
+                    <div id="fix-gbif-fields"></div>
+                    <div id="fix-gbif-nochange" class="fix-nochange-note" style="display:none;">
+                        No differences found &ndash; local data already matches GBIF/COL.
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="fix-gbif-confirm-btn" disabled onclick="confirmGbifFix()">
+                    Confirm update
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const PAGE_SIZE = 50;
     const CHECKS_META = JSON.parse(document.getElementById('taxa-checks-data').textContent);
@@ -207,14 +299,20 @@
         thead.innerHTML = `<tr>
             <th>#</th>
             <th>Canonical name</th>
+            <th>CoL ID</th>
             <th>Rank</th>
             <th>Status</th>
-            <th>Parent</th>
-            <th>Parent rank</th>
+            <th class="col-parent">Parent</th>
+            <th class="col-parent-rank">Parent rank</th>
             <th>Accepted taxon</th>
             <th>Accepted status</th>
             <th></th>
         </tr>`;
+
+        // Parent / Parent rank are meaningless for synonym_no_accepted rows
+        // (synonyms use accepted_taxonomy, not parent), so hide those columns.
+        document.getElementById('detail-table').classList.toggle(
+            'hide-parent-cols', checkKey === 'synonym_no_accepted');
 
         document.getElementById('detail-panel').classList.add('visible');
         document.getElementById('detail-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -251,8 +349,10 @@
         const tbody = document.getElementById('detail-tbody');
         tbody.innerHTML = '';
         const isMissingId = currentCheck === 'missing_external_id';
+        const isMissingParent = currentCheck === 'missing_parent';
+        const isSynonymNoAccepted = currentCheck === 'synonym_no_accepted';
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted p-3">No issues found.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted p-3">No issues found.</td></tr>';
             return;
         }
         rows.forEach((r, i) => {
@@ -266,24 +366,205 @@
                        GBIF&hellip;
                    </button>`
                 : '';
+            const parentCell = isMissingParent
+                ? `<div class="parent-autocomplete-wrap">
+                       <select class="parent-autocomplete" data-taxon-id="${r.id}" style="width:100%;"></select>
+                       <div class="parent-assign-status" id="parent-status-${r.id}"></div>
+                   </div>`
+                : esc(r.parent);
+            const acceptedCell = isSynonymNoAccepted
+                ? `<div class="parent-autocomplete-wrap">
+                       <select class="accepted-autocomplete" data-taxon-id="${r.id}" style="width:100%;"></select>
+                       <div class="parent-assign-status" id="accepted-status-${r.id}"></div>
+                   </div>`
+                : esc(r.accepted_taxonomy);
             tbody.innerHTML += `
                 <tr id="taxon-row-${r.id}">
                     <td>${offset + i + 1}</td>
-                    <td><strong>${esc(r.canonical_name)}</strong></td>
+                    <td>${canonicalNameCell(r)}</td>
+                    <td>${esc(r.col_id)}</td>
                     <td>${esc(r.rank)}</td>
-                    <td>${esc(r.taxonomic_status)}</td>
-                    <td>${esc(r.parent)}</td>
-                    <td>${esc(r.parent_rank)}</td>
-                    <td>${esc(r.accepted_taxonomy)}</td>
-                    <td>${esc(r.accepted_taxonomy_status)}</td>
+                    <td>${esc(r.taxonomic_status).toUpperCase()}</td>
+                    <td class="col-parent">${parentCell}</td>
+                    <td class="col-parent-rank">${esc(r.parent_rank)}</td>
+                    <td>${acceptedCell}</td>
+                    <td>${esc(r.accepted_taxonomy_status).toUpperCase()}</td>
                     <td style="white-space:nowrap;">
                         <a href="${editUrl}" target="_blank"
                            class="btn btn-outline-primary btn-sm"
                            style="white-space:nowrap;font-size:0.75rem;padding:2px 8px;">
                             Edit
-                        </a>${assignBtn}
+                        </a>
+                        <button class="btn btn-outline-info btn-sm ml-1"
+                                style="white-space:nowrap;font-size:0.75rem;padding:2px 8px;"
+                                data-taxon-id="${r.id}"
+                                data-canonical="${esc(r.canonical_name)}"
+                                onclick="openFixGbifModal(this)">
+                            Fix from GBIF
+                        </button>${assignBtn}
                     </td>
                 </tr>`;
+        });
+        if (isMissingParent) initParentAutocompletes();
+        if (isSynonymNoAccepted) initAcceptedAutocompletes();
+    }
+
+    // ---- Inline parent autocomplete (missing_parent check) ----
+
+    function initParentAutocompletes() {
+        $('.parent-autocomplete').each(function () {
+            const $select = $(this);
+            const taxonId = $select.data('taxon-id');
+            $select.select2({
+                ajax: {
+                    url: '/species-autocomplete/',
+                    dataType: 'json',
+                    delay: 250,
+                    data: params => ({
+                        term: params.term || '',
+                        exclude: String(taxonId),
+                    }),
+                    processResults: data => ({ results: data }),
+                    cache: true,
+                },
+                placeholder: 'Search for a parent taxon...',
+                minimumInputLength: 2,
+                width: 'resolve',
+                dropdownParent: $('#detail-table-wrap'),
+                templateResult: formatParentResult,
+                templateSelection: formatParentSelection,
+                theme: 'classic',
+            }).on('select2:select', function (e) {
+                assignParent(taxonId, e.params.data.id, e.params.data.species);
+            });
+        });
+    }
+
+    function formatParentResult(taxon) {
+        if (taxon.loading) return taxon.text;
+        return `${taxon.species}${taxon.rank ? ' (' + taxon.rank + ')' : ''}`;
+    }
+
+    function formatParentSelection(taxon) {
+        if (!taxon.species) return taxon.text;
+        return `${taxon.species}${taxon.rank ? ' (' + taxon.rank + ')' : ''}`;
+    }
+
+    function assignParent(taxonId, parentId, parentLabel) {
+        const statusEl = document.getElementById(`parent-status-${taxonId}`);
+        if (statusEl) {
+            statusEl.textContent = 'Saving...';
+            statusEl.className = 'parent-assign-status saving';
+        }
+
+        fetch('/taxa-validation/assign-parent/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ taxon_id: taxonId, parent_id: parentId }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                const row = document.getElementById(`taxon-row-${taxonId}`);
+                if (row) {
+                    row.classList.add('row-assigned');
+                    if (statusEl) {
+                        statusEl.textContent = `Parent set to ${parentLabel}.`;
+                        statusEl.className = 'parent-assign-status';
+                    }
+                }
+                currentTotal = Math.max(0, currentTotal - 1);
+                updatePagination();
+            } else if (statusEl) {
+                statusEl.textContent = data.error || 'Failed to assign parent.';
+                statusEl.className = 'parent-assign-status error';
+            }
+        })
+        .catch(() => {
+            if (statusEl) {
+                statusEl.textContent = 'Request failed.';
+                statusEl.className = 'parent-assign-status error';
+            }
+        });
+    }
+
+    // ---- Inline accepted-taxon autocomplete (synonym_no_accepted check) ----
+
+    function initAcceptedAutocompletes() {
+        $('.accepted-autocomplete').each(function () {
+            const $select = $(this);
+            const taxonId = $select.data('taxon-id');
+            $select.select2({
+                ajax: {
+                    url: '/species-autocomplete/',
+                    dataType: 'json',
+                    delay: 250,
+                    data: params => ({
+                        term: params.term || '',
+                        exclude: String(taxonId),
+                    }),
+                    processResults: data => ({ results: data }),
+                    cache: true,
+                },
+                placeholder: 'Search for the accepted taxon...',
+                minimumInputLength: 2,
+                width: 'resolve',
+                dropdownParent: $('#detail-table-wrap'),
+                templateResult: formatParentResult,
+                templateSelection: formatParentSelection,
+                theme: 'classic',
+            }).on('select2:select', function (e) {
+                const data = e.params.data;
+                if (!confirm(`Set accepted taxon to "${data.species}" (${data.rank})?`)) {
+                    $(this).val(null).trigger('change');
+                    return;
+                }
+                assignAccepted(taxonId, data.id, data.species);
+            });
+        });
+    }
+
+    function assignAccepted(taxonId, acceptedId, acceptedLabel) {
+        const statusEl = document.getElementById(`accepted-status-${taxonId}`);
+        if (statusEl) {
+            statusEl.textContent = 'Saving...';
+            statusEl.className = 'parent-assign-status saving';
+        }
+
+        fetch('/taxa-validation/assign-accepted/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ taxon_id: taxonId, accepted_id: acceptedId }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                const row = document.getElementById(`taxon-row-${taxonId}`);
+                if (row) {
+                    row.classList.add('row-assigned');
+                    if (statusEl) {
+                        statusEl.textContent = `Accepted taxon set to ${acceptedLabel}.`;
+                        statusEl.className = 'parent-assign-status';
+                    }
+                }
+                currentTotal = Math.max(0, currentTotal - 1);
+                updatePagination();
+            } else if (statusEl) {
+                statusEl.textContent = data.error || 'Failed to assign accepted taxon.';
+                statusEl.className = 'parent-assign-status error';
+            }
+        })
+        .catch(() => {
+            if (statusEl) {
+                statusEl.textContent = 'Request failed.';
+                statusEl.className = 'parent-assign-status error';
+            }
         });
     }
 
@@ -305,6 +586,21 @@
     function esc(s) {
         if (!s) return '<span class="text-muted">-</span>';
         return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function gbifLink(r) {
+        if (r.col_id) {
+            return `https://www.gbif.org/taxon/${encodeURIComponent(r.col_id)}`;
+        }
+        const q = encodeURIComponent(r.canonical_name || '').replace(/%20/g, '+');
+        return `https://www.gbif.org/search?q=${q}`;
+    }
+
+    function canonicalNameCell(r) {
+        if (!r.canonical_name) return esc(r.canonical_name);
+        return `<a href="${gbifLink(r)}" target="_blank" rel="noopener">
+                    <strong>${esc(r.canonical_name)}</strong>
+                </a>`;
     }
 
     // ---- GBIF modal ----
@@ -434,6 +730,137 @@
         const el = document.cookie.split(';').find(c => c.trim().startsWith('csrftoken='));
         return el ? el.trim().split('=')[1] : '';
     }
+    let fixGbifTaxonId = null;
+    let fixGbifPayload = null;
+
+    const FIX_GBIF_BASE_FIELDS = [
+        { key: 'canonical_name', label: 'Canonical name' },
+        { key: 'scientific_name', label: 'Scientific name' },
+        { key: 'rank', label: 'Rank' },
+        { key: 'taxonomic_status', label: 'Status' },
+        { key: 'col_id', label: 'CoL ID' },
+        { key: 'author', label: 'Author' },
+    ];
+
+    function openFixGbifModal(btnEl) {
+        const taxonId = parseInt(btnEl.dataset.taxonId, 10);
+        const canonicalName = btnEl.dataset.canonical || '';
+        fixGbifTaxonId = taxonId;
+        fixGbifPayload = null;
+
+        document.getElementById('fix-gbif-taxon-name').textContent = `Taxon: ${canonicalName}`;
+        document.getElementById('fix-gbif-loading').style.display = 'block';
+        document.getElementById('fix-gbif-not-found').style.display = 'none';
+        document.getElementById('fix-gbif-compare').style.display = 'none';
+        document.getElementById('fix-gbif-nochange').style.display = 'none';
+        document.getElementById('fix-gbif-fields').innerHTML = '';
+        document.getElementById('fix-gbif-confirm-btn').disabled = true;
+
+        $('#fix-gbif-modal').modal('show');
+
+        fetch(`/taxa-validation/gbif-lookup/${taxonId}/`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('fix-gbif-loading').style.display = 'none';
+                if (!data.ok) {
+                    document.getElementById('fix-gbif-not-found').textContent = data.error || 'Lookup failed.';
+                    document.getElementById('fix-gbif-not-found').style.display = 'block';
+                    return;
+                }
+                if (!data.gbif) {
+                    document.getElementById('fix-gbif-not-found').style.display = 'block';
+                    return;
+                }
+                renderFixGbifCompare(data.original, data.gbif);
+            })
+            .catch(() => {
+                document.getElementById('fix-gbif-loading').style.display = 'none';
+                document.getElementById('fix-gbif-not-found').textContent = 'Lookup failed.';
+                document.getElementById('fix-gbif-not-found').style.display = 'block';
+            });
+    }
+
+    function renderFixGbifCompare(original, gbif) {
+        const isSynonym = !!(gbif.is_synonym || original.is_synonym);
+
+        const parentOld = original.parent
+            ? `${original.parent}${original.parent_rank ? ' (' + original.parent_rank + ')' : ''}`
+            : '';
+        const parentNew = gbif.parent
+            ? `${gbif.parent}${gbif.parent_rank ? ' (' + gbif.parent_rank + ')' : ''}`
+            : '';
+        const oldValues = {
+            ...original,
+            parent: parentOld,
+            accepted_taxonomy: original.accepted_taxonomy || '',
+        };
+        const newValues = {
+            ...gbif,
+            parent: parentNew,
+            accepted_taxonomy: gbif.accepted_taxonomy || '',
+        };
+
+        const fields = FIX_GBIF_BASE_FIELDS.concat([
+            isSynonym
+                ? { key: 'accepted_taxonomy', label: 'Accepted taxon' }
+                : { key: 'parent', label: 'Parent' },
+        ]);
+
+        let hasChanges = false;
+        let html = '';
+        fields.forEach(f => {
+            const oldVal = oldValues[f.key] || '';
+            const newVal = newValues[f.key] || '';
+            const changed = newVal && (oldVal !== newVal);
+            if (changed) hasChanges = true;
+            html += `
+                <div class="fix-field-row ${changed ? 'changed' : ''}">
+                    <div class="fix-field-label">${esc(f.label)}</div>
+                    <div class="fix-box">${esc(oldVal) || '&nbsp;'}</div>
+                    <div class="fix-arrow">${changed ? '&#8594;' : ''}</div>
+                    <div class="fix-box ${changed ? 'fix-box-gbif-highlight' : ''}">${(f.key === 'col_id' ? `<a href="https://gbif.org/taxon/${newVal}" target="_blank">` + esc(newVal) + `</a>` : esc(newVal)) || '&nbsp;'}</div>
+                </div>`;
+        });
+
+        document.getElementById('fix-gbif-fields').innerHTML = html;
+        document.getElementById('fix-gbif-compare').style.display = 'block';
+        document.getElementById('fix-gbif-nochange').style.display = hasChanges ? 'none' : 'block';
+        document.getElementById('fix-gbif-confirm-btn').disabled = !hasChanges;
+
+        fixGbifPayload = gbif;
+    }
+
+    function confirmGbifFix() {
+        if (!fixGbifTaxonId || !fixGbifPayload) return;
+        const btn = document.getElementById('fix-gbif-confirm-btn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        fetch('/taxa-validation/apply-gbif-fix/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ taxon_id: fixGbifTaxonId, gbif: fixGbifPayload }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.textContent = 'Confirm update';
+            if (data.ok) {
+                $('#fix-gbif-modal').modal('hide');
+                fetchPage();
+            } else {
+                alert(data.error || 'Failed to apply update.');
+                btn.disabled = false;
+            }
+        })
+        .catch(() => {
+            alert('Request failed.');
+            btn.disabled = false;
+            btn.textContent = 'Confirm update';
+        });
+    }
 
     // Search on Enter key in the search input
     document.addEventListener('DOMContentLoaded', () => {
@@ -458,4 +885,5 @@
     <script src="{% static "js/libs/jquery/jquery-3.3.1.min.js" %}"></script>
     <script src="{% static "library/popper.js/1.11.0/popper.min.js" %}" crossorigin="anonymous"></script>
     <script src="{% static "js/libs/bootstrap-4.0.0/js/bootstrap.min.js" %}"></script>
+    <script src="{% static "lib/select2-4.1.0/js/select2.full.min.js" %}"></script>
 {% endblock %}

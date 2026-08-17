@@ -75,7 +75,15 @@ from bims.views.site_visit import (
     SiteVisitDeleteView
 )
 from bims.views.taxa_management import TaxaManagementView
-from bims.views.taxa_validation import TaxaValidationView, taxa_validation_results, taxa_assign_gbif_key
+from bims.views.taxa_validation import (
+    TaxaValidationView,
+    TaxaValidationResultsView,
+    TaxaAssignGbifKeyView,
+    TaxaAssignParentView,
+    TaxaAssignAcceptedView,
+    TaxaGbifLookupView,
+    TaxaApplyGbifFixView,
+)
 from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
 from bims.views.source_reference import (
@@ -225,11 +233,23 @@ urlpatterns = [
             TaxaValidationView.as_view(),
             name='taxa-validation'),
     re_path(r'^taxa-validation/results/$',
-            taxa_validation_results,
+            TaxaValidationResultsView.as_view(),
             name='taxa-validation-results'),
     re_path(r'^taxa-validation/assign-gbif-key/$',
-            taxa_assign_gbif_key,
+            TaxaAssignGbifKeyView.as_view(),
             name='taxa-validation-assign-gbif-key'),
+    re_path(r'^taxa-validation/assign-parent/$',
+            TaxaAssignParentView.as_view(),
+            name='taxa-validation-assign-parent'),
+    re_path(r'^taxa-validation/assign-accepted/$',
+            TaxaAssignAcceptedView.as_view(),
+            name='taxa-validation-assign-accepted'),
+    re_path(r'^taxa-validation/gbif-lookup/(?P<taxon_id>\d+)/$',
+            TaxaGbifLookupView.as_view(),
+            name='taxa-validation-gbif-lookup'),
+    re_path(r'^taxa-validation/apply-gbif-fix/$',
+            TaxaApplyGbifFixView.as_view(),
+            name='taxa-validation-apply-gbif-fix'),
     re_path(r'^backups-management/$',
             BackupsManagementView.as_view()),
     re_path(r'^dashboard-management/$',
