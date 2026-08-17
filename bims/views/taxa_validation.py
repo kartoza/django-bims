@@ -1,6 +1,7 @@
 # coding=utf-8
 from braces.views import SuperuserRequiredMixin
 from django.db.models import F, IntegerField, Q
+from django.db.models.fields.related import ForeignObjectRel
 from django.views.generic import TemplateView
 
 from rest_framework import status
@@ -555,4 +556,122 @@ class TaxaApplyGbifFixView(SuperuserRequiredMixin, APIView):
             'ok': True,
             'taxon_id': taxon_id,
             'updated_fields': update_fields,
+        })
+
+
+def _related_record_summary(taxon):
+    """Count records that a merge would reassign away from this taxon,
+    mirroring the relations merge_taxa_data() actually touches."""
+    links = [
+        rel.get_accessor_name() for rel in taxon._meta.get_fields()
+        if issubclass(type(rel), ForeignObjectRel)
+    ]
+    total = 0
+    for link in links:
+        if link in ('taxongrouptaxonomy_set', 'taxongroup_set'):
+            continue
+        try:
+            total += getattr(taxon, link).count()
+        except Exception:
+            continue
+    return {
+        'related_records': total,
+        'taxon_groups': taxon.taxongroup_set.count(),
+        'vernacular_names': taxon.vernacular_names.count(),
+    }
+
+
+class TaxaDuplicateGroupView(SuperuserRequiredMixin, APIView):
+    """GET: list every taxon sharing the same canonical_name + rank as the
+    given taxon, with related-record counts, for the merge-duplicates UI."""
+
+    def get(self, request, taxon_id):
+        try:
+            taxon = Taxonomy.objects.get(pk=taxon_id)
+        except Taxonomy.DoesNotExist:
+            return Response(
+                {'error': 'Taxon not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        group_qs = Taxonomy.objects.filter(
+            canonical_name=taxon.canonical_name,
+            rank=taxon.rank,
+        ).select_related('parent').order_by('id')
+
+        members = []
+        for t in group_qs:
+            summary = _related_record_summary(t)
+            members.append({
+                'id': t.id,
+                'canonical_name': t.canonical_name or '',
+                'scientific_name': t.scientific_name or '',
+                'rank': t.rank or '',
+                'taxonomic_status': t.taxonomic_status or '',
+                'col_id': t.col_id or '',
+                'gbif_key': t.gbif_key,
+                'parent': t.parent.canonical_name if t.parent else '',
+                'related_records': summary['related_records'],
+                'taxon_groups': summary['taxon_groups'],
+                'vernacular_names': summary['vernacular_names'],
+            })
+
+        return Response({
+            'ok': True,
+            'canonical_name': taxon.canonical_name or '',
+            'rank': taxon.rank or '',
+            'members': members,
+        })
+
+
+class TaxaMergeDuplicatesView(SuperuserRequiredMixin, APIView):
+    """POST: merge a group of duplicate taxa into a single survivor,
+    reassigning related records and deleting the rest."""
+
+    def post(self, request):
+        try:
+            survivor_id = int(request.data['survivor_id'])
+            duplicate_ids = [int(i) for i in request.data['duplicate_ids']]
+        except (KeyError, ValueError, TypeError):
+            return Response(
+                {'error': 'survivor_id and duplicate_ids (integers) are required'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        duplicate_ids = [i for i in duplicate_ids if i != survivor_id]
+        if not duplicate_ids:
+            return Response(
+                {'error': 'No duplicate taxa to merge'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            survivor = Taxonomy.objects.get(pk=survivor_id)
+        except Taxonomy.DoesNotExist:
+            return Response(
+                {'error': 'Survivor taxon not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        duplicates = Taxonomy.objects.filter(id__in=duplicate_ids)
+        missing = set(duplicate_ids) - set(duplicates.values_list('id', flat=True))
+        if missing:
+            return Response(
+                {'error': f'Taxa not found: {sorted(missing)}'},
+                status=status.HTTP_404_NOT_FOUND)
+
+        # Guard against merging taxa that don't actually share the survivor's
+        # canonical name/rank - avoids accidental cross-group merges.
+        if duplicates.exclude(
+            canonical_name=survivor.canonical_name, rank=survivor.rank
+        ).exists():
+            return Response(
+                {'error': (
+                    'All taxa being merged must share the same canonical '
+                    'name and rank as the survivor'
+                )},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from bims.utils.fetch_gbif import merge_taxa_data
+        merge_taxa_data(excluded_taxon=survivor, taxa_list=duplicates)
+
+        return Response({
+            'ok': True,
+            'survivor_id': survivor_id,
+            'merged_ids': duplicate_ids,
         })

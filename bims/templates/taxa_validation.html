@@ -106,6 +106,26 @@
         .fix-field-row.changed .fix-arrow { color: #fd7e14; font-weight: 700; }
         #fix-gbif-loading, #fix-gbif-not-found { font-size: 0.9rem; }
         .fix-nochange-note { font-size: 0.8rem; color: #6c757d; margin-top: 0.5rem; }
+
+        /* Merge duplicates modal */
+        #merge-loading, #merge-error { font-size: 0.9rem; }
+        .merge-member {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .merge-member:hover { background: #f8f9fa; }
+        .merge-member.selected { border-color: #28a745; background: #f1fbf3; }
+        .merge-member input[type="radio"] { margin-top: 4px; }
+        .merge-member-main { font-size: 0.85rem; }
+        .merge-member-main .name { font-weight: 600; }
+        .merge-member-meta { font-size: 0.78rem; color: #6c757d; margin-top: 2px; }
+        .merge-member-counts { font-size: 0.78rem; color: #856404; margin-top: 2px; }
     </style>
 {% endblock %}
 
@@ -258,6 +278,38 @@
     </div>
 </div>
 
+<!-- Merge duplicate taxa modal -->
+<div class="modal fade" id="merge-modal" tabindex="-1" role="dialog" aria-labelledby="merge-modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="merge-modal-title">Merge Duplicate Taxa</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div id="merge-loading" class="text-muted p-3 text-center">Loading duplicate group&hellip;</div>
+                <div id="merge-error" class="alert alert-warning" style="display:none;"></div>
+                <div id="merge-body" style="display:none;">
+                    <p class="text-muted mb-2" style="font-size:0.85rem;">
+                        Pick the taxon to keep. Occurrences, child taxa, synonyms, taxon-group
+                        memberships and vernacular names from the others will be reassigned to it,
+                        and the other rows will be permanently deleted. This cannot be undone.
+                    </p>
+                    <div id="merge-members"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="merge-confirm-btn" disabled onclick="confirmMerge()">
+                    Merge into selected
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const PAGE_SIZE = 50;
     const CHECKS_META = JSON.parse(document.getElementById('taxa-checks-data').textContent);
@@ -351,6 +403,7 @@
         const isMissingId = currentCheck === 'missing_external_id';
         const isMissingParent = currentCheck === 'missing_parent';
         const isSynonymNoAccepted = currentCheck === 'synonym_no_accepted';
+        const isDuplicateCanonical = currentCheck === 'duplicate_canonical';
         if (!rows.length) {
             tbody.innerHTML = '<tr><td colspan="10" class="text-center text-muted p-3">No issues found.</td></tr>';
             return;
@@ -378,6 +431,14 @@
                        <div class="parent-assign-status" id="accepted-status-${r.id}"></div>
                    </div>`
                 : esc(r.accepted_taxonomy);
+            const mergeBtn = isDuplicateCanonical
+                ? `<button class="btn btn-outline-warning btn-sm ml-1"
+                           style="white-space:nowrap;font-size:0.75rem;padding:2px 8px;"
+                           data-taxon-id="${r.id}"
+                           onclick="openMergeModal(this)">
+                       Merge duplicates
+                   </button>`
+                : '';
             tbody.innerHTML += `
                 <tr id="taxon-row-${r.id}">
                     <td>${offset + i + 1}</td>
@@ -395,13 +456,13 @@
                            style="white-space:nowrap;font-size:0.75rem;padding:2px 8px;">
                             Edit
                         </a>
-                        <button class="btn btn-outline-info btn-sm ml-1"
+                        ${isDuplicateCanonical ? '' : `<button class="btn btn-outline-info btn-sm ml-1"
                                 style="white-space:nowrap;font-size:0.75rem;padding:2px 8px;"
                                 data-taxon-id="${r.id}"
                                 data-canonical="${esc(r.canonical_name)}"
                                 onclick="openFixGbifModal(this)">
                             Fix from GBIF
-                        </button>${assignBtn}
+                        </button>`}${assignBtn}${mergeBtn}
                     </td>
                 </tr>`;
         });
@@ -859,6 +920,136 @@
             alert('Request failed.');
             btn.disabled = false;
             btn.textContent = 'Confirm update';
+        });
+    }
+
+    // ---- Merge duplicate taxa (duplicate_canonical check) ----
+
+    let mergeGroupMembers = [];
+    let mergeSurvivorId = null;
+
+    function openMergeModal(btnEl) {
+        const taxonId = parseInt(btnEl.dataset.taxonId, 10);
+        mergeGroupMembers = [];
+        mergeSurvivorId = null;
+
+        document.getElementById('merge-loading').style.display = 'block';
+        document.getElementById('merge-error').style.display = 'none';
+        document.getElementById('merge-body').style.display = 'none';
+        document.getElementById('merge-members').innerHTML = '';
+        document.getElementById('merge-confirm-btn').disabled = true;
+        document.getElementById('merge-confirm-btn').textContent = 'Merge into selected';
+
+        $('#merge-modal').modal('show');
+
+        fetch(`/taxa-validation/duplicate-group/${taxonId}/`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('merge-loading').style.display = 'none';
+                if (!data.ok) {
+                    document.getElementById('merge-error').textContent = data.error || 'Lookup failed.';
+                    document.getElementById('merge-error').style.display = 'block';
+                    return;
+                }
+                if (!data.members || data.members.length < 2) {
+                    document.getElementById('merge-error').textContent =
+                        'No other taxa share this canonical name and rank anymore.';
+                    document.getElementById('merge-error').style.display = 'block';
+                    return;
+                }
+                renderMergeGroup(data.members);
+            })
+            .catch(() => {
+                document.getElementById('merge-loading').style.display = 'none';
+                document.getElementById('merge-error').textContent = 'Lookup failed.';
+                document.getElementById('merge-error').style.display = 'block';
+            });
+    }
+
+    function renderMergeGroup(members) {
+        mergeGroupMembers = members;
+        const html = members.map(m => {
+            const meta = [
+                m.scientific_name,
+                m.taxonomic_status,
+                m.col_id ? `CoL ${m.col_id}` : '',
+                m.gbif_key ? `GBIF ${m.gbif_key}` : '',
+                m.parent ? `parent: ${m.parent}` : '',
+            ].filter(Boolean).join(' · ');
+            const counts = [
+                `${m.related_records} related record(s)`,
+                `${m.taxon_groups} taxon group(s)`,
+                `${m.vernacular_names} vernacular name(s)`,
+            ].join(' · ');
+            return `
+                <label class="merge-member" data-taxon-id="${m.id}" onclick="selectSurvivor(${m.id})">
+                    <input type="radio" name="merge-survivor" value="${m.id}">
+                    <div>
+                        <div class="merge-member-main">
+                            <span class="name">${esc(m.canonical_name)}</span> (${esc(m.rank)}) &middot; id ${m.id}
+                        </div>
+                        <div class="merge-member-meta">${esc(meta) || '&nbsp;'}</div>
+                        <div class="merge-member-counts">${esc(counts)}</div>
+                    </div>
+                </label>`;
+        }).join('');
+
+        document.getElementById('merge-members').innerHTML = html;
+        document.getElementById('merge-body').style.display = 'block';
+    }
+
+    function selectSurvivor(taxonId) {
+        mergeSurvivorId = taxonId;
+        document.querySelectorAll('.merge-member').forEach(el => {
+            const isSelected = parseInt(el.dataset.taxonId, 10) === taxonId;
+            el.classList.toggle('selected', isSelected);
+            el.querySelector('input[type="radio"]').checked = isSelected;
+        });
+        document.getElementById('merge-confirm-btn').disabled = false;
+    }
+
+    function confirmMerge() {
+        if (!mergeSurvivorId || mergeGroupMembers.length < 2) return;
+
+        const survivor = mergeGroupMembers.find(m => m.id === mergeSurvivorId);
+        const duplicateIds = mergeGroupMembers
+            .map(m => m.id)
+            .filter(id => id !== mergeSurvivorId);
+
+        if (!confirm(
+            `Merge ${duplicateIds.length} duplicate(s) into "${survivor.canonical_name}" ` +
+            `(id ${survivor.id})? The other row(s) will be permanently deleted. This cannot be undone.`
+        )) {
+            return;
+        }
+
+        const btn = document.getElementById('merge-confirm-btn');
+        btn.disabled = true;
+        btn.textContent = 'Merging...';
+
+        fetch('/taxa-validation/merge-duplicates/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ survivor_id: mergeSurvivorId, duplicate_ids: duplicateIds }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            btn.textContent = 'Merge into selected';
+            if (data.ok) {
+                $('#merge-modal').modal('hide');
+                fetchPage();
+            } else {
+                alert(data.error || 'Failed to merge taxa.');
+                btn.disabled = false;
+            }
+        })
+        .catch(() => {
+            alert('Request failed.');
+            btn.disabled = false;
+            btn.textContent = 'Merge into selected';
         });
     }
 

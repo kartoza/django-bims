@@ -83,6 +83,8 @@ from bims.views.taxa_validation import (
     TaxaAssignAcceptedView,
     TaxaGbifLookupView,
     TaxaApplyGbifFixView,
+    TaxaDuplicateGroupView,
+    TaxaMergeDuplicatesView,
 )
 from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
@@ -250,6 +252,12 @@ urlpatterns = [
     re_path(r'^taxa-validation/apply-gbif-fix/$',
             TaxaApplyGbifFixView.as_view(),
             name='taxa-validation-apply-gbif-fix'),
+    re_path(r'^taxa-validation/duplicate-group/(?P<taxon_id>\d+)/$',
+            TaxaDuplicateGroupView.as_view(),
+            name='taxa-validation-duplicate-group'),
+    re_path(r'^taxa-validation/merge-duplicates/$',
+            TaxaMergeDuplicatesView.as_view(),
+            name='taxa-validation-merge-duplicates'),
     re_path(r'^backups-management/$',
             BackupsManagementView.as_view()),
     re_path(r'^dashboard-management/$',
