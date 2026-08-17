@@ -1,9 +1,12 @@
 # coding=utf-8
+import ast
+
 from braces.views import SuperuserRequiredMixin
 from django.db.models import F, IntegerField, Q
 from django.db.models.fields.related import ForeignObjectRel
 from django.views.generic import TemplateView
 
+from preferences import preferences
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -13,6 +16,7 @@ from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.models.taxon_group import TaxonGroup
 from bims.models.taxonomy import Taxonomy
 from bims.utils.gbif import find_species
+from bims.utils.iucn import get_global_iucn_status, get_iucn_status
 
 TOP_LEVEL_RANKS = {'DOMAIN', 'KINGDOM'}
 
@@ -72,6 +76,14 @@ CHECKS = [
             'Taxa with no CoL ID, no FADA ID, no Aphia ID, and no '
             'TaxonWorks ID. Taxa from readonly BIMS-harvested groups '
             'are excluded.'
+        ),
+    },
+    {
+        'key': 'missing_iucn_global',
+        'label': 'Missing IUCN global status',
+        'description': (
+            'Accepted or doubtful species/subspecies with no Global Red '
+            'List (IUCN) status set, or whose status is "Not Evaluated".'
         ),
     },
 ]
@@ -160,6 +172,17 @@ def _qs_missing_external_id(qs):
     ).exclude(id__in=bims_harvested_ids)
 
 
+def _qs_missing_iucn_global(qs):
+    # Only accepted/doubtful species and subspecies are expected to carry a
+    # Global Red List assessment; synonyms and higher ranks are excluded.
+    return qs.filter(
+        Q(taxonomic_status='ACCEPTED') | Q(taxonomic_status='DOUBTFUL'),
+        rank__in=['SPECIES', 'SUBSPECIES'],
+    ).filter(
+        Q(iucn_status__isnull=True) | Q(iucn_status__category='NE')
+    )
+
+
 _CHECK_FN = {
     'missing_parent': _qs_missing_parent,
     'synonym_no_accepted': _qs_synonym_no_accepted,
@@ -168,6 +191,7 @@ _CHECK_FN = {
     'invalid_parent_rank': _qs_invalid_parent_rank,
     'duplicate_canonical': _qs_duplicate_canonical,
     'missing_external_id': _qs_missing_external_id,
+    'missing_iucn_global': _qs_missing_iucn_global,
 }
 
 
@@ -674,4 +698,126 @@ class TaxaMergeDuplicatesView(SuperuserRequiredMixin, APIView):
             'ok': True,
             'survivor_id': survivor_id,
             'merged_ids': duplicate_ids,
+        })
+
+
+def _iucn_data_url(taxon):
+    """taxon.iucn_data is a TextField that sometimes holds a real dict and
+    sometimes holds the str() of one (e.g. "{'url': 'https://...'}") - pull
+    just the URL out either way."""
+    data = taxon.iucn_data
+    if isinstance(data, dict):
+        return data.get('url', '') or ''
+    if isinstance(data, str) and data.strip():
+        try:
+            parsed = ast.literal_eval(data)
+        except (ValueError, SyntaxError):
+            parsed = None
+        if isinstance(parsed, dict):
+            return parsed.get('url', '') or ''
+        return data
+    return ''
+
+
+class TaxaIucnLookupView(SuperuserRequiredMixin, APIView):
+    """GET: look up a taxon's latest global Red List assessment on the
+    IUCN API and return a comparison of local vs IUCN data, so the
+    validation page can preview a fix before applying it."""
+
+    def get(self, request, taxon_id):
+        try:
+            taxon = Taxonomy.objects.select_related('iucn_status').get(pk=taxon_id)
+        except Taxonomy.DoesNotExist:
+            return Response(
+                {'error': 'Taxon not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if not preferences.SiteSetting.iucn_api_key:
+            return Response(
+                {'error': 'IUCN API key is not configured.'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        original = {
+            'category': taxon.iucn_status.category if taxon.iucn_status else '',
+            'label': taxon.iucn_status.get_status() if taxon.iucn_status else '',
+            'sis_id': taxon.iucn_redlist_id,
+            'url': _iucn_data_url(taxon),
+        }
+
+        iucn_status, sis_id, iucn_url = get_iucn_status(taxon=taxon)
+
+        if not iucn_status and not sis_id and not iucn_url:
+            return Response({
+                'ok': True,
+                'taxon_id': taxon_id,
+                'original': original,
+                'iucn': None,
+            })
+
+        proposed = {
+            'category': iucn_status.category if iucn_status else '',
+            'label': iucn_status.get_status() if iucn_status else '',
+            'sis_id': sis_id,
+            'url': iucn_url or '',
+        }
+
+        return Response({
+            'ok': True,
+            'taxon_id': taxon_id,
+            'original': original,
+            'iucn': proposed,
+        })
+
+
+class TaxaApplyIucnFixView(SuperuserRequiredMixin, APIView):
+    """POST: apply a previously-fetched IUCN global assessment to a taxon."""
+
+    def post(self, request):
+        try:
+            taxon_id = int(request.data['taxon_id'])
+            iucn = request.data['iucn']
+            if not isinstance(iucn, dict):
+                raise TypeError
+        except (KeyError, ValueError, TypeError):
+            return Response(
+                {'error': 'taxon_id and iucn payload are required'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            taxon = Taxonomy.objects.get(pk=taxon_id)
+        except Taxonomy.DoesNotExist:
+            return Response(
+                {'error': 'Taxon not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        category = (iucn.get('category') or '').strip()
+        url = (iucn.get('url') or '').strip()
+        try:
+            sis_id = int(iucn.get('sis_id')) if iucn.get('sis_id') else None
+        except (TypeError, ValueError):
+            sis_id = None
+
+        update_fields = []
+
+        if category:
+            # Re-resolve locally rather than trusting a client-supplied FK id.
+            iucn_status = get_global_iucn_status(category)
+            if iucn_status and taxon.iucn_status_id != iucn_status.id:
+                taxon.iucn_status = iucn_status
+                update_fields.append('iucn_status')
+
+        if sis_id and taxon.iucn_redlist_id != sis_id:
+            taxon.iucn_redlist_id = sis_id
+            update_fields.append('iucn_redlist_id')
+
+        if url:
+            if _iucn_data_url(taxon) != url:
+                taxon.iucn_data = {'url': url}
+                update_fields.append('iucn_data')
+
+        if update_fields:
+            taxon.save(update_fields=update_fields)
+
+        return Response({
+            'ok': True,
+            'taxon_id': taxon_id,
+            'updated_fields': update_fields,
         })
