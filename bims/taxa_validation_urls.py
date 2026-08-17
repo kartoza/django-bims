@@ -1,0 +1,44 @@
+# coding=utf-8
+from django.urls import re_path
+
+from bims.views.taxa_validation import (
+    TaxaValidationView,
+    TaxaValidationResultsView,
+    TaxaAssignGbifKeyView,
+    TaxaAssignParentView,
+    TaxaAssignAcceptedView,
+    TaxaGbifLookupView,
+    TaxaApplyGbifFixView,
+    TaxaDuplicateGroupView,
+    TaxaMergeDuplicatesView,
+)
+
+urlpatterns = [
+    re_path(r'^$',
+            TaxaValidationView.as_view(),
+            name='taxa-validation'),
+    re_path(r'^results/$',
+            TaxaValidationResultsView.as_view(),
+            name='taxa-validation-results'),
+    re_path(r'^assign-gbif-key/$',
+            TaxaAssignGbifKeyView.as_view(),
+            name='taxa-validation-assign-gbif-key'),
+    re_path(r'^assign-parent/$',
+            TaxaAssignParentView.as_view(),
+            name='taxa-validation-assign-parent'),
+    re_path(r'^assign-accepted/$',
+            TaxaAssignAcceptedView.as_view(),
+            name='taxa-validation-assign-accepted'),
+    re_path(r'^gbif-lookup/(?P<taxon_id>\d+)/$',
+            TaxaGbifLookupView.as_view(),
+            name='taxa-validation-gbif-lookup'),
+    re_path(r'^apply-gbif-fix/$',
+            TaxaApplyGbifFixView.as_view(),
+            name='taxa-validation-apply-gbif-fix'),
+    re_path(r'^duplicate-group/(?P<taxon_id>\d+)/$',
+            TaxaDuplicateGroupView.as_view(),
+            name='taxa-validation-duplicate-group'),
+    re_path(r'^merge-duplicates/$',
+            TaxaMergeDuplicatesView.as_view(),
+            name='taxa-validation-merge-duplicates'),
+]

@@ -75,17 +75,6 @@ from bims.views.site_visit import (
     SiteVisitDeleteView
 )
 from bims.views.taxa_management import TaxaManagementView
-from bims.views.taxa_validation import (
-    TaxaValidationView,
-    TaxaValidationResultsView,
-    TaxaAssignGbifKeyView,
-    TaxaAssignParentView,
-    TaxaAssignAcceptedView,
-    TaxaGbifLookupView,
-    TaxaApplyGbifFixView,
-    TaxaDuplicateGroupView,
-    TaxaMergeDuplicatesView,
-)
 from bims.views.dashboard_management import DashboardManagementView
 from bims.views.harvest_collection_data import HarvestCollectionView
 from bims.views.source_reference import (
@@ -231,33 +220,8 @@ urlpatterns = [
     re_path(r'^taxa-management/$',
             TaxaManagementView.as_view(),
             name='taxa-management'),
-    re_path(r'^taxa-validation/$',
-            TaxaValidationView.as_view(),
-            name='taxa-validation'),
-    re_path(r'^taxa-validation/results/$',
-            TaxaValidationResultsView.as_view(),
-            name='taxa-validation-results'),
-    re_path(r'^taxa-validation/assign-gbif-key/$',
-            TaxaAssignGbifKeyView.as_view(),
-            name='taxa-validation-assign-gbif-key'),
-    re_path(r'^taxa-validation/assign-parent/$',
-            TaxaAssignParentView.as_view(),
-            name='taxa-validation-assign-parent'),
-    re_path(r'^taxa-validation/assign-accepted/$',
-            TaxaAssignAcceptedView.as_view(),
-            name='taxa-validation-assign-accepted'),
-    re_path(r'^taxa-validation/gbif-lookup/(?P<taxon_id>\d+)/$',
-            TaxaGbifLookupView.as_view(),
-            name='taxa-validation-gbif-lookup'),
-    re_path(r'^taxa-validation/apply-gbif-fix/$',
-            TaxaApplyGbifFixView.as_view(),
-            name='taxa-validation-apply-gbif-fix'),
-    re_path(r'^taxa-validation/duplicate-group/(?P<taxon_id>\d+)/$',
-            TaxaDuplicateGroupView.as_view(),
-            name='taxa-validation-duplicate-group'),
-    re_path(r'^taxa-validation/merge-duplicates/$',
-            TaxaMergeDuplicatesView.as_view(),
-            name='taxa-validation-merge-duplicates'),
+    re_path(r'^taxa-validation/',
+            include('bims.taxa_validation_urls')),
     re_path(r'^backups-management/$',
             BackupsManagementView.as_view()),
     re_path(r'^dashboard-management/$',
