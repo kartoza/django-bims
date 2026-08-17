@@ -426,7 +426,7 @@ class TaxaGbifLookupView(SuperuserRequiredMixin, APIView):
         if kingdom:
             classifier['kingdom'] = kingdom
 
-        col_data = find_species(name, **classifier)
+        col_data = find_species(name, require_exact_match=False, **classifier)
 
         if not col_data or 'usage' not in col_data:
             return Response({
