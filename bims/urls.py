@@ -220,6 +220,8 @@ urlpatterns = [
     re_path(r'^taxa-management/$',
             TaxaManagementView.as_view(),
             name='taxa-management'),
+    re_path(r'^taxa-validation/',
+            include('bims.taxa_validation_urls')),
     re_path(r'^backups-management/$',
             BackupsManagementView.as_view()),
     re_path(r'^dashboard-management/$',

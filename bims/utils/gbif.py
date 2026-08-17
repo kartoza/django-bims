@@ -119,6 +119,7 @@ def find_species(
         original_species_name,
         rank=None,
         returns_all=False,
+        require_exact_match=True,
         **classifier):
     """
     COL-based species lookup using the GBIF v2 species/match endpoint.
@@ -147,7 +148,7 @@ def find_species(
         logger.warning('COL match error for %s: %s', original_species_name, e)
         return None
 
-    if not data or (data.get('diagnostics') or {}).get('matchType') == 'NONE':
+    if require_exact_match and not data or (data.get('diagnostics') or {}).get('matchType') == 'NONE':
         logger.info('No COL match for %s', original_species_name)
         return None
 
@@ -156,7 +157,7 @@ def find_species(
 
     usage = data.get('usage', {})
 
-    if data.get('diagnostics', {}).get('matchType', '') != 'EXACT':
+    if require_exact_match and data.get('diagnostics', {}).get('matchType', '') != 'EXACT':
         if (usage.get('canonicalName', '') != original_species_name or
             usage.get('name', '') != original_species_name):
             return None
