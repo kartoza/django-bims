@@ -98,6 +98,15 @@
 
             targetElement.appendChild(harvestIucnBtn);
 
+            const taxaQualityCheckButton = document.createElement('a');
+            taxaQualityCheckButton.href = "{% url 'taxa-validation' %}";
+            taxaQualityCheckButton.className = "grp-button grp-primary";
+            taxaQualityCheckButton.textContent = "Taxa Data Quality";
+            taxaQualityCheckButton.style.marginLeft = "10px";
+            taxaQualityCheckButton.style.marginTop = "10px";
+
+            targetElement.appendChild(taxaQualityCheckButton);
+
             const outsideWrapper = document.createElement('div');
             outsideWrapper.style.display = 'flex';
             outsideWrapper.style.flexDirection = 'column';   // stack vertically
