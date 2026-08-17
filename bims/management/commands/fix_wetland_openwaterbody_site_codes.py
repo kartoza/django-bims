@@ -246,8 +246,8 @@ class Command(BaseCommand):
         Regenerate the site code for a wetland or open-waterbody site.
 
         Name resolution:
-          Wetland: NWM6 name from additional_data (auto-used when 'wetlid' present)
-            > user_wetland_name > 'UNSPECIFIED' (-> 'UNSP' in code).
+          Wetland: user_wetland_name > NWM6 name from additional_data
+            (auto-used when 'wetlid' present) > 'UNSPECIFIED' (-> 'UNSP' in code).
           Open waterbody: legacy_river_name > river.name > 'UNSPECIFIED'.
 
         Routing:
@@ -267,21 +267,16 @@ class Command(BaseCommand):
         ecosystem = site.ecosystem_type
 
         if ecosystem.lower() == 'wetland':
-            # wetland_catchment() prefers additional_data['name'] (NWM6) when
-            # additional_data contains 'wetlid'. Only supply wetland_name as
-            # a fallback so we don't override valid NWM6 data.
-            has_nwm6_name = bool(
-                site.additional_data and
-                'wetlid' in site.additional_data and
-                site.additional_data.get('name')
-            )
-            wetland_name = (site.user_wetland_name or '').strip() or UNSPECIFIED_CODE
+            # wetland_catchment() prefers user_wetland_name over
+            # additional_data['name'] (NWM6), falling back to 'UNSPECIFIED'
+            # when neither is present.
+            wetland_name = (site.user_wetland_name or '').strip()
             new_code, _ = generate_site_code(
                 location_site=site,
                 lat=lat,
                 lon=lon,
                 ecosystem_type=ecosystem,
-                wetland_name='' if has_nwm6_name else wetland_name,
+                wetland_name=wetland_name,
             )
         else:
             # Open waterbody: open_waterbody_catchment() reads `river_name`.
