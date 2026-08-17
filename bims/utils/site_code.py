@@ -331,6 +331,10 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
     """
     Generates a catchment code for a given wetland based on location and data.
 
+    Name priority (highest to lowest): user_wetland_name > wetland_data['name']
+    (from NWM6) > 'Unspecified'. A user-supplied wetland name always supersedes
+    the NWM6 default.
+
     :param user_wetland_name: Wetland name from user
     :param lat: Latitude of the location site
     :param lon: Longitude of the location site
@@ -369,10 +373,15 @@ def wetland_catchment(lat, lon, wetland_data: Dict, user_wetland_name: str) -> s
 
     wetland_site_code += quaternary_catchment + '-'
 
-    if wetland_data and 'name' in wetland_data and wetland_data['name']:
-        wetland_site_code += wetland_data['name'].replace(' ', '')[:4]
-    elif user_wetland_name:
-        wetland_site_code += user_wetland_name.replace(' ', '')[:4]
+    if user_wetland_name:
+        wetland_name = user_wetland_name
+    elif wetland_data and 'name' in wetland_data and wetland_data['name']:
+        wetland_name = wetland_data['name']
+    else:
+        wetland_name = ''
+
+    if wetland_name:
+        wetland_site_code += wetland_name.replace(' ', '')[:4]
     else:
         wetland_site_code += 'UNSP'
 

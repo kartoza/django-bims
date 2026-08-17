@@ -150,3 +150,15 @@ class TestWetlandCatchment(FastTenantTestCase):
                 user_wetland_name=''
             )
         self.assertIn('UNSP', site_code)
+
+    def test_user_wetland_name_supersedes_wetland_data(self):
+        layer_patch, catchments_patch = self._make_patches()
+        with layer_patch as mock_layer, catchments_patch:
+            mock_layer.objects.filter.return_value.first.return_value = None
+            _, site_code = wetland_catchment(
+                lat=-26.0, lon=28.0,
+                wetland_data={'name': 'Blesbokspruit'},
+                user_wetland_name='Lakeside'
+            )
+        self.assertIn('Lake', site_code)
+        self.assertNotIn('Bles', site_code)
