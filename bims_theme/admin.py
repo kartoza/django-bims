@@ -122,6 +122,15 @@ class CarouselHeaderAdmin(OrderedModelAdmin):
             "classes": ("collapse",),
             "fields": ("text_alignment", "text_style"),
         }),
+        ("Advanced", {
+            "classes": ("collapse",),
+            "description": (
+                "Raw CSS for this slide only. Scope selectors to "
+                "#carousel-item-&lt;id&gt; (visible in the page title/URL after saving) "
+                "to avoid affecting other slides."
+            ),
+            "fields": ("custom_css",),
+        }),
     )
 
 

@@ -1,8 +1,47 @@
 # coding=utf-8
+import re
+
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.core.validators import MaxValueValidator, MinValueValidator
 from ordered_model.models import OrderedModel
 from colorfield.fields import ColorField
+
+CAROUSEL_CUSTOM_CSS_MAX_LENGTH = 20000
+
+_CAROUSEL_CUSTOM_CSS_FORBIDDEN_PATTERNS = [
+    re.compile(r'</\s*style', re.IGNORECASE),
+    re.compile(r'<\s*script', re.IGNORECASE),
+    re.compile(r'<!--'),
+    re.compile(r'-->'),
+    re.compile(r'@import', re.IGNORECASE),
+    re.compile(r'expression\s*\(', re.IGNORECASE),
+    re.compile(r'javascript\s*:', re.IGNORECASE),
+    re.compile(r'-moz-binding', re.IGNORECASE),
+    re.compile(r'behavior\s*:', re.IGNORECASE),
+]
+
+
+def validate_carousel_custom_css(value):
+    """Guard against markup that would break out of the inline <style> tag
+    this value is rendered into, or pull in external/executable content."""
+    if not value:
+        return
+    if len(value) > CAROUSEL_CUSTOM_CSS_MAX_LENGTH:
+        raise ValidationError(
+            f'Custom CSS is too long (max {CAROUSEL_CUSTOM_CSS_MAX_LENGTH} characters).'
+        )
+    for pattern in _CAROUSEL_CUSTOM_CSS_FORBIDDEN_PATTERNS:
+        if pattern.search(value):
+            raise ValidationError(
+                f'Custom CSS contains a disallowed pattern ("{pattern.pattern}"). '
+                'Style/script tags, HTML comments, @import, and CSS expressions/'
+                'javascript: URLs are not allowed.'
+            )
+    if value.count('{') != value.count('}'):
+        raise ValidationError(
+            'Custom CSS has unbalanced braces ({ vs }) - check for a missing "{" or "}".'
+        )
 
 
 class CarouselHeader(OrderedModel):
@@ -147,6 +186,17 @@ class CarouselHeader(OrderedModel):
     description_line_height_pct = models.PositiveIntegerField(
         default=130, validators=[MinValueValidator(80), MaxValueValidator(200)],
         help_text='Description line-height as percent.'
+    )
+
+    custom_css = models.TextField(
+        blank=True, default='',
+        validators=[validate_carousel_custom_css],
+        help_text=(
+            'Advanced: raw CSS injected for this slide only. Scope your rules to '
+            '#carousel-item-&lt;id&gt; (this slide\'s id, shown after saving) so they '
+            "don't affect other slides or the rest of the page. "
+            'Style/script tags, @import, and javascript: URLs are rejected.'
+        ),
     )
 
     full_screen_background = models.BooleanField(
