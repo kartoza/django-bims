@@ -77,6 +77,8 @@ class HeaderSerializer(serializers.ModelSerializer):
             'title_offset_y_percent',
             'title_line_height_pct',
 
+            'custom_css',
+
             'desc_font_stack',
             'description_font_weight',
             'description_letter_spacing_em',
