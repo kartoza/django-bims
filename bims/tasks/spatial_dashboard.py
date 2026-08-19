@@ -647,8 +647,11 @@ def spatial_dashboard_species_download(search_parameters=None, search_process_id
     from bims.models.iucn_status import IUCNStatus
     from bims.models.location_context import LocationContext
     from bims.models.location_context_group import LocationContextGroup
-    from bims.views.download_csv_taxa_list import is_sanparks_project
+    from bims.views.download_csv_taxa_list import (
+        is_sanparks_project, SANPARKS_NEMBA_STATUS_MAP
+    )
     from bims.serializers.bio_collection_serializer import SANPARK_PARK_NAME
+    from preferences import preferences
     from bims.models.search_process import (
         SearchProcess,
         SEARCH_PROCESSING,
@@ -685,9 +688,11 @@ def spatial_dashboard_species_download(search_parameters=None, search_process_id
             search = CollectionSearch(search_parameters)
             collection_results = search.process_search()
 
-            park_group = LocationContextGroup.objects.filter(
-                Q(key__in=list(PARK_GROUP_KEYS)) | Q(name__iexact=SANPARK_PARK_NAME)
-            ).first()
+            park_group = None
+            if is_sanparks_project():
+                park_group = LocationContextGroup.objects.filter(
+                    Q(key__in=list(PARK_GROUP_KEYS)) | Q(name__iexact=SANPARK_PARK_NAME)
+                ).first()
 
             taxon_parks = {}
             if park_group:
@@ -732,12 +737,23 @@ def spatial_dashboard_species_download(search_parameters=None, search_process_id
             ).order_by('canonical_name')
 
             location_col = 'Park Name' if is_sanparks_project() else 'Site'
+            invasion_label = preferences.SiteSetting.invasion_label or 'Invasion'
+
+            def get_invasion_value(taxon):
+                status = (
+                    taxon.invasion.category or ''
+                ).strip() if taxon.invasion else ''
+                if is_sanparks_project():
+                    if not status:
+                        return ''
+                    return SANPARKS_NEMBA_STATUS_MAP.get(status.lower(), '')
+                return status
 
             csv_path = search_process.file_path + '.csv'
             headers = [
                 'Kingdom', 'Phylum', 'Class', 'Order', 'Family', 'Species', 'SubSpecies',
                 'Taxon', 'Scientific Name', 'Taxon rank', location_col,
-                'Conservation Status Global', 'Origin', 'Endemism', 'Invasion']
+                'Conservation Status Global', 'Origin', 'Endemism', invasion_label]
 
             with open(csv_path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.DictWriter(f, fieldnames=headers)
@@ -760,11 +776,11 @@ def spatial_dashboard_species_download(search_parameters=None, search_process_id
                         'Taxon': taxon.canonical_name or '',
                         'Scientific Name': taxon.scientific_name or '',
                         'Taxon rank': taxon.rank,
-                        location_col: ', '.join(sorted(taxon_parks.get(taxon.id, set()))),
+                        location_col: '; '.join(sorted(taxon_parks.get(taxon.id, set()))),
                         'Conservation Status Global': iucn_global,
                         'Origin': taxon.origin.category if taxon.origin else '',
                         'Endemism': taxon.endemism.name if taxon.endemism else '',
-                        'Invasion': taxon.invasion.category if taxon.invasion else '',
+                        invasion_label: get_invasion_value(taxon),
                     })
 
             if search_process.requester:
