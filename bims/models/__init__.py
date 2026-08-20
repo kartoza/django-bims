@@ -44,6 +44,7 @@ from bims.models.location_context_filter_group_order import *  # noqa
 from bims.models.location_context_group import *  # noqa
 from bims.models.algae_data import *  # noqa
 from bims.models.upload_session import *  # noqa
+from bims.models.upstream_deletion_check import *  # noqa
 from bims.models.dashboard_configuration import *  # noqa
 from bims.models.harvest_session import *  # noqa
 from bims.models.download_request import *  # noqa

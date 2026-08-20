@@ -96,14 +96,22 @@ class HarvestGbifSpeciesView(
             return HttpResponseRedirect(request.path_info)
 
         gbif_taxonomy = taxon_group.gbif_parent_species
-        if not gbif_taxonomy.gbif_key:
-            if gbif_taxonomy.gbif_data and 'key' in gbif_taxonomy.gbif_data:
-                gbif_taxonomy.gbif_key = gbif_taxonomy.gbif_data['key']
+        if not gbif_taxonomy.col_id:
+            from bims.utils.col import resolve_col_id
+            gbif_key = gbif_taxonomy.gbif_key
+            if not gbif_key and gbif_taxonomy.gbif_data and 'key' in gbif_taxonomy.gbif_data:
+                gbif_key = gbif_taxonomy.gbif_data['key']
+            col_id, _ = resolve_col_id(
+                gbif_key,
+                canonical_name=gbif_taxonomy.canonical_name or ''
+            )
+            if col_id:
+                gbif_taxonomy.col_id = col_id
                 gbif_taxonomy.save()
             else:
                 messages.error(
                     self.request,
-                    f'GBIF key is missing for {taxon_group.gbif_parent_species}.')
+                    f'COL ID is missing for {taxon_group.gbif_parent_species}.')
                 return HttpResponseRedirect(request.path_info)
 
         harvest_session = HarvestSession.objects.create(

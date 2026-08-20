@@ -126,6 +126,11 @@
         .merge-member-main .name { font-weight: 600; }
         .merge-member-meta { font-size: 0.78rem; color: #6c757d; margin-top: 2px; }
         .merge-member-counts { font-size: 0.78rem; color: #856404; margin-top: 2px; }
+
+        #col-check-panel { display: none; }
+        #col-check-panel.visible { display: block; }
+        #col-check-progress-wrap { max-width: 100%; }
+        #col-check-progress-text { font-size: 0.85rem; color: #6c757d; margin-top: 4px; }
     </style>
 {% endblock %}
 
@@ -165,6 +170,16 @@
             <div class="desc">{{ check.description }}</div>
         </div>
         {% endfor %}
+        <div class="check-card" id="col-check-card" onclick="openColCheckPanel()">
+            <div class="count {% if col_check_session.found_count %}count-warn{% else %}count-ok{% endif %}">
+                {% if col_check_session %}{{ col_check_session.found_count }}{% else %}?{% endif %}
+            </div>
+            <div class="label">Deleted on GBIF / Catalogue of Life</div>
+            <div class="desc">
+                Taxa with a CoL ID that no longer resolves on GBIF's Catalogue of
+                Life checklist. Runs as a background check.
+            </div>
+        </div>
     </div>
 
     <div id="detail-panel" class="card">
@@ -198,6 +213,77 @@
                 <span id="page-info" class="text-muted" style="font-size:0.85rem;"></span>
                 <button id="next-btn" class="btn btn-outline-secondary btn-sm" onclick="nextPage()" disabled>Next &raquo;</button>
             </div>
+        </div>
+    </div>
+
+    <div id="col-check-panel" class="card">
+        <div class="card-header d-flex align-items-center justify-content-between">
+            <span class="font-weight-bold">Deleted on GBIF / Catalogue of Life</span>
+            <button class="btn btn-sm btn-outline-secondary" onclick="closeColCheckPanel()">Close</button>
+        </div>
+        <div class="card-body">
+
+            <div id="col-check-start-state">
+                <p class="text-muted" style="font-size:0.85rem;">
+                    Checks every taxon in the selected Taxon Group that has a
+                    CoL ID against GBIF's Catalogue of Life checklist, and
+                    reports taxa whose CoL ID no longer resolves. This can
+                    take a while for large groups and runs in the background.
+                </p>
+                <div class="form-check mb-3">
+                    <input type="checkbox" class="form-check-input" id="col-check-auto-remove">
+                    <label class="form-check-label" for="col-check-auto-remove">
+                        Automatically remove the CoL ID from taxa found deleted
+                    </label>
+                </div>
+                <button id="col-check-start-btn" class="btn btn-primary btn-sm" onclick="startColCheck()">
+                    Start check
+                </button>
+            </div>
+
+            <div id="col-check-running-state" style="display:none;">
+                <div id="col-check-progress-wrap">
+                    <div class="progress" style="height: 18px;">
+                        <div id="col-check-progress-bar"
+                             class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar" style="width: 0%;"></div>
+                    </div>
+                    <div id="col-check-progress-text">0 / 0</div>
+                    <div id="col-check-found-text" class="text-muted" style="font-size:0.85rem;"></div>
+                </div>
+                <button class="btn btn-outline-danger btn-sm mt-3" onclick="cancelColCheck()">
+                    Cancel
+                </button>
+            </div>
+
+            <div id="col-check-done-state" style="display:none;">
+                <div id="col-check-done-summary" class="alert alert-info" style="font-size:0.85rem;"></div>
+                <div style="overflow-x: auto; max-height: 480px; overflow-y: auto;">
+                    <table class="result-table" id="col-check-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Canonical name</th>
+                                <th>Rank</th>
+                                <th>CoL ID</th>
+                                <th>Detail</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="col-check-tbody"></tbody>
+                    </table>
+                </div>
+                <div class="pagination-bar px-0 pb-0 mt-2">
+                    <button id="col-check-prev-btn" class="btn btn-outline-secondary btn-sm" onclick="colCheckPrevPage()" disabled>&laquo; Prev</button>
+                    <span id="col-check-page-info" class="text-muted" style="font-size:0.85rem;"></span>
+                    <button id="col-check-next-btn" class="btn btn-outline-secondary btn-sm" onclick="colCheckNextPage()" disabled>Next &raquo;</button>
+                </div>
+                <button class="btn btn-outline-primary btn-sm mt-3" onclick="resetColCheck()">
+                    Run again
+                </button>
+            </div>
+
         </div>
     </div>
 
@@ -372,6 +458,7 @@
         currentCheck = checkKey;
         currentOffset = 0;
 
+        closeColCheckPanel();
         document.querySelectorAll('.check-card').forEach(c => c.classList.remove('active'));
         const card = document.querySelector(`.check-card[data-key="${checkKey}"]`);
         if (card) card.classList.add('active');
@@ -1239,6 +1326,266 @@
         const g = groupId();
         window.location.href = g ? `/taxa-validation/?taxonGroup=${g}` : '/taxa-validation/';
     });
+
+    // ---- CoL/GBIF deletion check (background task) ----
+
+    let colCheckSessionId = {{ col_check_session.id|default:"null" }};
+    let colCheckPollTimer = null;
+    let colCheckOffset = 0;
+    let colCheckTotal = 0;
+    const COL_CHECK_PAGE_SIZE = 50;
+
+    function openColCheckPanel() {
+        document.getElementById('detail-panel').classList.remove('visible');
+        document.querySelectorAll('.check-card').forEach(c => c.classList.remove('active'));
+        document.getElementById('col-check-card').classList.add('active');
+        document.getElementById('col-check-panel').classList.add('visible');
+        document.getElementById('col-check-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        if (colCheckSessionId) {
+            pollColCheckStatus();
+        } else {
+            showColCheckState('start');
+        }
+    }
+
+    function closeColCheckPanel() {
+        document.getElementById('col-check-panel').classList.remove('visible');
+        document.getElementById('col-check-card').classList.remove('active');
+        if (colCheckPollTimer) {
+            clearTimeout(colCheckPollTimer);
+            colCheckPollTimer = null;
+        }
+    }
+
+    function showColCheckState(which) {
+        document.getElementById('col-check-start-state').style.display = which === 'start' ? 'block' : 'none';
+        document.getElementById('col-check-running-state').style.display = which === 'running' ? 'block' : 'none';
+        document.getElementById('col-check-done-state').style.display = which === 'done' ? 'block' : 'none';
+    }
+
+    function startColCheck() {
+        const autoRemove = document.getElementById('col-check-auto-remove').checked;
+        const btn = document.getElementById('col-check-start-btn');
+        btn.disabled = true;
+
+        fetch('/taxa-validation/col-check/start/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ taxonGroup: groupId(), auto_remove: autoRemove }),
+        })
+        .then(r => r.json().then(data => ({ httpStatus: r.status, data })))
+        .then(({ httpStatus, data }) => {
+            btn.disabled = false;
+            if (httpStatus === 409 && data.session_id) {
+                colCheckSessionId = data.session_id;
+                pollColCheckStatus();
+                return;
+            }
+            if (!data.ok) {
+                alert(data.error || 'Failed to start check.');
+                return;
+            }
+            colCheckSessionId = data.session_id;
+            showColCheckState('running');
+            pollColCheckStatus();
+        })
+        .catch(() => {
+            btn.disabled = false;
+            alert('Request failed.');
+        });
+    }
+
+    function pollColCheckStatus() {
+        if (!colCheckSessionId) return;
+        fetch(`/taxa-validation/col-check/status/${colCheckSessionId}/`)
+            .then(r => r.json())
+            .then(data => {
+                if (!data.ok) return;
+                if (data.status === 'running' || data.status === 'pending') {
+                    showColCheckState('running');
+                    const pct = data.total ? (data.processed / data.total * 100) : 0;
+                    document.getElementById('col-check-progress-bar').style.width = `${pct}%`;
+                    document.getElementById('col-check-progress-text').textContent =
+                        `${data.processed} / ${data.total}`;
+                    document.getElementById('col-check-found-text').textContent =
+                        `${data.found_count} found so far`;
+                    colCheckPollTimer = setTimeout(pollColCheckStatus, 1000);
+                } else {
+                    showColCheckState('done');
+                    renderColCheckSummary(data);
+                    colCheckOffset = 0;
+                    fetchColCheckPage();
+                }
+            })
+            .catch(() => {
+                colCheckPollTimer = setTimeout(pollColCheckStatus, 2000);
+            });
+    }
+
+    function renderColCheckSummary(data) {
+        const el = document.getElementById('col-check-done-summary');
+        el.className = 'alert ' + (data.status === 'failed' ? 'alert-danger' : 'alert-info');
+        el.textContent = data.status === 'failed'
+            ? `Check failed: ${data.error_message || 'unknown error'}`
+            : `Status: ${data.status}. Checked ${data.processed}/${data.total} taxa, ` +
+              `found ${data.found_count} deleted, removed ${data.removed_count}.`;
+    }
+
+    function fetchColCheckPage() {
+        fetch(`/taxa-validation/col-check/results/${colCheckSessionId}/?offset=${colCheckOffset}&limit=${COL_CHECK_PAGE_SIZE}`)
+            .then(r => r.json())
+            .then(data => {
+                colCheckTotal = data.total;
+                renderColCheckRows(data.results, data.offset);
+                updateColCheckPagination();
+            });
+    }
+
+    function renderColCheckRows(rows, offset) {
+        const tbody = document.getElementById('col-check-tbody');
+        tbody.innerHTML = '';
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted p-3">No deleted taxa found.</td></tr>';
+            return;
+        }
+        rows.forEach((r, i) => {
+            const actions = r.removed
+                ? `<span class="badge badge-secondary">${r.removed_auto ? 'auto-removed' : 'removed'}</span>`
+                : `<button class="btn btn-outline-danger btn-sm" onclick="removeColId(${r.id}, this)">Remove CoL ID</button>
+                   <button class="btn btn-danger btn-sm" onclick="deleteColCheckTaxon(${r.id}, '${esc(r.canonical_name).replace(/'/g, "\\'")}', this)">Delete Taxon</button>`;
+            tbody.innerHTML += `
+                <tr id="col-check-row-${r.id}">
+                    <td>${offset + i + 1}</td>
+                    <td><a href="/admin/bims/taxonomy/${r.taxon_id}/change/" target="_blank">${esc(r.canonical_name)}</a></td>
+                    <td>${esc(r.rank)}</td>
+                    <td>${esc(r.col_id)}</td>
+                    <td style="font-size:0.8rem;">${esc(r.detail)}</td>
+                    <td>${r.removed ? 'Removed' : 'Pending'}</td>
+                    <td>${actions}</td>
+                </tr>`;
+        });
+    }
+
+    function removeColId(resultId, btnEl) {
+        btnEl.disabled = true;
+        fetch('/taxa-validation/col-check/remove/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ result_id: resultId }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                const row = document.getElementById(`col-check-row-${resultId}`);
+                if (row) {
+                    const cells = row.querySelectorAll('td');
+                    cells[5].textContent = 'Removed';
+                    cells[6].innerHTML = '<span class="badge badge-secondary">removed</span>';
+                }
+            } else {
+                alert(data.error || 'Failed to remove.');
+                btnEl.disabled = false;
+            }
+        })
+        .catch(() => {
+            alert('Request failed.');
+            btnEl.disabled = false;
+        });
+    }
+
+    function deleteColCheckTaxon(resultId, canonicalName, btnEl) {
+        const warning = `Delete "${canonicalName}"?\n\n` +
+            `This will PERMANENTLY delete this taxon, ALL of its occurrence ` +
+            `records, and any child taxa (and their occurrence records) if it ` +
+            `has any. This cannot be undone.`;
+        if (!confirm(warning)) return;
+
+        const row = document.getElementById(`col-check-row-${resultId}`);
+        const cells = row ? row.querySelectorAll('td') : null;
+        if (cells) {
+            cells.forEach(c => c.querySelectorAll('button').forEach(b => b.disabled = true));
+        }
+
+        fetch('/taxa-validation/col-check/delete-taxon/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ result_id: resultId }),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                if (cells) {
+                    cells[5].textContent = 'Removed';
+                    cells[6].innerHTML = '<span class="badge badge-secondary">deleted</span>';
+                }
+                alert(`Deleted ${data.deleted_taxa_count} taxon/taxa and ` +
+                    `${data.deleted_occurrence_count} occurrence record(s).`);
+            } else {
+                alert(data.error || 'Failed to delete.');
+                if (cells) cells.forEach(c => c.querySelectorAll('button').forEach(b => b.disabled = false));
+            }
+        })
+        .catch(() => {
+            alert('Request failed.');
+            if (cells) cells.forEach(c => c.querySelectorAll('button').forEach(b => b.disabled = false));
+        });
+    }
+
+    function updateColCheckPagination() {
+        const from = colCheckTotal === 0 ? 0 : colCheckOffset + 1;
+        const to = Math.min(colCheckOffset + COL_CHECK_PAGE_SIZE, colCheckTotal);
+        document.getElementById('col-check-page-info').textContent = `${from}-${to} of ${colCheckTotal}`;
+        document.getElementById('col-check-prev-btn').disabled = colCheckOffset === 0;
+        document.getElementById('col-check-next-btn').disabled = colCheckOffset + COL_CHECK_PAGE_SIZE >= colCheckTotal;
+    }
+
+    function colCheckPrevPage() {
+        if (colCheckOffset >= COL_CHECK_PAGE_SIZE) { colCheckOffset -= COL_CHECK_PAGE_SIZE; fetchColCheckPage(); }
+    }
+    function colCheckNextPage() {
+        if (colCheckOffset + COL_CHECK_PAGE_SIZE < colCheckTotal) { colCheckOffset += COL_CHECK_PAGE_SIZE; fetchColCheckPage(); }
+    }
+
+    function cancelColCheck() {
+        if (!colCheckSessionId || !confirm('Cancel this check?')) return;
+        fetch('/taxa-validation/col-check/cancel/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ session_id: colCheckSessionId }),
+        }).then(() => {
+            if (colCheckPollTimer) clearTimeout(colCheckPollTimer);
+            pollColCheckStatus();
+        });
+    }
+
+    function resetColCheck() {
+        colCheckSessionId = null;
+        showColCheckState('start');
+    }
+
+    if (colCheckSessionId) {
+        document.addEventListener('DOMContentLoaded', () => {
+            fetch(`/taxa-validation/col-check/status/${colCheckSessionId}/`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok && (data.status === 'running' || data.status === 'pending')) {
+                        openColCheckPanel();
+                    }
+                });
+        });
+    }
 </script>
 {% endblock %}
 
