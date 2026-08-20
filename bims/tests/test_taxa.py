@@ -113,7 +113,7 @@ class TaxaCSVSerializerTest(TestCase):
             endemism=None,
             iucn_status=IUCNStatus.objects.create(category='LC'),
             national_conservation_status=IUCNStatus.objects.create(category='NT'),
-            gbif_key='12345',
+            col_id='XFF',
             additional_data={'Growth form': 'Tree'},
             vernacular_names=(self.vernacular_name,)
         )
@@ -152,7 +152,7 @@ class TaxaCSVSerializerTest(TestCase):
         self.assertEqual(serialized_data['conservation_status_global'], 'Least Concern')
         self.assertEqual(serialized_data['conservation_status_national'], 'Near Threatened')
         self.assertEqual(serialized_data['on_gbif'], 'Yes')
-        self.assertEqual(serialized_data['gbif_link'], 'https://www.gbif.org/species/12345')
+        self.assertEqual(serialized_data['gbif_link'], 'https://www.gbif.org/taxon/XFF')
         self.assertEqual(serialized_data['Growth form'], 'Tree')
         self.assertEqual(serialized_data['freshwater'], 'Y')
         self.assertEqual(serialized_data['testing'], 'Y')
