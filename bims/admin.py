@@ -144,7 +144,7 @@ from bims.models import (
     FilterPanelInfo,
     TaxonTagDescription,
     TaxonNationalConservationAssessment,
-    TaxonURL,
+    TaxonURL, DataUpstreamDeletionCheckSession, DataUpstreamDeletionCheckResult
 )
 from bims.models.meta_group import MetaGroup
 from bims.models.taxonomy import TaxonTag
@@ -3325,7 +3325,8 @@ admin.site.register(
     TaxonOrigin,
     TaxonOriginAdmin
 )
-
+admin.site.register(DataUpstreamDeletionCheckSession)
+admin.site.register(DataUpstreamDeletionCheckResult)
 admin.site.unregister(FlatPage)
 admin.site.register(FlatPage, ExtendedFlatPageAdmin)
 admin.site.register(TagGroup, TagGroupAdmin)

@@ -4,6 +4,7 @@ import ast
 from braces.views import SuperuserRequiredMixin
 from django.db.models import F, IntegerField, Q
 from django.db.models.fields.related import ForeignObjectRel
+from django.utils import timezone
 from django.views.generic import TemplateView
 
 from preferences import preferences
@@ -13,6 +14,10 @@ from rest_framework.views import APIView
 
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_status import TaxonomicStatus
+from bims.models.upstream_deletion_check import (
+    DataUpstreamDeletionCheckResult,
+    DataUpstreamDeletionCheckSession,
+)
 from bims.models.taxon_group import TaxonGroup
 from bims.models.taxonomy import Taxonomy
 from bims.utils.gbif import find_species
@@ -89,11 +94,11 @@ CHECKS = [
 ]
 
 
-def _base_qs(taxon_group_id=None):
-    qs = Taxonomy.objects.all()
-    if taxon_group_id:
-        qs = qs.filter(taxongroup__id=taxon_group_id)
-    return qs
+def query_taxa(taxon_group_id=None):
+    return (
+        Taxonomy.objects.all() if not taxon_group_id else
+        Taxonomy.objects.filter(taxongroup__id=taxon_group_id)
+    )
 
 
 def _qs_missing_parent(qs):
@@ -196,7 +201,7 @@ _CHECK_FN = {
 
 
 def run_checks(taxon_group_id=None):
-    base = _base_qs(taxon_group_id)
+    base = query_taxa(taxon_group_id)
     return {
         check['key']: _CHECK_FN[check['key']](base).count()
         for check in CHECKS
@@ -204,7 +209,7 @@ def run_checks(taxon_group_id=None):
 
 
 def taxa_for_check(check_key, taxon_group_id=None, offset=0, limit=50):
-    base = _base_qs(taxon_group_id)
+    base = query_taxa(taxon_group_id)
     fn = _CHECK_FN.get(check_key)
     if fn is None:
         return [], 0
@@ -250,6 +255,9 @@ class TaxaValidationView(SuperuserRequiredMixin, TemplateView):
             parent__isnull=True,
         ).order_by('name')
         ctx['selected_group_id'] = taxon_group_id or ''
+        ctx['col_check_session'] = DataUpstreamDeletionCheckSession.objects.filter(
+            taxon_group_id=taxon_group_id or None,
+        ).order_by('-created_at').first()
         return ctx
 
 
@@ -821,3 +829,216 @@ class TaxaApplyIucnFixView(SuperuserRequiredMixin, APIView):
             'taxon_id': taxon_id,
             'updated_fields': update_fields,
         })
+
+
+class TaxaColCheckStartView(SuperuserRequiredMixin, APIView):
+    """POST: start a background check for taxa whose col_id no longer
+    resolves on the Catalogue of Life checklist."""
+
+    def post(self, request):
+        taxon_group_id = request.data.get('taxonGroup') or None
+        auto_remove = bool(request.data.get('auto_remove'))
+
+        existing = DataUpstreamDeletionCheckSession.objects.filter(
+            taxon_group_id=taxon_group_id,
+            status__in=['pending', 'running'],
+        ).order_by('-created_at').first()
+        if existing:
+            return Response(
+                {
+                    'error': 'A check is already running for this taxon group.',
+                    'session_id': existing.id,
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        check_session = DataUpstreamDeletionCheckSession.objects.create(
+            started_by=request.user if request.user.is_authenticated else None,
+            taxon_group_id=taxon_group_id,
+            auto_remove=auto_remove,
+        )
+
+        from bims.tasks.col_deletion_check import check_col_deletions_task
+        check_col_deletions_task.delay(check_session.id)
+
+        return Response({'ok': True, 'session_id': check_session.id})
+
+
+class TaxaColCheckStatusView(SuperuserRequiredMixin, APIView):
+    """GET: poll the progress of a running/completed CoL deletion check."""
+
+    def get(self, request, session_id):
+        try:
+            check_session = DataUpstreamDeletionCheckSession.objects.get(pk=session_id)
+        except DataUpstreamDeletionCheckSession.DoesNotExist:
+            return Response(
+                {'error': 'Session not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'ok': True,
+            'session_id': check_session.id,
+            'status': check_session.status,
+            'total': check_session.total,
+            'processed': check_session.processed,
+            'found_count': check_session.found_count,
+            'removed_count': check_session.removed_count,
+            'auto_remove': check_session.auto_remove,
+            'canceled': check_session.canceled,
+            'started_at': check_session.started_at,
+            'finished_at': check_session.finished_at,
+            'error_message': check_session.error_message,
+        })
+
+
+class TaxaColCheckResultsView(SuperuserRequiredMixin, APIView):
+    """GET: paginated list of taxa found deleted on CoL for a session."""
+
+    def get(self, request, session_id):
+        try:
+            offset = int(request.query_params.get('offset', 0))
+            limit = int(request.query_params.get('limit', 50))
+            limit = min(limit, 200)
+        except (TypeError, ValueError):
+            offset, limit = 0, 50
+
+        qs = DataUpstreamDeletionCheckResult.objects.filter(
+            session_id=session_id).order_by('name')
+        total = qs.count()
+        page = qs[offset: offset + limit]
+        rows = [{
+            'id': r.id,
+            'taxon_id': r.object_id,
+            'canonical_name': r.name,
+            'rank': r.content_object.rank if r.content_object else '',
+            'col_id': r.upstream_id,
+            'detail': r.detail,
+            'removed': r.removed,
+            'removed_auto': r.removed_auto,
+        } for r in page]
+
+        return Response({'total': total, 'offset': offset, 'results': rows})
+
+
+class TaxaColCheckRemoveView(SuperuserRequiredMixin, APIView):
+    """POST: remove (null) the col_id for one CoL deletion check finding."""
+
+    def post(self, request):
+        try:
+            result_id = int(request.data['result_id'])
+        except (KeyError, ValueError, TypeError):
+            return Response(
+                {'error': 'result_id (integer) is required'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            result = DataUpstreamDeletionCheckResult.objects.select_related(
+                'session').get(pk=result_id)
+        except DataUpstreamDeletionCheckResult.DoesNotExist:
+            return Response(
+                {'error': 'Result not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        if result.removed:
+            return Response({'ok': True, 'already_removed': True})
+
+        taxon = result.content_object
+        if taxon is None:
+            return Response(
+                {'error': 'Underlying record no longer exists'},
+                status=status.HTTP_404_NOT_FOUND)
+        taxon.col_id = None
+        taxon.save(update_fields=['col_id'])
+
+        result.removed = True
+        result.removed_auto = False
+        result.removed_at = timezone.now()
+        result.save(update_fields=['removed', 'removed_auto', 'removed_at'])
+
+        DataUpstreamDeletionCheckSession.objects.filter(
+            pk=result.session_id).update(removed_count=F('removed_count') + 1)
+
+        return Response({
+            'ok': True,
+            'result_id': result_id,
+            'taxon_id': taxon.id,
+        })
+
+
+class TaxaColCheckDeleteTaxonView(SuperuserRequiredMixin, APIView):
+    """POST: permanently delete a taxon found deleted on CoL, along with
+    its occurrence records and any child taxa (and their occurrences)."""
+
+    def post(self, request):
+        from bims.models.biological_collection_record import (
+            BiologicalCollectionRecord,
+        )
+
+        try:
+            result_id = int(request.data['result_id'])
+        except (KeyError, ValueError, TypeError):
+            return Response(
+                {'error': 'result_id (integer) is required'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            result = DataUpstreamDeletionCheckResult.objects.select_related(
+                'session').get(pk=result_id)
+        except DataUpstreamDeletionCheckResult.DoesNotExist:
+            return Response(
+                {'error': 'Result not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        taxon = result.content_object
+        if taxon is None:
+            return Response(
+                {'error': 'Underlying taxon no longer exists'},
+                status=status.HTTP_404_NOT_FOUND)
+
+        taxon_ids = list(taxon.get_all_children().values_list(
+            'id', flat=True)) + [taxon.id]
+
+        occurrence_qs = BiologicalCollectionRecord.objects.filter(
+            taxonomy_id__in=taxon_ids)
+        deleted_occurrence_count = occurrence_qs.count()
+        occurrence_qs.delete()
+
+        deleted_taxa_count = len(taxon_ids)
+        Taxonomy.objects.filter(id__in=taxon_ids).delete()
+
+        if not result.removed:
+            result.removed = True
+            result.removed_auto = False
+            result.removed_at = timezone.now()
+            result.save(update_fields=['removed', 'removed_auto', 'removed_at'])
+
+            DataUpstreamDeletionCheckSession.objects.filter(
+                pk=result.session_id).update(removed_count=F('removed_count') + 1)
+
+        return Response({
+            'ok': True,
+            'result_id': result_id,
+            'taxon_id': taxon.id,
+            'deleted_taxa_count': deleted_taxa_count,
+            'deleted_occurrence_count': deleted_occurrence_count,
+        })
+
+
+class TaxaColCheckCancelView(SuperuserRequiredMixin, APIView):
+    """POST: request cancellation of a running CoL deletion check."""
+
+    def post(self, request):
+        try:
+            session_id = int(request.data['session_id'])
+        except (KeyError, ValueError, TypeError):
+            return Response(
+                {'error': 'session_id (integer) is required'},
+                status=status.HTTP_400_BAD_REQUEST)
+
+        updated = DataUpstreamDeletionCheckSession.objects.filter(
+            pk=session_id, status__in=['pending', 'running'],
+        ).update(canceled=True)
+
+        if not updated:
+            return Response(
+                {'error': 'No running session found for this id'},
+                status=status.HTTP_404_NOT_FOUND)
+
+        return Response({'ok': True, 'session_id': session_id})

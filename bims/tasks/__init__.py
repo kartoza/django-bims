@@ -35,6 +35,7 @@ from bims.tasks.module_summary import generate_module_summary
 from bims.tasks.summary_report import generate_general_summary_report
 from bims.tasks.spatial_dashboard import *  # noqa
 from bims.tasks.citation_download import *  # noqa
+from bims.tasks.col_deletion_check import *  # noqa
 
 
 @shared_task(name='bims.tasks.test_celery', queue='update')
