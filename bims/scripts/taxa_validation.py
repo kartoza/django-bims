@@ -43,6 +43,7 @@ class TaxaValidator:
         self.file_fada_ids = defaultdict(list)
         self.file_taxon_name_rank = defaultdict(list)
         self.file_taxon_name_rank_author = defaultdict(list)
+        self.file_taxon_name_rank_status = defaultdict(list)
         self.file_taxon_names_lower = set()
         self.db_accepted_taxon_names_lower = set()
         self.validation_results = []
@@ -151,6 +152,28 @@ class TaxaValidator:
 
         return ''
 
+    def _is_synonym_row(self, row):
+        """Return True if the row's taxonomic status marks it as a synonym."""
+        taxonomic_status = self.row_value(row, TAXONOMIC_STATUS).upper()
+        synonym_flag = self.row_value(row, SYNONYM).lower()
+
+        return (
+            'SYNONYM' in taxonomic_status or
+            synonym_flag in ('true', 'yes', '1')
+        )
+
+    def _status_category(self, row):
+        """Classify a row as 'SYNONYM', 'ACCEPTED', or 'OTHER' based on its
+        taxonomic status, for homonymy-vs-accepted/synonym disambiguation."""
+        if self._is_synonym_row(row):
+            return 'SYNONYM'
+
+        taxonomic_status = self.row_value(row, TAXONOMIC_STATUS).upper()
+        if 'ACCEPTED' in taxonomic_status:
+            return 'ACCEPTED'
+
+        return 'OTHER'
+
     def _check_synonym_accepted_taxon(self, row):
         """Check that the accepted taxon exists in the system or the CSV for synonym taxa.
 
@@ -161,15 +184,7 @@ class TaxaValidator:
         """
         messages = []
 
-        taxonomic_status = self.row_value(row, TAXONOMIC_STATUS).upper()
-        synonym_flag = self.row_value(row, SYNONYM).lower()
-
-        is_synonym = (
-            'SYNONYM' in taxonomic_status or
-            synonym_flag in ('true', 'yes', '1')
-        )
-
-        if not is_synonym:
+        if not self._is_synonym_row(row):
             return messages
 
         accepted_taxon_name = self.row_value(row, ACCEPTED_TAXON)
@@ -263,25 +278,24 @@ class TaxaValidator:
                 self.file_fada_ids[fada_id].append(row_number)
             if taxon_name:
                 author = self.row_value(row, AUTHORS)
+                subgenus = self.row_value(row, SUBGENUS)
                 # (name, rank) for homonymy detection
                 name_rank_key = (taxon_name.lower(), (taxon_rank or '').upper())
                 self.file_taxon_name_rank[name_rank_key].append(row_number)
-                # (name, rank, author) for true-duplicate detection
+                self.file_taxon_name_rank_status[name_rank_key].append(
+                    self._status_category(row))
+                # (name, rank, subgenus, author) for true-duplicate detection
                 name_rank_author_key = (
                     taxon_name.lower(),
                     (taxon_rank or '').upper(),
+                    (subgenus or '').upper(),
                     (author or '').lower().strip(),
                 )
                 self.file_taxon_name_rank_author[name_rank_author_key].append(row_number)
                 self.file_taxon_names_lower.add(taxon_name.lower())
 
             # Collect accepted taxon names referenced by synonym rows
-            taxonomic_status = self.row_value(row, TAXONOMIC_STATUS).upper()
-            synonym_flag = self.row_value(row, SYNONYM).lower()
-            is_synonym = (
-                'SYNONYM' in taxonomic_status or
-                synonym_flag in ('true', 'yes', '1')
-            )
+            is_synonym = self._is_synonym_row(row)
             if is_synonym:
                 accepted_taxon_name = self.row_value(row, ACCEPTED_TAXON)
                 if accepted_taxon_name:
@@ -350,13 +364,19 @@ class TaxaValidator:
                     f"(also in row(s) {', '.join(map(str, other_rows))})"
                 )
             elif len(rows_same_name_rank) > 1:
-                # Same name + rank but different authors: homonymy
-                other_rows = [r - 1 for r in rows_same_name_rank if r != row_number]
-                messages.append(
-                    f"WARNING: Homonymy detected - '{taxon_name}' ({taxon_rank}) appears with different author(s) "
-                    f"(also in row(s) {', '.join(map(str, other_rows))}). "
-                    f"Verify that one is the accepted name and the other is a synonym."
+                # Same name + rank but different authors.
+                statuses = self.file_taxon_name_rank_status.get(name_rank_key, [])
+                is_accepted_synonym_pair = (
+                    statuses.count('ACCEPTED') == 1 and
+                    statuses.count('SYNONYM') == len(statuses) - 1
                 )
+                if not is_accepted_synonym_pair:
+                    other_rows = [r - 1 for r in rows_same_name_rank if r != row_number]
+                    messages.append(
+                        f"WARNING: Homonymy detected - '{taxon_name}' ({taxon_rank}) appears with different author(s) "
+                        f"(also in row(s) {', '.join(map(str, other_rows))}). "
+                        f"Verify that one is the accepted name and the other is a synonym."
+                    )
 
         # Check database duplicates
         db_warnings = self._check_database_duplicates(gbif_key, fada_id)
