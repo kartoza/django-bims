@@ -57,20 +57,15 @@ def generate_site_visit_ecological_condition(site_visits):
         aspt_score = summary[0]['aspt']
         sass_score = summary[0]['sass_score']
 
-        existing = SiteVisitEcologicalCondition.objects.filter(
-            site_visit=site_visit,
-        )
-        if existing.count() > 1:
-            keep = existing.order_by('-id').first()
-            existing.exclude(pk=keep.pk).delete()
-            site_visit_ecological = keep
-        else:
-            site_visit_ecological, _ = existing.get_or_create(
+        site_visit_ecological, _ = (
+            SiteVisitEcologicalCondition.objects.update_or_create(
                 site_visit=site_visit,
+                defaults={
+                    'sass_score': sass_score,
+                    'aspt_score': aspt_score,
+                },
             )
-
-        site_visit_ecological.sass_score = sass_score
-        site_visit_ecological.aspt_score = aspt_score
+        )
         location_context = LocationContext.objects.filter(
             site=site_visit.location_site
         )
