@@ -112,10 +112,12 @@ def get_feature_data(lon, lat, context_key, layer_name, tolerance=0, location_si
             geocontext_group_key=layer.unique_id
         ).first()
         if location_contex_group:
-            location_context, _ = LocationContext.objects.get_or_create(
+            location_context, _ = LocationContext.objects.update_or_create(
                 site=location_site,
                 group=location_contex_group,
-                value=feature_data,
+                defaults={
+                    'value': feature_data
+                }
             )
 
     return feature_data

@@ -36,13 +36,13 @@ def get_geomorphological_zone_class(location_site: LocationSite) -> str:
     geo_class = context.value_from_key(
         layer_name='geomorphological zone'
     )
-    if geo_class == '-':
+    if geo_class == '-' or not geo_class:
         geo_class = get_feature_data(
             lon=location_site.longitude,
             lat=location_site.latitude,
             context_key='name',
-            layer_name='geomorphological',
-            tolerance=preferences.GeocontextSetting.tolerance,
+            layer_name='geomorphological zone',
+            tolerance=0.1,
             location_site=location_site,
         )
 
