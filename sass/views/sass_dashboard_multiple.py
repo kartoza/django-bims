@@ -83,6 +83,11 @@ class SassDashboardMultipleSitesApiView(APIView):
                         condition=Q(site_visit__sass_version=5,
                                     sass_taxon__sass_5_score__isnull=False),
                         then='sass_taxon__sass_5_score'),
+                    When(
+                        condition=Q(
+                            site_visit__sass_version=4,
+                            sass_taxon__score__isnull=False),
+                        then='sass_taxon__score'),
                     default=0
                 ))
             ).annotate(
