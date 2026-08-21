@@ -6,7 +6,8 @@ class SiteVisitEcologicalCondition(models.Model):
     site_visit = models.ForeignKey(
         'sass.SiteVisit',
         null=False,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        unique=True
     )
 
     sass_score = models.IntegerField(
