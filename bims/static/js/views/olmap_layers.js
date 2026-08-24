@@ -778,7 +778,7 @@ define(['shared', 'backbone', 'underscore', 'jquery', 'jqueryUi', 'views/layer_s
                 }
                 self.renderLayersSelector(
                     layer['wms_layer_name'], layer['name'], layer['name'], layerData['visibleInDefault'],
-                    currentLayerTransparency, '', layer['native_layer_abstract'],
+                    currentLayerTransparency, layerData['category'], layerData['source'],
                     layer['enable_styles_selection'],
                     '#children_' + id
                 );
