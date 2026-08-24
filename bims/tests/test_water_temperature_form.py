@@ -14,9 +14,12 @@ import factory
 from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
 
-from bims.api_views.thermal_data import WaterTemperatureThresholdApiView
+from bims.api_views.thermal_data import (
+    WaterTemperatureThresholdApiView, ThermalDataApiView
+)
 from bims.tests.model_factories import (
-    LocationSiteF, WaterTemperatureF, WaterTemperatureThresholdF
+    LocationSiteF, WaterTemperatureF, WaterTemperatureThresholdF,
+    SourceReferenceDatabaseF
 )
 from bims.models.water_temperature import WaterTemperatureThreshold
 
@@ -212,6 +215,84 @@ class TestWaterTemperatureForm(FastTenantTestCase):
             'not-a-date',
             response_content['message'][0]
         )
+
+
+class TestWaterTemperatureSourceReferenceFilter(FastTenantTestCase):
+    """The site-wide `reference`/`referenceCategory` filter (used by
+    the main search/map filter panel) should also apply to the
+    water temperature dashboard page and its chart data API."""
+
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.location_site = LocationSiteF.create()
+        self.source_reference_a = SourceReferenceDatabaseF.create()
+        self.source_reference_b = SourceReferenceDatabaseF.create()
+        self.water_temperature_a = WaterTemperatureF.create(
+            location_site=self.location_site,
+            date_time=datetime(2020, 1, 1),
+            value=10,
+            minimum=10,
+            maximum=10,
+            is_daily=True,
+            source_reference=self.source_reference_a
+        )
+        self.water_temperature_b = WaterTemperatureF.create(
+            location_site=self.location_site,
+            date_time=datetime(2020, 1, 2),
+            value=20,
+            minimum=20,
+            maximum=20,
+            is_daily=True,
+            source_reference=self.source_reference_b
+        )
+        self.client = TenantClient(self.tenant)
+
+    def test_site_view_filters_by_reference(self):
+        url = reverse(
+            'water-temperature-site',
+            kwargs={'site_id': self.location_site.id, 'year': 2020}
+        )
+        response = self.client.get(
+            url,
+            {
+                'siteId': self.location_site.id,
+                'reference': json.dumps([self.source_reference_a.id])
+            }
+        )
+        self.assertEqual(response.status_code, 200)
+        water_temperature_data = (
+            response.context['water_temperature_data']
+        )
+        self.assertEqual(water_temperature_data.value, 10)
+
+    def test_site_view_filters_by_unmatched_reference_returns_404(self):
+        url = reverse(
+            'water-temperature-site',
+            kwargs={'site_id': self.location_site.id, 'year': 2020}
+        )
+        response = self.client.get(
+            url,
+            {
+                'siteId': self.location_site.id,
+                'reference': json.dumps([999999])
+            }
+        )
+        self.assertEqual(response.status_code, 404)
+
+    def test_thermal_data_api_filters_by_reference(self):
+        request = self.factory.get(
+            '/api/thermal-data/',
+            {
+                'site-id': self.location_site.id,
+                'year': '2020',
+                'reference': json.dumps([self.source_reference_b.id])
+            }
+        )
+        response = ThermalDataApiView.as_view()(request)
+        response_content = json.loads(response.content)
+        self.assertIn(20.0, response_content.get('mean_7', []))
+        self.assertNotIn(10.0, response_content.get('mean_7', []))
 
 
 class WaterTemperatureThresholdApiViewTest(FastTenantTestCase):

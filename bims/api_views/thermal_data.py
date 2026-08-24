@@ -9,6 +9,7 @@ from rest_framework import status
 from bims.models import LocationSite
 from bims.models.water_temperature import calculate_indicators, \
     WaterTemperature, thermograph_data, WaterTemperatureThreshold, get_thermal_zone
+from bims.utils.source_reference_filter import filter_by_source_reference
 
 logger = logging.getLogger('bims')
 
@@ -51,6 +52,8 @@ class ThermalDataApiView(APIView):
                 date_time__gte=start_date,
                 date_time__lte=end_date
             )
+            water_temperature = filter_by_source_reference(
+                water_temperature, request)
             year = start_date.year
             if water_temperature:
                 indicator = calculate_indicators(
@@ -64,8 +67,13 @@ class ThermalDataApiView(APIView):
                 year = years[-1]
             else:
                 year = int(year.strip())
+            water_temperature = filter_by_source_reference(
+                WaterTemperature.objects.filter(
+                    location_site=location_site,
+                    date_time__year=year
+                ), request)
             indicator = calculate_indicators(
-                location_site, year, True)
+                location_site, year, True, water_temperature)
         if indicator and 'weekly' in indicator:
             thermograph = thermograph_data(indicator['weekly'])
             thermograph['date_time'] = indicator['date_time']

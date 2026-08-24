@@ -1056,7 +1056,27 @@ class CollectionSearch(object):
             bio = collection_record_model.objects.none()
 
         if self.thermal_module:
-            water_temperature = list(WaterTemperature.objects.all().order_by(
+            water_temperature_records = WaterTemperature.objects.all()
+            if self.reference:
+                water_temperature_records = (
+                    water_temperature_records.filter(
+                        source_reference__in=self.reference
+                    )
+                )
+            if self.reference_category:
+                clauses = (
+                    Q(source_reference__polymorphic_ctype=
+                      ContentType.objects.get_for_model(
+                          LIST_SOURCE_REFERENCES[p])) for p in
+                    self.reference_category
+                )
+                reference_category_filter = reduce(operator.or_, clauses)
+                water_temperature_records = (
+                    water_temperature_records.filter(
+                        reference_category_filter
+                    )
+                )
+            water_temperature = list(water_temperature_records.order_by(
                 'location_site').distinct('location_site').values_list(
                 'location_site', flat=True))
             if not isinstance(filtered_location_sites, QuerySet):
@@ -1234,7 +1254,23 @@ class CollectionSearch(object):
 
         thermal_sites = WaterTemperature.objects.none()
         if self.thermal_module:
-            thermal_sites = WaterTemperature.objects.exclude(
+            thermal_sites_records = WaterTemperature.objects.all()
+            if self.reference:
+                thermal_sites_records = thermal_sites_records.filter(
+                    source_reference__in=self.reference
+                )
+            if self.reference_category:
+                clauses = (
+                    Q(source_reference__polymorphic_ctype=
+                      ContentType.objects.get_for_model(
+                          LIST_SOURCE_REFERENCES[p])) for p in
+                    self.reference_category
+                )
+                reference_category_filter = reduce(operator.or_, clauses)
+                thermal_sites_records = thermal_sites_records.filter(
+                    reference_category_filter
+                )
+            thermal_sites = thermal_sites_records.exclude(
                 location_site_id__in=list(sites.values_list('site_id'))
             ).annotate(
                 name=Case(
