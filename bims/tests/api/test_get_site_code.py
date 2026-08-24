@@ -14,7 +14,10 @@ from django.urls import reverse
 from rest_framework import status
 
 from bims.tests.model_factories import UserF, LocationSiteF, LocationContextGroupF, LayerF
-from bims.utils.site_code import SANPARK_PARK_KEY, wetland_catchment
+from bims.utils.site_code import (
+    SANPARK_PARK_KEY, wetland_catchment, fbis_catchment_generator,
+    open_waterbody_catchment
+)
 
 
 def mocked_fetch_river_name(latitude, longitude):
@@ -162,3 +165,123 @@ class TestWetlandCatchment(FastTenantTestCase):
             )
         self.assertIn('Lake', site_code)
         self.assertNotIn('Bles', site_code)
+
+
+class TestFbisCatchmentGenerator(FastTenantTestCase):
+
+    @patch('bims.utils.site_code.get_feature_data', return_value='')
+    @patch('bims.utils.site_code.get_river_feature_data')
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_explicit_river_name_supersedes_everything(
+            self, mock_get_river_feature_data, mock_get_feature_data):
+        location_site = LocationSiteF.create(
+            legacy_river_name='LegacyRiver'
+        )
+        catchment_code, _ = fbis_catchment_generator(
+            location_site=location_site,
+            lat=-26.0, lon=28.0,
+            river_name='UserRiver'
+        )
+        self.assertIn('USER', catchment_code)
+        mock_get_river_feature_data.assert_not_called()
+
+    @patch('bims.utils.site_code.get_feature_data', return_value='')
+    @patch(
+        'bims.utils.site_code.get_river_feature_data',
+        return_value='NearbyRiver')
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_legacy_river_name_supersedes_nearby_river_lookup(
+            self, mock_get_river_feature_data, mock_get_feature_data):
+        location_site = LocationSiteF.create(
+            legacy_river_name='LegacyRiver'
+        )
+        catchment_code, _ = fbis_catchment_generator(
+            location_site=location_site,
+            lat=-26.0, lon=28.0
+        )
+        self.assertIn('LEGA', catchment_code)
+        self.assertNotIn('NEAR', catchment_code)
+        mock_get_river_feature_data.assert_not_called()
+
+    @patch('bims.utils.site_code.get_feature_data', return_value='')
+    @patch(
+        'bims.utils.site_code.get_river_feature_data',
+        return_value='NearbyRiver')
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_falls_back_to_nearby_river_lookup_when_no_stored_name(
+            self, mock_get_river_feature_data, mock_get_feature_data):
+        location_site = LocationSiteF.create()
+        catchment_code, _ = fbis_catchment_generator(
+            location_site=location_site,
+            lat=-26.0, lon=28.0
+        )
+        self.assertIn('NEAR', catchment_code)
+
+
+class TestOpenWaterbodyCatchment(FastTenantTestCase):
+
+    def _make_patches(self):
+        layer_patch = patch('bims.utils.site_code.Layer')
+        catchments_patch = patch(
+            'bims.utils.site_code._get_catchments_data',
+            return_value=({}, {})
+        )
+        river_feature_patch = patch(
+            'bims.utils.site_code.get_river_feature_data',
+            return_value='NearbyRiver'
+        )
+        return layer_patch, catchments_patch, river_feature_patch
+
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_user_river_name_supersedes_everything(self):
+        layer_patch, catchments_patch, river_feature_patch = (
+            self._make_patches()
+        )
+        location_site = LocationSiteF.create(
+            legacy_river_name='LegacyRiver'
+        )
+        with layer_patch as mock_layer, catchments_patch, \
+                river_feature_patch as mock_river_feature:
+            mock_layer.objects.filter.return_value.first.return_value = None
+            site_code = open_waterbody_catchment(
+                lat=-26.0, lon=28.0,
+                user_open_waterbody_name='UserWaterbody',
+                location_site=location_site
+            )
+        self.assertIn('USER', site_code)
+        mock_river_feature.assert_not_called()
+
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_legacy_river_name_supersedes_nearby_river_lookup(self):
+        layer_patch, catchments_patch, river_feature_patch = (
+            self._make_patches()
+        )
+        location_site = LocationSiteF.create(
+            legacy_river_name='LegacyRiver'
+        )
+        with layer_patch as mock_layer, catchments_patch, \
+                river_feature_patch as mock_river_feature:
+            mock_layer.objects.filter.return_value.first.return_value = None
+            site_code = open_waterbody_catchment(
+                lat=-26.0, lon=28.0,
+                user_open_waterbody_name='',
+                location_site=location_site
+            )
+        self.assertIn('LEGA', site_code)
+        self.assertNotIn('NEAR', site_code)
+        mock_river_feature.assert_not_called()
+
+    @factory.django.mute_signals(signals.pre_save, signals.post_save)
+    def test_falls_back_to_nearby_river_lookup_when_no_stored_name(self):
+        layer_patch, catchments_patch, river_feature_patch = (
+            self._make_patches()
+        )
+        location_site = LocationSiteF.create()
+        with layer_patch as mock_layer, catchments_patch, river_feature_patch:
+            mock_layer.objects.filter.return_value.first.return_value = None
+            site_code = open_waterbody_catchment(
+                lat=-26.0, lon=28.0,
+                user_open_waterbody_name='',
+                location_site=location_site
+            )
+        self.assertIn('NEAR', site_code)
