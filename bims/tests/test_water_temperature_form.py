@@ -40,6 +40,12 @@ class TestWaterTemperatureForm(FastTenantTestCase):
         self.hourly_data = os.path.join(
             test_data_directory, 'hourly.csv'
         )
+        self.hourly_data_bom = os.path.join(
+            test_data_directory, 'hourly_bom.csv'
+        )
+        self.hourly_data_whitespace = os.path.join(
+            test_data_directory, 'hourly_whitespace.csv'
+        )
 
     def test_upload_without_login(self):
         response = self.client.post(
@@ -108,6 +114,103 @@ class TestWaterTemperatureForm(FastTenantTestCase):
         self.assertEqual(
             response_content['status'],
             'success'
+        )
+
+    def test_validate_data_with_bom(self):
+        # A UTF-8 BOM at the start of the file (common when the CSV
+        # is exported from Excel) should not break header/date parsing
+        self.client.login(
+            username='@.test',
+            password='psst'
+        )
+        hourly_data = open(self.hourly_data_bom, 'rb')
+        water_file = SimpleUploadedFile(
+            'file.csv',
+            hourly_data.read(),
+            content_type='text/csv'
+        )
+        hourly_data.close()
+        response = self.client.post(
+            reverse('validate-water-temperature'),
+            {
+                'water_file': water_file,
+                'format': '%d/%m/%Y',
+                'interval': '1',
+                'start_time': '00:00',
+                'end_time': '23:00'
+            }
+        )
+        response_content = json.loads(response.content)
+        self.assertEqual(
+            response_content['status'],
+            'success'
+        )
+
+    def test_validate_data_with_stray_whitespace(self):
+        # Trailing whitespace around the date value (common when the
+        # CSV is edited/exported by spreadsheet software) should be
+        # stripped before parsing rather than failing validation
+        self.client.login(
+            username='@.test',
+            password='psst'
+        )
+        hourly_data = open(self.hourly_data_whitespace, 'rb')
+        water_file = SimpleUploadedFile(
+            'file.csv',
+            hourly_data.read(),
+            content_type='text/csv'
+        )
+        hourly_data.close()
+        response = self.client.post(
+            reverse('validate-water-temperature'),
+            {
+                'water_file': water_file,
+                'format': '%d/%m/%Y',
+                'interval': '1',
+                'start_time': '00:00',
+                'end_time': '23:00'
+            }
+        )
+        response_content = json.loads(response.content)
+        self.assertEqual(
+            response_content['status'],
+            'success'
+        )
+
+    def test_validate_data_shows_offending_value_in_error(self):
+        # When a date genuinely fails to parse, the error message
+        # should include the raw value so it's easy to diagnose
+        self.client.login(
+            username='@.test',
+            password='psst'
+        )
+        csv_content = (
+            b'Date Time,Water temperature\n'
+            b'not-a-date,16.963\n'
+        )
+        water_file = SimpleUploadedFile(
+            'file.csv',
+            csv_content,
+            content_type='text/csv'
+        )
+        response = self.client.post(
+            reverse('validate-water-temperature'),
+            {
+                'water_file': water_file,
+                'format': '%d/%m/%Y',
+                'interval': '1',
+                'start_time': '00:00',
+                'end_time': '23:00'
+            }
+        )
+        response_content = json.loads(response.content)
+        self.assertEqual(
+            response_content['status'],
+            'failed'
+        )
+        self.assertIn(
+            'not-a-date',
+            response_content['message'][0]
         )
 
 

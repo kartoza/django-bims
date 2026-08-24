@@ -79,9 +79,12 @@ def process_water_temperature_data(
             logger.error('Upload session not found')
             return
 
-        with open(upload_session.process_file.path) as file:
+        with open(
+                upload_session.process_file.path, encoding='utf-8-sig'
+        ) as file:
             reader = csv.DictReader(file)
-            headers = reader.fieldnames
+            headers = [header.strip() for header in reader.fieldnames]
+            reader.fieldnames = headers
             data = list(reader)
             date_field = 'Date Time' if 'Date Time' in headers else 'Date'
 
@@ -96,7 +99,7 @@ def process_water_temperature_data(
                 else:
                     water_temp_value = temperature['Water temperature']
 
-                date_string = temperature[date_field]
+                date_string = temperature[date_field].strip()
                 if len(date_string.split(
                         ':')) > 2 and ':%S' not in date_format:
                     date_format += ':%S'  # Add second
