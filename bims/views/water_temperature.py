@@ -25,6 +25,7 @@ from django.http import Http404
 from bims.models.basemap_layer import BaseMapLayer
 from bims.tasks.water_temperature import process_water_temperature_data
 from bims.utils.get_key import get_key
+from bims.utils.source_reference_filter import filter_by_source_reference
 from bims.models.location_site import LocationSite
 from bims.models import (
     WaterTemperature,
@@ -471,6 +472,9 @@ class WaterTemperatureSiteView(TemplateView):
 
         water_temperature_data = WaterTemperature.objects.filter(
             location_site=self.location_site
+        )
+        water_temperature_data = filter_by_source_reference(
+            water_temperature_data, self.request
         )
         if not water_temperature_data.exists():
             raise Http404('Does not exist')

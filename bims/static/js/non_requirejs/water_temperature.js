@@ -4,6 +4,15 @@ function renderWaterTemperatureChart(){
     let startDate = $('#startDate').val();
     let endDate = $('#endDate').val();
     let url = '/api/thermal-data/?site-id='+ siteId  + '&year=' + year + '&startDate=' + startDate + '&endDate=' + endDate
+    const currentParams = new URLSearchParams(window.location.search);
+    const reference = currentParams.get('reference');
+    const referenceCategory = currentParams.get('referenceCategory');
+    if (reference) {
+        url += '&reference=' + encodeURIComponent(reference);
+    }
+    if (referenceCategory) {
+        url += '&referenceCategory=' + encodeURIComponent(referenceCategory);
+    }
     fetch(url).then(
       response => response.json()
     ).then((data =>{
