@@ -199,8 +199,9 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
             is_daily = True
 
         row = 2
-        reader = csv.DictReader(codecs.iterdecode(water_file, 'utf-8'))
-        headers = reader.fieldnames
+        reader = csv.DictReader(codecs.iterdecode(water_file, 'utf-8-sig'))
+        headers = [header.strip() for header in reader.fieldnames]
+        reader.fieldnames = headers
         data = list(reader)
         date_field = 'Date Time' if 'Date Time' in headers else 'Date'
         value_key = ''
@@ -237,7 +238,7 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
             for temperature_data in data:
                 # Check date format
                 try:
-                    date_string = temperature_data[date_field]
+                    date_string = temperature_data[date_field].strip()
                     if len(date_string.split(':')) > 2 and ':%S' not in date_format:
                         date_format += ':%S' # Add second
                     date = datetime.strptime(date_string, date_format)
@@ -290,8 +291,8 @@ class WaterTemperatureValidateView(LoginRequiredMixin, View):
                 except ValueError:
                     self.add_error_messages(
                         row,
-                        'Date format should be {}'.format(
-                            date_format
+                        'Date format should be {} (got "{}")'.format(
+                            date_format, date_string
                         )
                     )
                 row += 1
