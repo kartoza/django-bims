@@ -615,7 +615,7 @@ class OccurrenceProcessor(object):
                     location_site,
                     lat=location_site.latitude,
                     lon=location_site.longitude,
-                    river_name=river_name,
+                    river_name=legacy_river_name if legacy_river_name else river_name,
                     ecosystem_type=ecosystem_type or '',
                     wetland_name=user_wetland_name or '',
                     **{
