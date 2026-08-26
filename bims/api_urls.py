@@ -50,6 +50,7 @@ from bims.api_views.taxon import (
     TaxaGroupSummary,
     TaxonTagAutocompleteAPIView, AddTagAPIView, TaxonProposalDetail, IUCNStatusFetchView, TaxonTreeJsonView,
     HarvestIUCNStatus, ApproveTaxonGroupProposalsView, ClearTaxaNotAssociatedInTaxonGroup,
+    ClearGbifDatasetOccurrences,
     ClearGbifDeletedOccurrences, COLSearchView
 )
 from bims.api_views.dataset import DatasetAutocompleteAPIView
@@ -539,6 +540,9 @@ urlpatterns = [
     path('clear-gbif-deleted-occurrences/',
          ClearGbifDeletedOccurrences.as_view(),
          name='clear_gbif_deleted_occurrences'),
+    path('clear-gbif-dataset-occurrences/',
+         ClearGbifDatasetOccurrences.as_view(),
+         name='clear_gbif_dataset_occurrences'),
     path('harvest-iucn-status/',
          HarvestIUCNStatus.as_view(),
          name='harvest_iucn_status'),

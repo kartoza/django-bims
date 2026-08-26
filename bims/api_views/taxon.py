@@ -39,7 +39,9 @@ from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
 from bims.tasks.taxa import fetch_iucn_status, approve_unvalidated_taxa_by_group, \
     clear_taxa_not_associated_in_taxon_group
-from bims.tasks.gbif_deletions import clear_gbif_deleted_occurrences
+from bims.tasks.gbif_deletions import (
+    clear_gbif_deleted_occurrences, clear_gbif_dataset_occurrences
+)
 
 logger = logging.getLogger('bims')
 
@@ -1425,6 +1427,32 @@ class ClearGbifDeletedOccurrences(APIView):
                 "Starting background cleanup of GBIF-sourced occurrences that "
                 "have been deleted upstream in GBIF. A report will be emailed "
                 "to superusers."
+            )
+
+        return Response({"message": message}, status=HTTP_200_OK)
+
+
+class ClearGbifDatasetOccurrences(APIView):
+    permission_classes = (IsSuperUser,)
+
+    def post(self, request, *args, **kwargs):
+        if not request.user.is_superuser:
+            return Response({"error": "Permission denied."}, status=HTTP_403_FORBIDDEN)
+
+        dry_run = bool(request.data.get("dry_run", False))
+        clear_gbif_dataset_occurrences.delay(dry_run=dry_run)
+
+        if dry_run:
+            message = (
+                "Starting a DRY RUN check of all GBIF dataset keys currently in "
+                "use against GBIF. Nothing will be deleted; a report will be "
+                "emailed to superusers."
+            )
+        else:
+            message = (
+                "Starting background check of all GBIF dataset keys currently in "
+                "use. Occurrences belonging to datasets no longer on GBIF will be "
+                "removed. A report will be emailed to superusers."
             )
 
         return Response({"message": message}, status=HTTP_200_OK)
