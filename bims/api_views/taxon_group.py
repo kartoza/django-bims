@@ -33,6 +33,25 @@ def update_taxon_group_orders(taxon_group_ids):
             continue
 
 
+def _delete_unused_ancestors(parent):
+    """
+    Walk up the parent chain starting at `parent`, deleting each ancestor that has
+    become unused (not linked to any taxon group, not referenced by an occurrence,
+    and has no remaining children). Stops as soon as an ancestor still in use is found.
+    """
+    while parent is not None:
+        next_parent = parent.parent
+        still_in_use = (
+            TaxonGroupTaxonomy.objects.filter(taxonomy=parent).exists()
+            or BiologicalCollectionRecord.objects.filter(taxonomy=parent).exists()
+            or Taxonomy.objects.filter(parent=parent).exists()
+        )
+        if still_in_use:
+            break
+        parent.delete()
+        parent = next_parent
+
+
 def _remove_single_taxon(taxonomy, taxon_group, delete_if_orphaned=True):
     """
     Remove one taxonomy from a taxon group.
@@ -44,7 +63,9 @@ def _remove_single_taxon(taxonomy, taxon_group, delete_if_orphaned=True):
         taxonomy=taxonomy
     ).update(module_group=None)
     if delete_if_orphaned and not TaxonGroupTaxonomy.objects.filter(taxonomy=taxonomy).exists():
+        parent = taxonomy.parent
         taxonomy.delete()
+        _delete_unused_ancestors(parent)
 
 
 def remove_taxa_from_taxon_group(taxa_ids, taxon_group_id, include_children=False):

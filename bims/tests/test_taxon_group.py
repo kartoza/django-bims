@@ -217,6 +217,55 @@ class TestTaxonGroup(TestCase):
             "Orphaned taxon with no children in the group should be permanently deleted"
         )
 
+    def test_remove_taxa_deletes_unused_ancestor_chain(self):
+        """Deleting an orphaned leaf also deletes ancestors that become unused as a result."""
+        grandparent = TaxonomyF.create()
+        parent = TaxonomyF.create(parent=grandparent)
+        leaf = TaxonomyF.create(parent=parent)
+        taxon_group = TaxonGroupF.create(taxonomies=(leaf,))
+
+        remove_taxa_from_taxon_group([leaf.id], taxon_group.id)
+
+        self.assertFalse(
+            Taxonomy.objects.filter(id=leaf.id).exists(),
+            "Orphaned leaf should be permanently deleted"
+        )
+        self.assertFalse(
+            Taxonomy.objects.filter(id=parent.id).exists(),
+            "Parent should be deleted once it has no remaining children and is unused"
+        )
+        self.assertFalse(
+            Taxonomy.objects.filter(id=grandparent.id).exists(),
+            "Grandparent should be deleted once the whole chain below it is unused"
+        )
+
+    def test_remove_taxa_keeps_ancestor_still_in_use(self):
+        """Ancestor cleanup stops at an ancestor that's still linked to a group, referenced by an
+        occurrence, or has another child."""
+        grandparent = TaxonomyF.create()
+        parent = TaxonomyF.create(parent=grandparent)
+        leaf = TaxonomyF.create(parent=parent)
+        other_group = TaxonGroupF.create(taxonomies=(grandparent,))
+        taxon_group = TaxonGroupF.create(taxonomies=(leaf,))
+
+        remove_taxa_from_taxon_group([leaf.id], taxon_group.id)
+
+        self.assertFalse(
+            Taxonomy.objects.filter(id=leaf.id).exists(),
+            "Orphaned leaf should be permanently deleted"
+        )
+        self.assertFalse(
+            Taxonomy.objects.filter(id=parent.id).exists(),
+            "Parent should still be deleted since it is unused"
+        )
+        self.assertTrue(
+            Taxonomy.objects.filter(id=grandparent.id).exists(),
+            "Grandparent should be kept because it still belongs to another taxon group"
+        )
+        self.assertTrue(
+            other_group.taxonomies.filter(id=grandparent.id).exists()
+        )
+
     def _patch_restrict(self, enabled):
         return patch(
             'bims.api_views.taxon_group.preferences',
