@@ -141,12 +141,25 @@
             clearGbifDeletedBtn.style.marginLeft = '10px';
             clearGbifDeletedBtn.style.marginTop = '0px';
             clearGbifDeletedBtn.style.setProperty('font-size', '9pt', 'important');
+            // Hidden for now, keeping the wiring in place in case it's re-enabled.
+            clearGbifDeletedBtn.style.display = 'none';
+
+            const clearGbifDatasetBtn = document.createElement('a');
+            clearGbifDatasetBtn.href = '#';
+            clearGbifDatasetBtn.className = 'grp-button grp-primary';
+            clearGbifDatasetBtn.textContent = 'Clear GBIF dataset';
+            clearGbifDatasetBtn.style.marginLeft = '10px';
+            clearGbifDatasetBtn.style.marginTop = '10px';
+            clearGbifDatasetBtn.style.setProperty('font-size', '9pt', 'important');
+            clearGbifDatasetBtn.title = 'Check every GBIF dataset currently in use; remove occurrences for any dataset no longer on GBIF';
 
             const staleDaysLabel = document.createElement('label');
             staleDaysLabel.style.display = 'block';
             staleDaysLabel.style.marginLeft = '10px';
             staleDaysLabel.title = 'Only check occurrences not modified in the last N days';
             staleDaysLabel.appendChild(document.createTextNode('GBIF stale days '));
+            // Hidden alongside clearGbifDeletedBtn, which it configures.
+            staleDaysLabel.style.display = 'none';
 
             const staleDaysInput = document.createElement('input');
             staleDaysInput.type = 'number';
@@ -172,6 +185,7 @@
             outsideWrapper.appendChild(clearTaxaBtn);
             outsideWrapper.appendChild(clearGbifDeletedBtn);
             outsideWrapper.appendChild(staleDaysLabel);
+            outsideWrapper.appendChild(clearGbifDatasetBtn);
             targetElement.appendChild(outsideWrapper);
 
             removeOutsideBtn.addEventListener('click', function (event) {
@@ -272,6 +286,41 @@
                 .then(response => {
                     if (response.ok) return response.json();
                     throw new Error("Failed to enqueue GBIF deleted-occurrence cleanup");
+                })
+                .then(data => {
+                    alert(data.message || "Cleanup task started.");
+                    window.location.href = "/admin/";
+                })
+                .catch(error => {
+                    console.error("Error starting cleanup:", error);
+                    alert("An unexpected error occurred. Please try again.");
+                });
+            });
+
+            clearGbifDatasetBtn.addEventListener('click', function (event) {
+                event.preventDefault();
+
+                const dryRun = !!dryRunInput.checked;
+                const confirmMsg = dryRun
+                    ? "Run a DRY RUN? This checks every GBIF dataset currently in use against GBIF; no data will be deleted, a report will be emailed to superusers."
+                    : "This will check every GBIF dataset currently in use against GBIF and permanently delete occurrences belonging to any dataset no longer on GBIF. Proceed?";
+
+                if (!confirm(confirmMsg)) return;
+
+                fetch("{% url 'clear_gbif_dataset_occurrences' %}", {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "same-origin",
+                    body: JSON.stringify({
+                        dry_run: dryRun
+                    })
+                })
+                .then(response => {
+                    if (response.ok) return response.json();
+                    throw new Error("Failed to enqueue GBIF dataset cleanup");
                 })
                 .then(data => {
                     alert(data.message || "Cleanup task started.");

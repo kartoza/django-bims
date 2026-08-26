@@ -217,3 +217,129 @@ def clear_gbif_deleted_occurrences(
     logger.info(message.replace("\n", " "))
 
     return result
+
+
+def _dataset_deleted(session, dataset_key, timeout):
+    """
+    True if GBIF no longer has this dataset: either the dataset endpoint
+    404s, or it returns 200 with a non-null 'deleted' timestamp (GBIF
+    soft-deletes datasets rather than removing the record outright).
+    """
+    try:
+        response = session.get(
+            GBIF_API + '/dataset/%s' % dataset_key, timeout=timeout)
+        if response.status_code == 404:
+            return True
+        if response.status_code == 200:
+            try:
+                return bool(response.json().get('deleted'))
+            except ValueError:
+                return False
+        return False
+    except requests.RequestException as e:
+        logger.warning("dataset check failed for %s: %s", dataset_key, e)
+        return False
+
+
+@shared_task(name="bims.tasks.clear_gbif_dataset_occurrences", queue="update")
+def clear_gbif_dataset_occurrences(
+    dry_run: bool = True,
+    timeout: int = 30,
+) -> dict:
+    """
+    Check every distinct GBIF dataset key currently used by local occurrences
+    against GBIF. For any dataset that no longer exists upstream (404 from
+    GBIF's dataset API), remove all local occurrences belonging to it (unless
+    dry_run).
+
+    :param dry_run: If True, do not delete anything; only report.
+    :param timeout: Per-request timeout in seconds.
+    """
+    from bims.models.biological_collection_record import (
+        BiologicalCollectionRecord,
+    )
+    from bims.models.dataset import Dataset
+
+    session = _build_session()
+    domain_name = get_domain_name()
+
+    base_qs = BiologicalCollectionRecord.objects.filter(
+        source_collection__icontains='gbif',
+        dataset_key__isnull=False,
+    ).exclude(dataset_key='')
+
+    dataset_keys = list(
+        base_qs.order_by().values_list('dataset_key', flat=True).distinct()
+    )
+
+    datasets_checked = 0
+    deleted_dataset_keys = []
+    to_delete = 0
+    deleted = 0
+    datasets_removed = 0
+    sample = []
+
+    for dataset_key in dataset_keys:
+        datasets_checked += 1
+        if not _dataset_deleted(session, dataset_key, timeout):
+            continue
+
+        deleted_dataset_keys.append(dataset_key)
+        qs = base_qs.filter(dataset_key=dataset_key)
+        count = qs.count()
+        to_delete += count
+
+        for record in qs[:5]:
+            if len(sample) >= 25:
+                break
+            name = (
+                record.taxonomy.scientific_name
+                if record.taxonomy else record.original_species_name
+            )
+            sample.append(
+                f"{record.id}: {name or '-'} (dataset={dataset_key})")
+
+        if not dry_run:
+            _, detail_map = qs.delete()
+            deleted += detail_map.get('bims.BiologicalCollectionRecord', 0)
+
+            # Once every occurrence for this dataset is gone locally, remove
+            # the local Dataset record too, so it doesn't linger orphaned.
+            local_dataset_qs = Dataset.objects.filter(uuid=dataset_key)
+            if local_dataset_qs.exists() and not BiologicalCollectionRecord.objects.filter(
+                dataset_key=dataset_key
+            ).exists():
+                _, dataset_detail_map = local_dataset_qs.delete()
+                datasets_removed += dataset_detail_map.get('bims.Dataset', 0)
+
+    result = {
+        "ok": True,
+        "dry_run": dry_run,
+        "domain": domain_name,
+        "datasets_checked": datasets_checked,
+        "datasets_deleted": deleted_dataset_keys,
+        "to_delete": to_delete,
+        "deleted": deleted,
+        "datasets_removed": datasets_removed,
+        "sample_to_delete": sample,
+    }
+
+    subject = (
+        f"[{domain_name}] GBIF dataset occurrence cleanup"
+        f"{' (DRY RUN)' if dry_run else ''}"
+    )
+    message = (
+        f"GBIF dataset occurrence cleanup completed"
+        f"{' (DRY RUN – no changes made)' if dry_run else ''}.\n\n"
+        f"• Datasets checked : {datasets_checked}\n"
+        f"• Datasets no longer on GBIF : {len(deleted_dataset_keys)}\n"
+        f"• Occurrences matched : {to_delete}\n"
+        f"• Occurrences removed locally : {deleted}\n"
+        f"• Local Dataset records removed : {datasets_removed}\n"
+        f"• Affected dataset keys : {', '.join(deleted_dataset_keys) or '-'}\n"
+        f"• Sample (up to 25) : {', '.join(sample) or '-'}\n"
+    )
+    mail_superusers(subject=subject, body=message)
+    logger.info(message.replace("\n", " "))
+
+    return result
