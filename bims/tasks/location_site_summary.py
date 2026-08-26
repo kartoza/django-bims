@@ -174,8 +174,10 @@ def generate_location_site_summary(
 
         start_time = time.time()
         origin_data = collection_records.annotate(
-            name=Case(When(taxonomy__origin__isnull=True,
-                           then=Value('unknown')),
+            name=Case(When(Q(taxonomy__origin__isnull=True) |
+                           Q(taxonomy__origin__category__isnull=True) |
+                           Q(taxonomy__origin__category=''),
+                           then=Value('Unknown')),
                       default=F('taxonomy__origin__category'))
         ).values(
             'name'
