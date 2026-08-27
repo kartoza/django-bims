@@ -136,7 +136,7 @@ class TaxaProcessor(object):
         if use_proposal and proposal is not None:
             setattr(proposal, field, value)
 
-    def _compose_species_name(self, row) -> str:
+    def _compose_species_name(self, row, rank: str = '') -> str:
         """
         Return a canonical binomial/trinomial, including subgenus parenthetical when present.
 
@@ -144,6 +144,9 @@ class TaxaProcessor(object):
         • Otherwise prepend the genus.
         • Always force epithets (everything after the genus) to lower-case.
         • When a SubGenus column value is present, inserts it as "(SubGenusName)" after the genus.
+        • When rank is SubSpecies and a SubSpecies column value is present, appends it
+          as the trinomial's third epithet, so the composed name isn't mistaken for
+          (and doesn't get overridden by) the parent species' binomial.
         """
         genus = _safe_strip(self.get_row_value(row, GENUS))
         subgenus = _safe_strip(self.get_row_value(row, SUBGENUS))
@@ -167,15 +170,23 @@ class TaxaProcessor(object):
 
         if subgenus:
             subgenus = _bare_subgenus(subgenus, genus)
-            return f'{genus_cap} ({subgenus}) {epithet}'.strip()
-
-        if species.lower().startswith(genus.lower() + ' '):
+            name = f'{genus_cap} ({subgenus}) {epithet}'.strip()
+        elif species.lower().startswith(genus.lower() + ' '):
             rest = species.split(' ', 1)[1] if ' ' in species else ''
-            return f'{genus_cap} {" ".join(w.lower() for w in rest.split())}'.strip()
-        species_lc = parts[0].lower()
-        epithets = ' '.join(p.lower() for p in parts[1:]) if len(parts) > 1 else ''
-        tail = f' {epithets}' if epithets else ''
-        return f'{genus_cap} {species_lc}{tail}'.strip()
+            name = f'{genus_cap} {" ".join(w.lower() for w in rest.split())}'.strip()
+        else:
+            species_lc = parts[0].lower()
+            epithets = ' '.join(p.lower() for p in parts[1:]) if len(parts) > 1 else ''
+            tail = f' {epithets}' if epithets else ''
+            name = f'{genus_cap} {species_lc}{tail}'.strip()
+
+        rank_l = (rank or '').lower()
+        if 'sub' in rank_l and 'species' in rank_l:
+            sub_species_epithet = _safe_strip(self.get_row_value(row, SUBSPECIES))
+            if sub_species_epithet and sub_species_epithet.lower() not in name.lower():
+                name = f'{name} {sub_species_epithet.lower()}'.strip()
+
+        return name
 
     def _fix_species_like(self, row, name: str) -> str:
         """
@@ -237,7 +248,7 @@ class TaxaProcessor(object):
             return csv_taxon
 
         if is_species_like:
-            target = self._compose_species_name(row)
+            target = self._compose_species_name(row, rank=rank)
             r_csv = difflib.SequenceMatcher(
                 None, _canon(csv_taxon), _canon(target)).ratio() if csv_taxon else 0.0
             r_cmp = difflib.SequenceMatcher(
@@ -826,7 +837,7 @@ class TaxaProcessor(object):
 
         if not taxon_name:
             if 'species' in str(rank).lower():
-                taxon_name = self._compose_species_name(row)
+                taxon_name = self._compose_species_name(row, rank=rank)
             else:
                 taxon_name = _safe_strip(
                     self.get_row_value(
@@ -834,7 +845,9 @@ class TaxaProcessor(object):
 
         if rank == SUBSPECIES:
             sub_species_name = _safe_strip(self.get_row_value(row, SUBSPECIES))
-            if sub_species_name and taxon_name not in sub_species_name and not sub_species_name[0].isupper():
+            if (sub_species_name
+                    and sub_species_name.lower() not in taxon_name.lower()
+                    and not sub_species_name[0].isupper()):
                 taxon_name = f'{taxon_name} {sub_species_name}'
 
         if csv_taxon:
@@ -842,7 +855,7 @@ class TaxaProcessor(object):
             # that _choose_taxon_display_name prefers "Genus (Sub) epithet"
             # over the plain csv_taxon when a SubGenus column is present.
             composed_taxon = (
-                self._compose_species_name(row) if is_species else taxon_name
+                self._compose_species_name(row, rank=rank) if is_species else taxon_name
             )
             taxon_name = self._choose_taxon_display_name(
                 row=row,

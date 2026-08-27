@@ -351,6 +351,62 @@ class TestTaxaUpload(FastTenantTestCase):
 
     @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
     @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_taxa_upload_subspecies_with_taxon_column_keeps_epithet(
+            self,
+            mock_fetch_all_species_from_gbif,
+            mock_finish
+    ):
+        """
+        Regression test: a SubSpecies row whose Taxon column already holds the
+        full trinomial (e.g. "Baicalocandona dorsoconcava insularis") must not
+        be collapsed down to just the species-level binomial
+        ("Baicalocandona dorsoconcava"). Previously _choose_taxon_display_name
+        compared the CSV name against a "composed" name that never included
+        the SubSpecies column, so the composed (binomial-only) name always won
+        and the subspecies epithet was silently dropped.
+        """
+        mock_finish.return_value = None
+        mock_fetch_all_species_from_gbif.return_value = None
+
+        with open(
+                os.path.join(
+                    test_data_directory,
+                    'taxa_upload_subspecies_with_taxon_column.csv'
+                ),
+                'rb'
+        ) as file:
+            upload_session = UploadSessionF.create(
+                uploader=self.owner,
+                process_file=File(file),
+                module_group=self.taxon_group
+            )
+
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        self.assertTrue(
+            Taxonomy.objects.filter(
+                rank='SUBSPECIES',
+                canonical_name__icontains='dorsoconcava insularis',
+            ).exists(),
+            msg=(
+                'Expected a SUBSPECIES taxon named '
+                '"Baicalocandona dorsoconcava insularis", not one collapsed '
+                'down to the species-level "Baicalocandona dorsoconcava".'
+            )
+        )
+
+        self.assertFalse(
+            Taxonomy.objects.filter(
+                rank='SUBSPECIES',
+                canonical_name__iexact='Baicalocandona dorsoconcava',
+            ).exists(),
+            msg='SubSpecies row must not be saved with the plain species binomial.'
+        )
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
     def test_synonym_has_no_parent_doubtful_keeps_parent(
             self,
             mock_fetch_all_species_from_gbif,
