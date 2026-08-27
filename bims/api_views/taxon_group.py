@@ -2,12 +2,11 @@ import json
 from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.sites.models import Site
 from django.http import Http404
-from django.db import transaction
 from preferences import preferences
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from bims.api_views.taxon_update import create_taxon_proposal
+from bims.api_views.taxon_update import create_taxon_proposal, is_expert
 from bims.models import (
     TaxonGroup, Taxonomy, BiologicalCollectionRecord,
     TaxonExtraAttribute, TaxonomicGroupCategory,
@@ -213,6 +212,13 @@ class AddTaxaToTaxonGroup(TaxaUpdateMixin):
         'taxonGroupId': 1 // id of the taxon group
     }
     """
+    def test_func(self):
+        if super().test_func():
+            return True
+        taxon_group_id = self.request.POST.get('taxonGroupId')
+        taxon_group = TaxonGroup.objects.filter(id=taxon_group_id).first()
+        return is_expert(self.request.user, taxon_group)
+
     def post(self, request, *args):
         taxa_ids = self.request.POST.get('taxaIds', None)
         taxon_group_id = self.request.POST.get('taxonGroupId', None)
