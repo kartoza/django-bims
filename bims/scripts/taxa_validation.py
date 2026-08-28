@@ -23,7 +23,7 @@ from bims.scripts.species_keys import (
 from bims.scripts.data_upload import FALLBACK_ENCODINGS
 from bims.models import Taxonomy, UploadSession
 from bims.utils.domain import get_current_domain
-from bims.utils.gbif import get_species
+from bims.utils.gbif import get_species_by_col_id
 
 logger = logging.getLogger('bims')
 
@@ -210,31 +210,27 @@ class TaxaValidator:
             return messages
 
         try:
-            gbif_key_int = int(gbif_key)
-        except (ValueError, TypeError):
-            messages.append(f"ERROR: Invalid GBIF key format: {gbif_key}")
-            return messages
-
-        try:
-            gbif_rec = get_species(gbif_key_int)
+            gbif_rec = get_species_by_col_id(gbif_key)
         except Exception as e:
-            messages.append(f"WARNING: GBIF lookup failed for key {gbif_key}: {str(e)}")
+            messages.append(f"WARNING: GBIF lookup failed for col_id {gbif_key}: {str(e)}")
             return messages
 
-        if not gbif_rec or not isinstance(gbif_rec, dict) or not gbif_rec.get("key"):
-            messages.append(f"WARNING: GBIF record not found for key {gbif_key}")
+        if not gbif_rec or not isinstance(gbif_rec, dict) or not gbif_rec.get("usage"):
+            messages.append(f"WARNING: GBIF record not found for col_id {gbif_key}")
             return messages
+
+        gbif_usage = gbif_rec.get("usage")
 
         input_rank = self.row_value(row, TAXON_RANK).upper() if self.row_value(row, TAXON_RANK) else ''
         input_name = self._get_input_taxon_name(row)
 
-        gbif_rank = (gbif_rec.get("rank") or '').upper()
-        gbif_name = gbif_rec.get("canonicalName") or gbif_rec.get("scientificName") or ""
+        gbif_rank = (gbif_usage.get("rank") or '').upper()
+        gbif_name = gbif_usage.get("canonicalName") or gbif_rec.get("name") or ""
 
         # Check rank mismatch - ERROR
         if input_rank and gbif_rank and input_rank != gbif_rank:
             messages.append(
-                f"ERROR: GBIF key {gbif_key} refers to a different taxon. "
+                f"ERROR: GBIF col_id {gbif_key} refers to a different taxon. "
                 f"Expected rank '{input_rank}' but GBIF returns '{gbif_rank}' for '{gbif_name}'"
             )
 
@@ -249,7 +245,7 @@ class TaxaValidator:
 
                 if similarity < NAME_SIMILARITY_THRESHOLD:
                     messages.append(
-                        f"ERROR: GBIF key {gbif_key} may refer to a different taxon. "
+                        f"ERROR: GBIF col_id {gbif_key} may refer to a different taxon. "
                         f"Input name '{input_name}' does not match GBIF name '{gbif_name}' "
                         f"(similarity: {similarity:.0%})"
                     )
@@ -325,7 +321,7 @@ class TaxaValidator:
         if gbif_key and len(self.file_gbif_keys.get(gbif_key, [])) > 1:
             other_rows = [r-1 for r in self.file_gbif_keys[gbif_key] if r != row_number]
             messages.append(
-                f"ERROR: Duplicate GBIF key {gbif_key} (also in row(s) {', '.join(map(str, other_rows))})"
+                f"ERROR: Duplicate GBIF col_id {gbif_key} (also in row(s) {', '.join(map(str, other_rows))})"
             )
 
         # Check for within-file duplicates (FADA ID)
