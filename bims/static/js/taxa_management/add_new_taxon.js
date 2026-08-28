@@ -146,7 +146,6 @@ export const addNewTaxon = (() => {
             });
             return;
         }
-        $('#addNewTaxonModal').modal('toggle');
         loading.hide();
         $.ajax({
             url: '/api/add-taxa-to-taxon-group/',
@@ -161,7 +160,17 @@ export const addNewTaxon = (() => {
                     const names = response.rejected.map(t => t.name).join(', ');
                     alert(`The following taxa could not be added because they already belong to another group: ${names}`);
                 }
+                $('#addNewTaxonModal').modal('toggle');
                 insertParam('validated', 'False', false, true);
+            },
+            error: function (xhr) {
+                table.show();
+                let msg = 'Failed to add taxon.';
+                try {
+                    const resp = JSON.parse(xhr.responseText);
+                    if (resp.error) msg = resp.error;
+                } catch (e) {}
+                alert(msg);
             }
         });
     }
