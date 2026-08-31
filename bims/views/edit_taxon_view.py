@@ -48,6 +48,9 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['rank_choices'] = self.model._meta.get_field('rank').choices
+        context['addendum_choices'] = (
+            self.model._meta.get_field('addendum').choices
+        )
         context['taxon_group_id'] = self.kwargs.get('taxon_group_id', '')
         context['iucn_status_choices'] = IUCNStatus.objects.filter(
             national=False
@@ -207,6 +210,7 @@ class EditTaxonView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
             self.request.POST.get('additional_data__Conservation_References', '')).strip()
         data['fada_id'] = self.request.POST.get('fada_id', '').strip() or None
         data['col_id'] = self.request.POST.get('col_id', '').strip() or None
+        data['addendum'] = self.request.POST.get('addendum', '').strip()
 
         subgenus_id = self.request.POST.get('subgenus', '').strip()
         if is_synonym and subgenus_id:

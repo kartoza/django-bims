@@ -185,6 +185,12 @@ export const taxonDetail = (() => {
                                         : hierarchySource.subspecies
                                 }</div>
                             </div>
+                            ${data.addendum ? `
+                            <div class="dt-item col-12 row">
+                                <div class="col-6"><strong>Addendum</strong></div>
+                                <div class="col-6">${data.addendum}</div>
+                            </div>
+                            ` : ''}
                             <div class="dt-item col-12 row">
                                 <div class="col-6"><strong>Author(s)</strong></div>
                                 <div class="col-6">${

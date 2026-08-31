@@ -16,6 +16,7 @@ from django.dispatch import receiver
 
 from bims.enums.taxonomic_status import TaxonomicStatus
 from bims.enums.taxonomic_rank import TaxonomicRank
+from bims.enums.taxon_addendum import TaxonAddendum
 from bims.models.iucn_status import IUCNStatus
 from bims.models.endemism import Endemism
 from bims.utils.domain import get_current_domain
@@ -199,6 +200,18 @@ class AbstractTaxonomy(AbstractValidation):
         max_length=50,
         choices=[(status.name, status.value) for status in TaxonomicStatus],
         blank=True
+    )
+
+    addendum = models.CharField(
+        verbose_name='Addendum',
+        max_length=50,
+        choices=[(a.name, a.value) for a in TaxonAddendum],
+        blank=True,
+        help_text=(
+            'Nomenclatural qualifier appended to the scientific name, e.g. '
+            '"sensu lato" when a species has been split into subspecies but '
+            'both the species and its subspecies remain accepted taxa.'
+        ),
     )
 
     parent = models.ForeignKey(

@@ -370,6 +370,7 @@ class TaxonomyUpdateProposal(AbstractTaxonomy):
                     'iucn_status',
                     'accepted_taxonomy',
                     'species_group',
+                    'addendum',
                     'parent',
                     'tags',
                     'biographic_distributions',

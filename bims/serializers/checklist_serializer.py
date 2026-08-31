@@ -188,13 +188,20 @@ class ChecklistPDFSerializer(ChecklistBaseSerializer):
         return bio.count()
 
     def get_scientific_name(self, obj: Taxonomy):
-        from bims.utils.taxonomy import canonical_with_subgenus
+        from bims.utils.taxonomy import (
+            canonical_with_subgenus, build_name_with_addendum
+        )
         subgenus_str = obj.sub_genus_name or (
             obj.subgenus.canonical_name if obj.subgenus_id else ''
         )
         canonical = canonical_with_subgenus(
             obj.canonical_name, obj.genus_name, subgenus_str
         )
+        if obj.addendum:
+            sci = build_name_with_addendum(
+                canonical, obj.author, obj.addendum, abbreviate=True
+            )
+            return self.clean_text(sci)
         sci = obj.scientific_name or ''
         if canonical and canonical not in sci:
             author = obj.author or ''
@@ -237,6 +244,7 @@ class ChecklistSerializer(ChecklistBaseSerializer):
     class_name = serializers.SerializerMethodField()
     family = serializers.SerializerMethodField()
     order = serializers.SerializerMethodField()
+    scientific_name = serializers.SerializerMethodField()
     synonyms = serializers.SerializerMethodField()
     common_name = serializers.SerializerMethodField()
     most_recent_record = serializers.SerializerMethodField()
@@ -328,6 +336,17 @@ class ChecklistSerializer(ChecklistBaseSerializer):
             obj,
             'family_name'
         )
+
+    def get_scientific_name(self, obj: Taxonomy):
+        if obj.addendum:
+            from bims.utils.taxonomy import build_name_with_addendum
+            return build_name_with_addendum(
+                obj.canonical_name or obj.scientific_name,
+                obj.author,
+                obj.addendum,
+                abbreviate=True,
+            )
+        return obj.scientific_name or ''
 
     def get_synonyms(self, obj: Taxonomy):
         synonyms = Taxonomy.objects.filter(

@@ -64,6 +64,7 @@ class TaxonSerializer(serializers.ModelSerializer):
     proposal_id = serializers.SerializerMethodField()
     can_edit = serializers.SerializerMethodField()
     taxonomic_status = serializers.SerializerMethodField()
+    addendum = serializers.SerializerMethodField()
     fada_id = serializers.SerializerMethodField()
     children_count = serializers.SerializerMethodField()
     other_group_count = serializers.SerializerMethodField()
@@ -355,8 +356,23 @@ class TaxonSerializer(serializers.ModelSerializer):
                 pass
         return iucn_status
 
+    def get_addendum(self, obj):
+        from bims.utils.taxonomy import get_addendum_display
+        code = self.get_proposed_or_current(obj, 'addendum')
+        return get_addendum_display(code, abbreviate=False)
+
     def get_scientific_name(self, obj):
-        return self.get_proposed_or_current(obj, 'scientific_name')
+        from bims.utils.taxonomy import get_addendum_display
+        sci = self.get_proposed_or_current(obj, 'scientific_name')
+        addendum = get_addendum_display(
+            getattr(obj, 'addendum', ''), abbreviate=False
+        )
+        if not addendum:
+            return sci
+        canonical = self.get_proposed_or_current(obj, 'canonical_name')
+        if canonical and canonical in sci:
+            return sci.replace(canonical, f'{canonical} {addendum}', 1)
+        return f'{sci} {addendum}'.strip()
 
     def get_endemism_name(self, obj):
         try:

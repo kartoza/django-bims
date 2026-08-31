@@ -2,6 +2,7 @@ from preferences import preferences
 from rest_framework import serializers
 
 from bims.models.taxonomy import Taxonomy
+from bims.utils.taxonomy import get_addendum_display
 
 
 STATUS_COLDP_MAP = {
@@ -43,6 +44,7 @@ class ColDPTaxonSerializer(serializers.ModelSerializer):
     status = serializers.SerializerMethodField()
     scientificName = serializers.SerializerMethodField()
     authorship = serializers.SerializerMethodField()
+    namePhrase = serializers.SerializerMethodField()
     rank = serializers.SerializerMethodField()
     environment = serializers.SerializerMethodField()
     code = serializers.SerializerMethodField()
@@ -68,6 +70,7 @@ class ColDPTaxonSerializer(serializers.ModelSerializer):
             'status',
             'scientificName',
             'authorship',
+            'namePhrase',
             'rank',
             'environment',
             'code',
@@ -133,6 +136,9 @@ class ColDPTaxonSerializer(serializers.ModelSerializer):
 
     def get_authorship(self, obj):
         return obj.author or ''
+
+    def get_namePhrase(self, obj):
+        return get_addendum_display(obj.addendum, abbreviate=False)
 
     def get_environment(self, obj):
         """

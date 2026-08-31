@@ -39,6 +39,7 @@ SUBTRIBE = 'SubTribe'
 SYNONYM = 'Synonym'
 ACCEPTED_TAXON = 'Accepted Taxon'
 SUBGENUS = 'SubGenus'
+ADDENDUM = 'Addendum'
 AUTHORS = 'Author(s)'
 BIOGRAPHIC_DISTRIBUTIONS = [
     'ANT', 'AT', 'AU', 'NA',
