@@ -232,6 +232,7 @@ def process_download_csv_taxa_list(
         return _updated_headers
 
     raw_headers = []
+    has_addendum = False
     for taxon in taxa_qs.iterator(chunk_size=2000):
         ser = TaxaCSVSerializer(taxon)
         row = ser.data
@@ -240,10 +241,16 @@ def process_download_csv_taxa_list(
             if k not in raw_headers:
                 raw_headers.append(k)
 
+        if row.get('addendum'):
+            has_addendum = True
+
         tag_titles.update(ser.context.get('tags', []))
         additional_attributes_titles.update(
             ser.context.get('additional_attributes_titles', [])
         )
+
+    if not has_addendum and 'addendum' in raw_headers:
+        raw_headers.remove('addendum')
 
     for key in BIOGRAPHIC_DISTRIBUTIONS:
         if key not in raw_headers:
