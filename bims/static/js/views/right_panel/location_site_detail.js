@@ -155,19 +155,63 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
             }
             return $detailWrapper;
         },
+        climateApiUrl: 'https://power.larc.nasa.gov/api/temporal/climatology/point',
+        climateVariables: [
+            {key: 'PRECTOTCORR', title: 'Average Monthly Rainfall', unit: '(mm/day)'},
+            {key: 'T2M', title: 'Average Monthly Temperature', unit: '(°C)'}
+        ],
+        climateMonthKeys: ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'],
+        climateMonthLabels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
         renderClimateData: function (data, containerElement) {
-            if (data.hasOwnProperty('climate_data')) {
-                let singleClimateDataTemplate = _.template($('#climate-data-template').html());
-                for (let climateKey of Object.keys(data['climate_data'])) {
-                    containerElement.append(singleClimateDataTemplate({
-                        'title': data['climate_data'][climateKey]['title'],
-                        'key': climateKey,
-                        'data': data['climate_data'][climateKey],
-                        'wrapper': climateKey + '-wrapper'
-                    }))
-                    this.renderMonthlyLineChart(data['climate_data'][climateKey], climateKey);
-                }
+            let self = this;
+            if (!data.hasOwnProperty('site_detail_info')) {
+                return;
             }
+            let siteCoordinates = (data['site_detail_info']['site_coordinates'] || '').split(',');
+            let longitude = (siteCoordinates[0] || '').trim();
+            let latitude = (siteCoordinates[1] || '').trim();
+            if (!longitude || !latitude || longitude === 'Unknown' || latitude === 'Unknown') {
+                return;
+            }
+            $.ajax({
+                url: this.climateApiUrl,
+                method: 'GET',
+                dataType: 'json',
+                data: {
+                    parameters: this.climateVariables.map(function (v) { return v.key; }).join(','),
+                    community: 'AG',
+                    longitude: longitude,
+                    latitude: latitude,
+                    format: 'JSON'
+                },
+                success: function (response) {
+                    let parameters = response && response.properties && response.properties.parameter;
+                    if (!parameters) {
+                        return;
+                    }
+                    let singleClimateDataTemplate = _.template($('#climate-data-template').html());
+                    self.climateVariables.forEach(function (variable) {
+                        let monthlyValues = parameters[variable.key];
+                        if (!monthlyValues) {
+                            return;
+                        }
+                        let climateKey = variable.key.toLowerCase() + '-climate-chart';
+                        containerElement.append(singleClimateDataTemplate({
+                            'title': variable.title,
+                            'key': climateKey,
+                            'data': {},
+                            'wrapper': climateKey + '-wrapper'
+                        }));
+                        self.renderMonthlyLineChart({
+                            'values': self.climateMonthKeys.map(function (m) { return monthlyValues[m]; }),
+                            'keys': self.climateMonthLabels
+                        }, climateKey, variable.unit);
+                    });
+                },
+                error: function () {
+                    // Third-party climate API unavailable; leave the panel empty.
+                }
+            });
         },
         createDataSummary: function (data) {
             var bio_data = data['biodiversity_data'];
@@ -189,7 +233,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
             chartParent.append(newCanvas);
             return document.getElementById(chartId);
         },
-        renderMonthlyLineChart: function (climateData, canvasId) {
+        renderMonthlyLineChart: function (climateData, canvasId, unit) {
             let chartConfig = {
                 type: 'line',
                 data: {
@@ -222,7 +266,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
                             display: true,
                             scaleLabel: {
                                 display: true,
-                                labelString: '(mm)'
+                                labelString: unit || '(mm)'
                             }
                         }]
                     }

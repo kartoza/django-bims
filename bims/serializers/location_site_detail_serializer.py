@@ -1,5 +1,3 @@
-from django.db.models import Q
-from django.utils.text import slugify
 from rest_framework import serializers
 from preferences import preferences
 from bims.models.location_site import LocationSite
@@ -9,7 +7,6 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.models.location_context_filter_group_order import (
     LocationContextFilterGroupOrder
 )
-from bims.models.climate_data import ClimateData
 
 
 class LocationSiteDetailSerializer(LocationSiteSerializer):
@@ -91,64 +88,16 @@ class LocationSiteDetailSerializer(LocationSiteSerializer):
             return taxonomy.canonical_name
         return None
 
-    def get_site_climate_data(self, instance):
-        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug',
-                  'Sep', 'Oct', 'Nov', 'Dec']
-        months_number = [
-            '01', '02', '03', '04', '05', '06',
-            '07', '08', '09', '10', '11', '12'
-        ]
-        site_climate_data = dict()
-        all_climate_data = ClimateData.objects.all()
-
-        for climate_data in all_climate_data:
-            key = slugify(climate_data.title)
-            site_climate_data[key] = {}
-            site_climate_data[key]['title'] = climate_data.title
-            site_climate_data[key]['values'] = []
-            site_climate_data[key]['keys'] = []
-
-            geocontext_data = LocationContext.objects.filter(
-                site=instance,
-                group__geocontext_group_key=
-                climate_data.climate_geocontext_group_key
-            )
-
-            month_index = 0
-            for month in months:
-                temp_data = (
-                    geocontext_data.filter(
-                        Q(group__key__icontains=month) |
-                        Q(group__key__iendswith=months_number[month_index])
-                    )
-                )
-                if temp_data.exists():
-                    site_climate_data[key]['values'].append(
-                        round(float(temp_data.first().value))
-                    )
-                else:
-                    site_climate_data[key]['values'].append(0)
-                site_climate_data[key]['keys'].append(month)
-                month_index += 1
-
-        return site_climate_data
-
     def to_representation(self, instance):
         result = super(
             LocationSiteDetailSerializer, self).to_representation(
             instance)
         records_occurrence = {}
         try:
-            climate_data = self.get_site_climate_data(
-                instance)
-        except KeyError:
-            climate_data = {}
-        try:
             site_detail_info = self.get_site_detail_info(instance)
         except KeyError:
             site_detail_info = {}
 
-        result['climate_data'] = climate_data
         result['records_occurrence'] = records_occurrence
         result['site_detail_info'] = site_detail_info
 
