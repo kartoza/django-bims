@@ -11,6 +11,49 @@ ADDENDUM_FULL_TEXT = {
 }
 
 
+def resolve_addendum_code(raw_value: str) -> str:
+    """
+    Resolve a free-text addendum value to the stored addendum code.
+    """
+    value = (raw_value or '').strip().lower()
+    if not value:
+        return ''
+    for addendum in TaxonAddendum:
+        if value in (
+            addendum.name.lower(),
+            addendum.value.lower(),
+            ADDENDUM_ABBREVIATIONS.get(addendum.name, '').lower(),
+        ):
+            return addendum.name
+    return ''
+
+
+def _addendum_name_pattern(addendum: TaxonAddendum) -> str:
+    """Regex alternation matching an addendum's full text or abbreviation
+    (e.g. 's.l.', 's. l.', 's l', 'sl' for SENSU_LATO)"""
+    alternatives = [_re.escape(addendum.value)]
+    abbreviation = ADDENDUM_ABBREVIATIONS.get(addendum.name)
+    if abbreviation:
+        letters = [c for c in abbreviation if c.isalpha()]
+        alternatives.append(r'\.?\s*'.join(letters) + r'\.?')
+    return '|'.join(alternatives)
+
+
+def strip_addendum_from_name(name: str) -> tuple:
+    """
+    Detect and strip a trailing addendum qualifier from a taxon name
+    """
+    name = (name or '').strip()
+    if not name:
+        return name, ''
+    for addendum in TaxonAddendum:
+        pattern = r'\s+(?:%s)\s*$' % _addendum_name_pattern(addendum)
+        match = _re.search(pattern, name, flags=_re.IGNORECASE)
+        if match:
+            return name[:match.start()].strip(), addendum.name
+    return name, ''
+
+
 def get_addendum_display(addendum_code: str, abbreviate: bool = True) -> str:
     """
     Return the display text for an addendum code, e.g. 's.l.' or

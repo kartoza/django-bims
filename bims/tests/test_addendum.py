@@ -15,7 +15,12 @@ from bims.serializers.checklist_serializer import (
 from bims.serializers.coldp_serializer import ColDPTaxonSerializer
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.tests.model_factories import TaxonGroupF, TaxonomyF
-from bims.utils.taxonomy import build_name_with_addendum, get_addendum_display
+from bims.utils.taxonomy import (
+    build_name_with_addendum,
+    get_addendum_display,
+    resolve_addendum_code,
+    strip_addendum_from_name,
+)
 from bims.views.download_csv_taxa_list import TaxaCSVSerializer
 
 User = get_user_model()
@@ -56,6 +61,58 @@ class TestAddendumHelpers(FastTenantTestCase):
             'Aquanothrus montanus', 'Engelbrecht, 1975', '', abbreviate=True
         )
         self.assertEqual(name, 'Aquanothrus montanus Engelbrecht, 1975')
+
+    def test_resolve_addendum_code_matches_known_variants(self):
+        for raw in ('sensu lato', 'SENSU LATO', 's.l.', 'S.L.', 'SENSU_LATO'):
+            self.assertEqual(
+                resolve_addendum_code(raw), TaxonAddendum.SENSU_LATO.name
+            )
+
+    def test_resolve_addendum_code_ignores_unknown(self):
+        self.assertEqual(resolve_addendum_code('nomen dubium'), '')
+        self.assertEqual(resolve_addendum_code(''), '')
+        self.assertEqual(resolve_addendum_code(None), '')
+
+
+class TestStripAddendumFromName(FastTenantTestCase):
+
+    def test_strips_dotted_abbreviation(self):
+        name, code = strip_addendum_from_name('Aquanothrus montanus s.l.')
+        self.assertEqual(name, 'Aquanothrus montanus')
+        self.assertEqual(code, TaxonAddendum.SENSU_LATO.name)
+
+    def test_strips_spaced_abbreviation(self):
+        name, code = strip_addendum_from_name('Aquanothrus montanus s. l.')
+        self.assertEqual(name, 'Aquanothrus montanus')
+        self.assertEqual(code, TaxonAddendum.SENSU_LATO.name)
+
+    def test_strips_undotted_abbreviation_case_insensitive(self):
+        name, code = strip_addendum_from_name('Aquanothrus montanus SL')
+        self.assertEqual(name, 'Aquanothrus montanus')
+        self.assertEqual(code, TaxonAddendum.SENSU_LATO.name)
+
+    def test_strips_full_text(self):
+        name, code = strip_addendum_from_name(
+            'Aquanothrus montanus sensu lato'
+        )
+        self.assertEqual(name, 'Aquanothrus montanus')
+        self.assertEqual(code, TaxonAddendum.SENSU_LATO.name)
+
+    def test_leaves_name_without_addendum_unchanged(self):
+        name, code = strip_addendum_from_name('Aquanothrus montanus')
+        self.assertEqual(name, 'Aquanothrus montanus')
+        self.assertEqual(code, '')
+
+    def test_does_not_strip_mid_name_occurrence(self):
+        # 'sl' embedded inside a real epithet must not be mistaken for the
+        # addendum - only a trailing, whitespace-separated token counts.
+        name, code = strip_addendum_from_name('Islandia islandica')
+        self.assertEqual(name, 'Islandia islandica')
+        self.assertEqual(code, '')
+
+    def test_empty_name(self):
+        self.assertEqual(strip_addendum_from_name(''), ('', ''))
+        self.assertEqual(strip_addendum_from_name(None), ('', ''))
 
 
 class TestAddendumModelField(FastTenantTestCase):

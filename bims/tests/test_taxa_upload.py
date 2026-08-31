@@ -6,6 +6,7 @@ from django_tenants.test.client import TenantClient
 from mock import mock
 
 from bims.enums import TaxonomicRank
+from bims.enums.taxon_addendum import TaxonAddendum
 from bims.models import TaxonGroupTaxonomy
 from bims.models.taxon_origin import TaxonOrigin
 from bims.scripts.taxa_upload import TaxaCSVUpload, TaxaProcessor
@@ -1517,3 +1518,143 @@ class TestAcceptedTaxonResolution(FastTenantTestCase):
             wrong_accepted.accepted_taxonomy,
             'accepted_taxonomy on the resolved accepted taxon must be cleared.'
         )
+
+
+class TestAddendumUpload(FastTenantTestCase):
+    """Tests for handling the CSV 'Addendum' column added alongside the
+    Taxonomy.addendum field."""
+
+    _CSV_CANONICAL_NAMES = [
+        'Aquanothrus montanus',
+        'Aquanothrus capensis',
+        'Aquanothrus vexans',
+        'Aquanothrus natalensis',
+        'Aquanothrus',
+        'Anisitsiellidae',
+        'Trombidiformes',
+        'Arachnida',
+        'Arthropoda',
+        'Animalia',
+    ]
+
+    def _delete_csv_taxa(self):
+        Taxonomy.objects.filter(
+            canonical_name__in=self._CSV_CANONICAL_NAMES
+        ).delete()
+
+    def setUp(self):
+        self._delete_csv_taxa()
+        self.taxon_group = TaxonGroupF.create()
+        self.owner = UserF.create(first_name='tester')
+
+        for key in ('indigenous', 'alien', 'unknown', 'alien-invasive', 'alien-non-invasive'):
+            TaxonOrigin.objects.get_or_create(
+                origin_key=key,
+                defaults={'category': key}
+            )
+
+    def tearDown(self):
+        self._delete_csv_taxa()
+
+    def _make_upload_session(self, csv_filename):
+        with open(os.path.join(test_data_directory, csv_filename), 'rb') as f:
+            return UploadSessionF.create(
+                uploader=self.owner,
+                process_file=File(f),
+                module_group=self.taxon_group
+            )
+
+    def test_addendum_resolver_matches_known_value(self):
+        """TaxaProcessor.addendum() resolves a recognised value (name,
+        full text or abbreviation, case-insensitive) to the stored code."""
+        processor = TaxaProcessor()
+        for raw in ('sensu lato', 'SENSU LATO', 's.l.', 'S.L.', 'SENSU_LATO'):
+            self.assertEqual(
+                processor.addendum({'Addendum': raw}),
+                TaxonAddendum.SENSU_LATO.name,
+                f'Expected {raw!r} to resolve to SENSU_LATO.'
+            )
+
+    def test_addendum_resolver_ignores_unknown_value(self):
+        """An addendum value that isn't supported yet is ignored (returns
+        '') rather than raising or being stored verbatim."""
+        processor = TaxaProcessor()
+        self.assertEqual(processor.addendum({'Addendum': 'nomen dubium'}), '')
+
+    def test_addendum_resolver_ignores_empty_value(self):
+        processor = TaxaProcessor()
+        self.assertEqual(processor.addendum({'Addendum': ''}), '')
+        self.assertEqual(processor.addendum({}), '')
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_csv_upload_sets_addendum_on_recognised_value(
+        self, mock_gbif, mock_finish
+    ):
+        """A row with Addendum=sensu lato ends up with taxonomy.addendum
+        set to the stored TaxonAddendum code."""
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        upload_session = self._make_upload_session('taxa_upload_addendum.csv')
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        taxon = Taxonomy.objects.get(canonical_name='Aquanothrus montanus')
+        self.assertEqual(taxon.addendum, TaxonAddendum.SENSU_LATO.name)
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_csv_upload_ignores_unrecognised_addendum(
+        self, mock_gbif, mock_finish
+    ):
+        """A row with an Addendum value we don't support yet (e.g. 'nomen
+        dubium') is uploaded normally, just without addendum being set."""
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        upload_session = self._make_upload_session('taxa_upload_addendum.csv')
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        taxon = Taxonomy.objects.get(canonical_name='Aquanothrus capensis')
+        self.assertEqual(taxon.addendum, '')
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_csv_upload_blank_addendum_column_leaves_field_blank(
+        self, mock_gbif, mock_finish
+    ):
+        """A row with no Addendum value at all is unaffected."""
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        upload_session = self._make_upload_session('taxa_upload_addendum.csv')
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        taxon = Taxonomy.objects.get(canonical_name='Aquanothrus vexans')
+        self.assertEqual(taxon.addendum, '')
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    def test_csv_upload_strips_embedded_sl_from_taxon_name(
+        self, mock_gbif, mock_finish
+    ):
+        """A row with no Addendum column value but 's.l.' embedded directly
+        in the Taxon name (e.g. 'Aquanothrus natalensis s.l.') should end
+        up with a clean canonical_name and addendum set from the name."""
+        mock_finish.return_value = None
+        mock_gbif.return_value = None
+
+        upload_session = self._make_upload_session('taxa_upload_addendum.csv')
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+
+        taxon = Taxonomy.objects.get(canonical_name='Aquanothrus natalensis')
+        self.assertEqual(taxon.addendum, TaxonAddendum.SENSU_LATO.name)
+        self.assertNotIn('s.l', taxon.canonical_name.lower())

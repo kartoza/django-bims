@@ -27,6 +27,7 @@ from bims.templatetags import is_fada_site
 from bims.utils.fetch_gbif import (
     fetch_all_species_from_gbif, fetch_gbif_vernacular_names, harvest_synonyms_for_accepted_taxonomy
 )
+from bims.utils.taxonomy import resolve_addendum_code, strip_addendum_from_name
 from bims.scripts.data_upload import DataCSVUpload
 from bims.utils.gbif import get_species, get_species_by_col_id
 from td_biblio.exceptions import DOILoaderError
@@ -378,6 +379,36 @@ class TaxaProcessor(object):
                 name__iexact=endemism_value
             ).order_by('id').first()
         return endemism_obj
+
+    def addendum(self, row):
+        """
+        Processing the addendum column (e.g. 'sensu lato', 's.l.').
+        """
+        addendum_value = _safe_strip(self.get_row_value(row, ADDENDUM))
+        if not addendum_value:
+            return ''
+        return resolve_addendum_code(addendum_value)
+
+    def strip_name_addendum(self, row):
+        """
+        Strip a trailing addendum qualifier (e.g. 's.l.')
+        """
+        detected = ''
+        cleaned_row = row
+        for key in (TAXON, SPECIES):
+            raw = self.get_row_value(row, key)
+            if not raw:
+                continue
+            clean_name, code = strip_addendum_from_name(str(raw))
+            if not code:
+                continue
+            detected = code
+            actual_key = key if key in row else self.all_keys.get(key.upper())
+            if actual_key:
+                if cleaned_row is row:
+                    cleaned_row = dict(row)
+                cleaned_row[actual_key] = clean_name
+        return cleaned_row, detected
 
     def conservation_status(self, row, global_cons: bool = False):
         """Processing conservation status with graceful fallbacks."""
@@ -788,6 +819,8 @@ class TaxaProcessor(object):
         if not self.all_keys:
             for key in row.keys():
                 self.all_keys[key.upper()] = key
+
+        row, name_addendum_code = self.strip_name_addendum(row)
 
         auto_validate = preferences.SiteSetting.auto_validate_taxa_on_upload
         use_proposal = not auto_validate
@@ -1364,6 +1397,13 @@ class TaxaProcessor(object):
             endemism_obj = self.endemism(row)
             if endemism_obj:
                 self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'endemism', endemism_obj)
+
+            # Addendum (e.g. 'sensu lato') - explicit column wins, else fall
+            # back to a qualifier embedded in the taxon name (e.g. 's.l.');
+            # unrecognised values are ignored.
+            addendum_code = self.addendum(row) or name_addendum_code
+            if addendum_code:
+                self._update_taxon_and_proposal(taxonomy, proposal, use_proposal, new_taxon, 'addendum', addendum_code)
 
             iucn_status = self.conservation_status(row, True)
             if iucn_status:
