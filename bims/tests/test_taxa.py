@@ -9,6 +9,7 @@ from bims.tests.model_factories import (
 )
 from bims.utils.fetch_gbif import merge_taxa_data
 from bims.models import Taxonomy, BiologicalCollectionRecord, TaxonGroup, IUCNStatus, TaxonExtraAttribute
+from bims.models.taxonomy import TaxonTag
 from bims.serializers.taxon_serializer import TaxonSerializer
 from bims.views.download_csv_taxa_list import TaxaCSVSerializer
 from bims.utils.taxonomy import canonical_with_subgenus
@@ -94,6 +95,41 @@ class TestTaxaHelpers(TestCase):
         self.assertEqual(
             Taxonomy.objects.get(id=taxa_2.id).vernacular_names.all().count(),
             3
+        )
+
+    def test_merge_duplicated_taxa_with_colliding_tag(self):
+        """
+        If the winner and a loser share a tag on a unique-together linked
+        model (e.g. CustomTaggedTaxonomy on content_object+tag), reassigning
+        the loser's row to the winner raises an IntegrityError. This must not
+        poison the rest of the merge: later links (and taxa.delete()) should
+        still run instead of raising TransactionManagementError.
+        """
+        tag = TaxonTag.objects.create(name='shared_tag')
+
+        winner = TaxonomyF.create(canonical_name='verified_taxa')
+        loser = TaxonomyF.create(canonical_name='taxa_to_merged')
+
+        winner.biographic_distributions.add(tag)
+        loser.biographic_distributions.add(tag)
+
+        collection = BiologicalCollectionRecordF.create(taxonomy=loser)
+
+        # Should not raise IntegrityError/TransactionManagementError.
+        merge_taxa_data(
+            excluded_taxon=winner,
+            taxa_list=Taxonomy.objects.filter(id=loser.id)
+        )
+
+        # The loser is gone, and other links were still merged despite the
+        # colliding tag being skipped.
+        self.assertFalse(Taxonomy.objects.filter(id=loser.id).exists())
+        self.assertEqual(
+            BiologicalCollectionRecord.objects.get(id=collection.id).taxonomy,
+            winner
+        )
+        self.assertEqual(
+            list(winner.biographic_distributions.all()), [tag]
         )
 
 

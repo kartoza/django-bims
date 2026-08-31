@@ -63,16 +63,17 @@ def merge_taxa_data(gbif_key='', excluded_taxon=None, taxa_list=None):
                 if link == 'taxongrouptaxonomy_set':
                     continue
                 try:
-                    objects = getattr(taxon, link).all()
-                    if objects.count() > 0:
-                        print('Updating {obj} for : {taxon}'.format(
-                            obj=str(objects.model._meta.label),
-                            taxon=str(taxon)
-                        ))
-                        update_dict = {
-                            getattr(taxon, link).field.name: excluded_taxon
-                        }
-                        objects.update(**update_dict)
+                    with transaction.atomic():
+                        objects = getattr(taxon, link).all()
+                        if objects.count() > 0:
+                            print('Updating {obj} for : {taxon}'.format(
+                                obj=str(objects.model._meta.label),
+                                taxon=str(taxon)
+                            ))
+                            update_dict = {
+                                getattr(taxon, link).field.name: excluded_taxon
+                            }
+                            objects.update(**update_dict)
                 except Exception as e:  # noqa
                     logger.error(e)
                     continue
