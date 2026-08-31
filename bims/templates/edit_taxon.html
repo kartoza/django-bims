@@ -204,6 +204,20 @@
             </div>
 
             <div class="form-group row">
+                <label for="addendum" class="col-sm-2 col-form-label col-form-label">
+                    Addendum
+                </label>
+                <div class="col-sm-10">
+                    <select name="addendum" id="addendum" class="form-control form-control-sm">
+                        <option value="" {% if not object.addendum %}selected{% endif %}>-</option>
+                        {% for value, label in addendum_choices %}
+                            <option value="{{ value }}" {% if value == object.addendum %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group row">
                 <label class="col-sm-2 col-form-label col-form-label">
                     {% if hierarchy_taxon.id != object.id %}
                         Accepted Taxon hierarchy

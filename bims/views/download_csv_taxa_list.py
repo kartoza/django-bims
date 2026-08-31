@@ -20,7 +20,7 @@ from bims.tasks.email_csv import send_csv_via_email
 from bims.tasks.download_taxa_list import (
     download_taxa_list as download_taxa_list_task
 )
-from bims.utils.taxonomy import canonical_with_subgenus
+from bims.utils.taxonomy import canonical_with_subgenus, get_addendum_display
 
 
 SANPARKS_PROJECT_KEY = 'sanparks'
@@ -56,9 +56,16 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
     invasion = serializers.SerializerMethodField()
     accepted_taxon = serializers.SerializerMethodField()
     scientific_name_and_authority = serializers.SerializerMethodField()
+    addendum = serializers.SerializerMethodField()
+
+    def get_addendum(self, obj: Taxonomy):
+        return get_addendum_display(obj.addendum, abbreviate=False)
 
     def get_scientific_name_and_authority(self, obj: Taxonomy):
         taxon = self.get_taxon(obj)
+        if obj.addendum:
+            author = obj.author or ''
+            return f'{taxon} {author}'.strip() if author else taxon
         sci = obj.scientific_name or ''
         if taxon and taxon not in sci:
             author = obj.author or ''
@@ -80,11 +87,13 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
         subgenus_str = obj.sub_genus_name or (
             obj.subgenus.canonical_name if obj.subgenus_id else ''
         )
-        return canonical_with_subgenus(
+        canonical = canonical_with_subgenus(
             obj.canonical_name,
             obj.genus_name,
             subgenus_str,
         )
+        addendum = get_addendum_display(obj.addendum, abbreviate=True)
+        return f'{canonical} {addendum}'.strip() if addendum else canonical
 
     def get_common_name(self, obj):
         vernacular_names = list(
@@ -158,6 +167,7 @@ class TaxaCSVSerializer(TaxonHierarchySerializer):
             'genus',
             'subgenus',
             'species',
+            'addendum',
             'subspecies',
             'variety',
             'species_group',

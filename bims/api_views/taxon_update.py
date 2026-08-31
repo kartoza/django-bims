@@ -209,6 +209,7 @@ def create_taxon_proposal(
         'fada_id': data.get('fada_id', getattr(taxon, 'fada_id', None)),
         'species_group': data.get('species_group', getattr(taxon, 'species_group', None)),
         'subgenus': data.get('subgenus', getattr(taxon, 'subgenus', None)),
+        'addendum': data.get('addendum', getattr(taxon, 'addendum', '')),
         'last_modified_by': creator,
     }
 
@@ -333,6 +334,7 @@ def update_taxon_proposal(
         'hierarchical_data': data.get('hierarchical_data', proposal.hierarchical_data or {}),
         'additional_data': merged_additional,
         'subgenus': data.get('subgenus', proposal.subgenus),
+        'addendum': data.get('addendum', proposal.addendum),
         'last_modified_by': user,
     }
 

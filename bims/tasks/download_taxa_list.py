@@ -28,7 +28,7 @@ from bims.scripts.species_keys import (
 )
 from bims.templatetags import is_fada_site
 from bims.utils.domain import get_current_domain
-from bims.utils.taxonomy import canonical_with_subgenus
+from bims.utils.taxonomy import canonical_with_subgenus, get_addendum_display
 
 logger = logging.getLogger(__name__)
 
@@ -182,6 +182,7 @@ def process_download_csv_taxa_list(
             'subphylum': SUBPHYLUM,
             'subspecies': SUBSPECIES,
             'species': SPECIES,
+            'addendum': 'Addendum',
             'genus': GENUS,
             'tribe': TRIBE,
             'family': FAMILY,
@@ -470,6 +471,9 @@ def _build_checklist_pdf_header(title, taxon_group, styles, subset_note='', doi=
     paragraphs.append(Paragraph(
         '<i>= denotes a synonym of the accepted taxon above it</i>', styles.citation
     ))
+    paragraphs.append(Paragraph(
+        '<i>s.l. = sensu lato</i>', styles.citation
+    ))
     if is_fada_site():
         paragraphs.append(Spacer(1, 6))
         paragraphs.append(Paragraph(
@@ -498,6 +502,9 @@ def _render_checklist_groups(groups, styles):
 
         for sp in info['species']:
             sp_line = f"<i>{sp['canonical_name']}</i>"
+            addendum = get_addendum_display(sp.get('addendum'), abbreviate=True)
+            if addendum:
+                sp_line += f" {addendum}"
             if sp.get('author'):
                 sp_line += f" {sp['author']}"
             if sp.get('type_species'):
@@ -571,6 +578,7 @@ def process_download_pdf_taxa_list(
             groups[key_id]['species'].append({
                 'canonical_name': s.canonical_name,
                 'author': s.author or '',
+                'addendum': s.addendum,
                 'type_species': 'type species' in (s.additional_data or {}),
                 'regions': sorted(
                     t.name for t in s.biographic_distributions.all()
