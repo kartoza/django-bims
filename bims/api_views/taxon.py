@@ -34,6 +34,7 @@ from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.utils.gbif import suggest_search, get_vernacular_names, species_search
 from bims.utils.fetch_gbif import fetch_all_species_from_gbif
 from bims.utils.col import resolve_col_id
+from bims.utils.taxonomy import ensure_fada_id
 from bims.serializers.tag_serializer import TagSerializer, TaxonomyTagUpdateSerializer
 from bims.models.taxonomy_update_proposal import TaxonomyUpdateProposal
 from bims.utils.iucn import get_iucn_status
@@ -514,10 +515,7 @@ class AddNewTaxon(LoginRequiredMixin, APIView):
                 except (Taxonomy.DoesNotExist, ValueError):
                     pass
 
-            from bims.templatetags.site import is_fada_site
-            if is_fada_site() and not taxonomy.fada_id:
-                taxonomy.fada_id = f'FADA-{taxonomy.id}'
-                taxonomy.save(update_fields=['fada_id'])
+            ensure_fada_id(taxonomy)
 
         if taxon_group and taxonomy:
             from bims.api_views.taxon_update import ensure_accepted_taxonomy_in_group

@@ -7,6 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from bims.api_views.taxon_update import create_taxon_proposal, is_expert
+from bims.utils.taxonomy import ensure_fada_id
 from bims.models import (
     TaxonGroup, Taxonomy, BiologicalCollectionRecord,
     TaxonExtraAttribute, TaxonomicGroupCategory,
@@ -152,6 +153,7 @@ def add_taxa_to_taxon_group(taxa_ids, taxon_group_id):
                 'is_validated': False
             }
         )
+        ensure_fada_id(taxonomy)
 
     return rejected
 

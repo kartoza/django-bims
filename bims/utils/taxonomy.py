@@ -11,6 +11,22 @@ ADDENDUM_FULL_TEXT = {
 }
 
 
+def ensure_fada_id(taxonomy) -> None:
+    """
+    Backfill fada_id on a taxonomy when it's added to a taxon group on
+    the FADA site. Taxa can end up without a fada_id if they were only
+    ever created as an ancestor (genus/family/...) for hierarchy
+    purposes rather than added directly through the add-taxon flow.
+    """
+    from bims.templatetags.site import is_fada_site
+    if not taxonomy or taxonomy.fada_id:
+        return
+    if not is_fada_site():
+        return
+    taxonomy.fada_id = f'FADA-{taxonomy.id}'
+    taxonomy.save(update_fields=['fada_id'])
+
+
 def resolve_addendum_code(raw_value: str) -> str:
     """
     Resolve a free-text addendum value to the stored addendum code.

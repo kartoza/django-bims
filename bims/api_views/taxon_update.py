@@ -18,6 +18,7 @@ from bims.models.taxonomy_update_proposal import (
     TaxonomyUpdateProposal
 )
 from bims.models.taxon_group import TaxonGroup
+from bims.utils.taxonomy import ensure_fada_id
 
 
 ADDITIONAL_KEYS = [
@@ -134,6 +135,7 @@ def ensure_accepted_taxonomy_in_group(taxonomy, taxon_group, use_proposal=False)
                 'is_validated': True
             }
         )
+        ensure_fada_id(accepted_taxonomy)
 
     return accepted_taxonomy
 
@@ -236,6 +238,7 @@ def create_taxon_proposal(
                     'is_validated': False
                 }
             )
+        ensure_fada_id(accepted_taxonomy)
 
     if proposal:
         if 'tags' in data:
