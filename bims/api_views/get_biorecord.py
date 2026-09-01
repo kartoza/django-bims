@@ -220,6 +220,24 @@ class BioCollectionSummary(APIView):
             source_reference__isnull=True
         ).distinct('source_reference')
         source_references = collection_with_references.source_references()
+
+        collection_with_dataset_keys = collection_results.exclude(
+            dataset_key__isnull=True
+        ).distinct('dataset_key')
+        dataset_source_references = (
+            collection_with_dataset_keys.dataset_source_references()
+        )
+
+        if dataset_source_references:
+            source_references = [
+                ref for ref in source_references
+                if not (
+                    ref.get('Reference Category') == 'Database' and
+                    'gbif' in ref.get('Source', '').lower()
+                )
+            ]
+            source_references += dataset_source_references
+
         response_data['source_references'] = source_references
 
         file_path = create_search_process_file(

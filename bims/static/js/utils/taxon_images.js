@@ -26,7 +26,8 @@ define(['backbone', 'utils/class'], function (Backbone, UtilClass) {
             div += '</p>'
             return div;
         },
-        renderTaxonImages: function (gbifId, taxonId) {
+        colChecklistKey: '7ddf754f-d193-4cc9-b351-99906754a03b',
+        renderTaxonImages: function (gbifId, taxonId, colId) {
             let self = this;
             let $thirdPartyData = $('<div>');
             let template = _.template($('#third-party-template').html());
@@ -50,9 +51,16 @@ define(['backbone', 'utils/class'], function (Backbone, UtilClass) {
                         });
                         $wrapper.append($rowWrapper);
                     }
+                    let occurrenceSearchUrl = null;
                     if (gbifId) {
+                        occurrenceSearchUrl = 'https://api.gbif.org/v1/occurrence/search?taxonKey=' + gbifId + '&limit=4';
+                    } else if (colId) {
+                        occurrenceSearchUrl = 'https://api.gbif.org/v1/occurrence/search?checklistKey=' + self.colChecklistKey +
+                            '&taxonKey=' + colId + '&limit=4';
+                    }
+                    if (occurrenceSearchUrl) {
                         $.get({
-                            url: 'https://api.gbif.org/v1/occurrence/search?taxonKey=' + gbifId + '&limit=4',
+                            url: occurrenceSearchUrl,
                             dataType: 'json',
                             success: function (data) {
                                 var results = data['results'];

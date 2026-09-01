@@ -136,6 +136,7 @@ define(['backbone', 'shared'], function (Backbone, Shared) {
                     Shared.Dispatcher.trigger('sidePanel:updateSidePanelTitle', $overviewPanelTitle);
 
                     self.gbifId = data['gbif_key'];
+                    self.colId = data['col_id'];
                     if(self.count > 0) {
                         data['count'] = self.count;
                     }
@@ -153,7 +154,7 @@ define(['backbone', 'shared'], function (Backbone, Shared) {
 
                     //Header Table
                     $('#third-party-images').click();
-                    $('#third-party-images').append(Shared.TaxonImagesUtil.renderTaxonImages(self.gbifId, self.taxonId));
+                    $('#third-party-images').append(Shared.TaxonImagesUtil.renderTaxonImages(self.gbifId, self.taxonId, self.colId));
 
                     speciesDetailContainer.find('#open-detailed-view').click(function () {
                         Shared.Dispatcher.trigger('map:showTaxonDetailedDashboard', {

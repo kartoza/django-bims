@@ -575,7 +575,7 @@ define(['backbone', 'shared', 'underscore', 'jquery', 'chartJs', 'fileSaver', 'h
                     </div>`)
             });
             self.recordsAreaTable.html($tableArea);
-            this.imagesCard.append(Shared.TaxonImagesUtil.renderTaxonImages(data['gbif_id'], self.taxonId));
+            this.imagesCard.append(Shared.TaxonImagesUtil.renderTaxonImages(data['gbif_id'], self.taxonId, data['col_id']));
         },
         renderIucnAssessments: function (data) {
             var assessments = data['iucn_assessments'] || [];
