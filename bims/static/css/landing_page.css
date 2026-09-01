@@ -635,6 +635,7 @@ html, body {
     justify-content: center;
     gap: 16px;
     padding: 10px 0;
+    margin-top: 30px;
 }
 
 .organism-group-card {

@@ -137,8 +137,10 @@
                         <div class="row">
                             <div class="col-lg-8 mx-auto text-center">
                                 <h2 class="section-heading"
-                                    style="font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %};
-                                           color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color 'inherit' %};">
+                                   style="font-family: {% firstof custom_theme.landing_page_occurrence_records_title_font.font_stack custom_theme.summary_font.font_stack 'inherit' %};
+                                        font-size: {{ custom_theme.landing_page_occurrence_records_title_font_size_px }}px !important;
+                                        color: {% firstof custom_theme.landing_page_occurrence_records_title_text_color custom_theme.main_accent_color 'inherit' %};
+                                        font-weight: {{ custom_theme.landing_page_occurrence_records_title_font_weight }}">
                                     Available organism groups
                                 </h2>
                             </div>
