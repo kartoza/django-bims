@@ -1,4 +1,5 @@
 import React from 'react';
+import {createRoot} from "react-dom/client";
 import '../css/SourceReference.scss';
 import DOI from "./components/DOI";
 import Author from "./components/Author";
@@ -274,7 +275,8 @@ $(function (){
       let props = $(this).data()
       props.history = history;
       delete(props.addsourcereferenceview);
-      window.ReactDOM.render(<AddSourceReferenceView {...props}/>, $(this).get(0));
+      const root = createRoot($(this).get(0));
+      root.render(<AddSourceReferenceView {...props}/>);
   });
 })
 
