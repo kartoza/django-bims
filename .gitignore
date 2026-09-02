@@ -110,6 +110,7 @@ pycharm_project_251*
 
 # node modules
  node_modules/
+.pnpm-store/
 
 # Pg cluster for docker
 deployment/pg

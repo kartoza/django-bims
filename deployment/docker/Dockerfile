@@ -56,7 +56,8 @@ COPY . /home/web/django_project
 WORKDIR /home/web/django_project
 
 # Install front-end build tools and run webpack
-RUN cd bims && npm install --quiet -g webpack@5.50.0 webpack-cli@4.8.0 && npm install --quiet && webpack --mode production
+RUN npm install -g pnpm@10.34.5
+RUN cd bims && npm install --quiet -g webpack@5.50.0 webpack-cli@4.8.0 && pnpm install --frozen-lockfile && webpack --mode production
 
 # Add uWSGI configuration
 COPY deployment/docker/uwsgi.conf /uwsgi.conf
