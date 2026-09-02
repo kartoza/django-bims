@@ -1,7 +1,9 @@
 # coding=utf-8
 """Checklist management view"""
 from braces.views import LoginRequiredMixin
+from django.http import Http404
 from django.views.generic import TemplateView
+from preferences import preferences
 
 from bims.enums import TaxonomicGroupCategory
 from bims.models import TaxonGroup
@@ -10,6 +12,11 @@ from bims.models.licence import Licence
 
 class ChecklistView(LoginRequiredMixin, TemplateView):
     template_name = 'checklist/checklist_page.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        if not preferences.SiteSetting.enable_checklist_versioning:
+            raise Http404('Not allowed')
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)

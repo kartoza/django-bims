@@ -311,6 +311,11 @@ class SiteSetting(Preferences):
         help_text='Enable or disable Harvest from TaxonWorks'
     )
 
+    enable_checklist_versioning = models.BooleanField(
+        default=True,
+        help_text='Enable or disable the Taxonomic Checklist Versioning feature'
+    )
+
     enable_download_request_approval = models.BooleanField(
         default=False,
         help_text=(

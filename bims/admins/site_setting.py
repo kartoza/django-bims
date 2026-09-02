@@ -198,6 +198,7 @@ class SiteSettingAdmin(PreferencesAdmin):
                 "enable_climate_data",
                 "enable_harvest_worms",
                 "enable_harvest_taxonworks",
+                "enable_checklist_versioning",
                 "enable_ecosystem_type",
                 "enable_download_request_approval",
                 "max_download_records",
