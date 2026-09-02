@@ -80,11 +80,13 @@ class TaxonGroupTotalValidated(APIView):
         # Validated
         self.accepted_validated += qs.filter(
             accepted_q,
+            taxongrouptaxonomy__taxongroup=taxon_group,
             taxongrouptaxonomy__is_validated=True
         ).distinct().count()
 
         self.synonym_validated += qs.filter(
             synonym_q,
+            taxongrouptaxonomy__taxongroup=taxon_group,
             taxongrouptaxonomy__is_validated=True
         ).distinct().count()
 
@@ -92,11 +94,13 @@ class TaxonGroupTotalValidated(APIView):
         if can_view_unvalidated:
             self.accepted_unvalidated += qs.filter(
                 accepted_q,
+                taxongrouptaxonomy__taxongroup=taxon_group,
                 taxongrouptaxonomy__is_validated=False
             ).distinct().count()
 
             self.synonym_unvalidated += qs.filter(
                 synonym_q,
+                taxongrouptaxonomy__taxongroup=taxon_group,
                 taxongrouptaxonomy__is_validated=False
             ).distinct().count()
 
