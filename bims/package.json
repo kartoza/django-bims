@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Django-BIMS",
   "main": "index.js",
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "test": "python manage.py test app.tests.test_generate_ui_mocks && jest",
     "qtest": "jest"
