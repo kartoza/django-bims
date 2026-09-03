@@ -754,14 +754,23 @@ def get_gbif_doi(gbif_key):
 
 def create_source_reference():
     """Return the single shared GBIF database source reference."""
-    database_record, _ = DatabaseRecord.objects.get_or_create(
+    database_record = DatabaseRecord.objects.filter(
         name="Global Biodiversity Information Facility (GBIF)",
-    )
-    source_reference, _ = SourceReferenceDatabase.objects.get_or_create(
+    ).order_by('id').first()
+    if database_record is None:
+        database_record = DatabaseRecord.objects.create(
+            name="Global Biodiversity Information Facility (GBIF)",
+        )
+    source_reference = SourceReferenceDatabase.objects.filter(
         source_name="Global Biodiversity Information Facility (GBIF)",
         source=database_record,
-        publish_to_gbif=False,
-    )
+    ).order_by('id').first()
+    if source_reference is None:
+        source_reference = SourceReferenceDatabase.objects.create(
+            source_name="Global Biodiversity Information Facility (GBIF)",
+            source=database_record,
+            publish_to_gbif=False,
+        )
     return source_reference
 
 
