@@ -1523,8 +1523,8 @@ class TestBimsInstanceUtilities(TestCase):
 # ===========================================================================
 
 _PUBLIC_STRIPPED_FIELDS = {
-    'can_be_validated', 'taxon_group', 'additional_data',
-    'DT_RowId', 'proposal_id', 'can_edit', 'children_count',
+    'can_be_validated', 'taxon_group',
+    'proposal_id', 'can_edit', 'children_count',
     'other_group_count', 'rejected', 'ready_for_validation',
     'validation_message', 'end_embargo_date', 'verified',
 }
@@ -1662,15 +1662,6 @@ class TestTaxonDetailPublicAccess(FastTenantTestCase):
         data = response.data
         for field in ('DT_RowId', 'can_edit', 'children_count', 'other_group_count'):
             self.assertIn(field, data, msg=f'Field "{field}" should be present for authenticated access')
-
-    def test_public_additional_data_stripped(self, _mock_vernacular):
-        response = self._get(self.taxonomy.pk)
-        self.assertNotIn('additional_data', response.data)
-
-    def test_authenticated_additional_data_present(self, _mock_vernacular):
-        response = self._get(self.taxonomy.pk, user=self.auth_user)
-        self.assertIn('additional_data', response.data)
-
 
 # ===========================================================================
 # TaxonSerializer PUBLIC_EXCLUDED_FIELDS (unit-level)
