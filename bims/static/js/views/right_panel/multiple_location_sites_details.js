@@ -131,6 +131,7 @@ define(['backbone', 'shared', 'chartJs', 'jquery', 'underscore', 'utils/filter_l
                     return false;
                 }
                 parameters['modules'] = $target.data('module');
+                parameters['spatialFilter'] = encodeURIComponent(parameters['spatialFilter']);
                 Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
             });
             $sectionWrapper.find('.spatial-dashboard-btn').click(function () {

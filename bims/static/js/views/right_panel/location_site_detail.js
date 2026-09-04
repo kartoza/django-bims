@@ -437,11 +437,13 @@ define(['backbone', 'shared', 'chartJs', 'jquery'], function (Backbone, Shared, 
             });
             $('.sp-open-dashboard').click(function (e) {
                 let parameters = $.extend(true, {}, filterParameters);
+
                 const $target = $(e.target);
                 if ($target.hasClass("disabled")) {
                     return false;
                 }
                 parameters['modules'] = $target.data('module')
+                parameters['spatialFilter'] = encodeURIComponent(parameters['spatialFilter']);
                 Shared.Router.updateUrl('site-detail/' + self.apiParameters(parameters).substr(1), true);
             });
             $('.sp-add-record').click(function (e) {
