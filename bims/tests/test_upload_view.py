@@ -17,7 +17,7 @@ from github.GithubException import UnknownObjectException
 
 from bims.models.upload_request import UploadRequest, UploadType
 from bims.models.licence import Licence
-
+from bims.tests.model_factories import UserF
 
 UPLOAD_URL_NAME = "upload"
 
@@ -25,6 +25,7 @@ UPLOAD_URL_NAME = "upload"
 class TestUploadView(FastTenantTestCase):
     def setUp(self):
         super().setUp()
+        user = UserF.create()
         self.client = TenantClient(self.tenant)
         try:
             self.url = reverse(UPLOAD_URL_NAME)
@@ -37,6 +38,10 @@ class TestUploadView(FastTenantTestCase):
         self.licence, _ = Licence.objects.get_or_create(
             identifier="CC-BY",
             defaults={"name": "CC BY 4.0 – Attribution"},
+        )
+        self.client.login(
+            username=user.username,
+            password='password'
         )
 
     def _make_file(self, name="data.csv", content=b"col1,col2\nx,y\n"):
@@ -90,6 +95,10 @@ class TestUploadView(FastTenantTestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertIn(b"Upload", res.content)
 
+    def test_get_page_redirection(self):
+        client = TenantClient(self.tenant)
+        res = client.get(self.url)
+        self.assertEqual(res.status_code, status.HTTP_302_FOUND)
 
     @mock.patch("bims.views.upload.preferences")
     def test_post_success_without_recaptcha(self, mock_preferences):
