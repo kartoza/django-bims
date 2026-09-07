@@ -5,6 +5,8 @@
 
 <script>
 
+    const conservationStatusUsesTaxonCount = {% if preferences.SiteSetting.conservation_status_chart_use_taxon_count %}true{% else %}false{% endif %};
+
     function getNumberWithCommas(number) {
         try {
             return number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
@@ -37,6 +39,12 @@
         chartWrapper.append(img);
         let canvas = $(`<div class="donut-chart"><canvas id="chart-${moduleName}" width="150px" height="150px"></canvas></div>`);
         chartWrapper.append(canvas);
+        if (moduleData.hasOwnProperty('conservation-status')) {
+            const consStatusBasisLabel = conservationStatusUsesTaxonCount ? 'Number of taxa' : 'Number of occurrences';
+            chartWrapper.append(
+                `<p class="chart-caption" style="text-align: center; font-size: 11px; margin: 4px 0 0;">${consStatusBasisLabel}</p>`
+            );
+        }
         container.append(chartWrapper);
 
         let native = 0;
@@ -107,6 +115,16 @@
         $moduleInfoContainer.append(
             `<p class="module-info" style="margin-bottom: 0; font-size: {{ custom_theme.summary_font_size_px }}px; text-transform:{{ custom_theme.summary_text_case|default:'none' }}; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color '#000000' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}"><span class="module-numbers">${getNumberWithCommas(totalRecords)}</span> Records</p>`
         )
+        if (conservationStatusUsesTaxonCount && moduleData.hasOwnProperty('total_species')) {
+            $moduleInfoContainer.append(
+                `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: {{ custom_theme.summary_font_size_px }}px; text-transform:{{ custom_theme.summary_text_case|default:'none' }}; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color '#000000' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}"><span class="module-numbers">${getNumberWithCommas(moduleData['total_species'])}</span> Species</p>`
+            )
+        }
+        if (conservationStatusUsesTaxonCount && moduleData.hasOwnProperty('total_subspecies')) {
+            $moduleInfoContainer.append(
+                `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: {{ custom_theme.summary_font_size_px }}px; text-transform:{{ custom_theme.summary_text_case|default:'none' }}; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color '#000000' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}"><span class="module-numbers">${getNumberWithCommas(moduleData['total_subspecies'])}</span> Subspecies</p>`
+            )
+        }
         $moduleInfoContainer.append(
             `<p class="module-info" style="margin-top: 0; margin-bottom: 0;font-size: {{ custom_theme.summary_font_size_px }}px; text-transform:{{ custom_theme.summary_text_case|default:'none' }}; color: {% firstof custom_theme.summary_text_color custom_theme.main_accent_color '#000000' %}; font-family: {% firstof custom_theme.summary_font.font_stack 'inherit' %}"><span class="module-numbers">${getNumberWithCommas(totalSite)}</span> ${locationSiteNamePlural}</p>`
         )

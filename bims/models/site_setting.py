@@ -361,6 +361,14 @@ class SiteSetting(Preferences):
         ),
     )
 
+    conservation_status_chart_use_taxon_count = models.BooleanField(
+        default=False,
+        help_text=(
+            'Base the conservation status chart on the front page on the '
+            'number of taxa instead of the number of occurrence records.'
+        ),
+    )
+
     enable_remove_all_occurrences_tool = models.BooleanField(
         default=False,
         help_text=(

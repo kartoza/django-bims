@@ -1,5 +1,6 @@
 from django.db import connection
 from django.db.models.functions import Coalesce
+from preferences import preferences
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from allauth.utils import get_user_model
@@ -85,6 +86,13 @@ class ModuleSummary(APIView):
         summary['total'] = collections.count()
         summary['total_site'] = collections.distinct('site').count()
         summary['total_site_visit'] = collections.distinct('survey').count()
+        if preferences.SiteSetting.conservation_status_chart_use_taxon_count:
+            summary['total_species'] = collections.filter(
+                taxonomy__rank='SPECIES'
+            ).distinct('taxonomy').count()
+            summary['total_subspecies'] = collections.filter(
+                taxonomy__rank='SUBSPECIES'
+            ).distinct('taxonomy').count()
 
         tg = taxon_group.taxonomies.filter(
             taxonomic_status=TaxonomicStatus.ACCEPTED.name
@@ -197,8 +205,15 @@ class ModuleSummary(APIView):
 
     def get_conservation_status_summary(self, collections):
         """
-        Returns conservation status summary data from the provided collections
+        Returns conservation status summary data from the provided collections.
         """
+        use_taxon_count = (
+            preferences.SiteSetting.conservation_status_chart_use_taxon_count
+        )
+        count_annotation = (
+            Count('taxonomy', distinct=True) if use_taxon_count
+            else Count('value')
+        )
         summary_temp = dict(
             collections.annotate(
                 value=Case(When(taxonomy__iucn_status__isnull=False,
@@ -208,7 +223,7 @@ class ModuleSummary(APIView):
                     F('taxonomy__iucn_status__order'), Value(9999)
                 )
             ).values('value').annotate(
-                count=Count('value'),
+                count=count_annotation,
                 min_order=Min('cons_order')
             ).order_by('min_order').values_list('value', 'count')
         )
