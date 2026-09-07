@@ -4,16 +4,29 @@
 - Children's accepted-species counts are rolled into the parent total
 - FADA sites exclude taxa with no fada_id
 - _validated_count_for_group deduplicates taxa shared across children
+- Conservation status chart counts occurrences by default, or distinct taxa
+  when SiteSetting.conservation_status_chart_use_taxon_count is enabled
+- total_species / total_subspecies breakdown is only added when that
+  setting is enabled
 """
 from unittest.mock import patch
 
 from django_tenants.test.cases import FastTenantTestCase
+from preferences import preferences
 
 from bims.api_views.module_summary import ModuleSummary
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.enums.taxonomic_rank import TaxonomicRank
 from bims.enums.taxonomic_status import TaxonomicStatus
-from bims.tests.model_factories import TaxonomyF, TaxonGroupF, TaxonGroupTaxonomyF
+from bims.models import BiologicalCollectionRecord
+from bims.models.site_setting import SiteSetting
+from bims.tests.model_factories import (
+    TaxonomyF,
+    TaxonGroupF,
+    TaxonGroupTaxonomyF,
+    BiologicalCollectionRecordF,
+    IUCNStatusF,
+)
 
 
 def _accepted(**kwargs):
@@ -200,3 +213,102 @@ class TestModuleSummaryNonAcceptedExcluded(FastTenantTestCase):
     def test_only_accepted_counted(self, _mock):
         count = self.ms._validated_count_for_group(self.group)
         self.assertEqual(count, 1)
+
+
+def _set_conservation_status_use_taxon_count(value):
+    """Toggle the SiteSetting singleton flag, creating it if needed."""
+    site_setting = preferences.SiteSetting
+    if not site_setting:
+        site_setting = SiteSetting.objects.create()
+    site_setting.conservation_status_chart_use_taxon_count = value
+    site_setting.save()
+
+
+class TestConservationStatusSummaryCounting(FastTenantTestCase):
+    """By default the conservation status chart counts occurrence records;
+    when conservation_status_chart_use_taxon_count is enabled it counts
+    distinct taxa instead."""
+
+    def setUp(self):
+        self.ms = ModuleSummary()
+        self.iucn_status = IUCNStatusF.create(category='LC', national=False)
+        self.taxon = TaxonomyF.create(
+            scientific_name='Repeated Fish',
+            rank=TaxonomicRank.SPECIES.name,
+            iucn_status=self.iucn_status,
+        )
+        # Same taxon collected 3 times -> 3 occurrence records, 1 distinct taxon
+        for _ in range(3):
+            BiologicalCollectionRecordF.create(taxonomy=self.taxon)
+        self.collections = BiologicalCollectionRecord.objects.filter(
+            taxonomy=self.taxon
+        )
+
+    def tearDown(self):
+        _set_conservation_status_use_taxon_count(False)
+
+    def test_default_counts_occurrence_records(self):
+        _set_conservation_status_use_taxon_count(False)
+        summary = self.ms.get_conservation_status_summary(self.collections)
+        self.assertEqual(summary['chart_data']['Least Concern'], 3)
+
+    def test_enabled_counts_distinct_taxa(self):
+        _set_conservation_status_use_taxon_count(True)
+        summary = self.ms.get_conservation_status_summary(self.collections)
+        self.assertEqual(summary['chart_data']['Least Concern'], 1)
+
+
+class TestModuleSummarySpeciesSubspeciesBreakdown(FastTenantTestCase):
+    """total_species / total_subspecies are only added, and only counted
+    per distinct taxon, when conservation_status_chart_use_taxon_count is
+    enabled."""
+
+    def setUp(self):
+        self.ms = ModuleSummary()
+        self.group = _species_group('Mammals')
+
+        self.species_taxon = TaxonomyF.create(
+            scientific_name='SpeciesA',
+            rank=TaxonomicRank.SPECIES.name,
+        )
+        self.subspecies_taxon = TaxonomyF.create(
+            scientific_name='SubspeciesA',
+            rank=TaxonomicRank.SUBSPECIES.name,
+        )
+        self.genus_taxon = TaxonomyF.create(
+            scientific_name='GenusA',
+            rank=TaxonomicRank.GENUS.name,
+        )
+        for taxon in (
+            self.species_taxon, self.subspecies_taxon, self.genus_taxon
+        ):
+            TaxonGroupTaxonomyF.create(taxongroup=self.group, taxonomy=taxon)
+
+        # Multiple occurrence records per taxon to prove distinct counting
+        BiologicalCollectionRecordF.create(taxonomy=self.species_taxon)
+        BiologicalCollectionRecordF.create(taxonomy=self.species_taxon)
+        BiologicalCollectionRecordF.create(taxonomy=self.subspecies_taxon)
+        BiologicalCollectionRecordF.create(taxonomy=self.genus_taxon)
+
+    def tearDown(self):
+        _set_conservation_status_use_taxon_count(False)
+
+    def test_breakdown_absent_when_disabled(self):
+        _set_conservation_status_use_taxon_count(False)
+        data = self.ms.module_summary_data(self.group)
+        self.assertNotIn('total_species', data)
+        self.assertNotIn('total_subspecies', data)
+
+    def test_breakdown_present_and_correct_when_enabled(self):
+        _set_conservation_status_use_taxon_count(True)
+        data = self.ms.module_summary_data(self.group)
+        self.assertEqual(data['total_species'], 1)
+        self.assertEqual(data['total_subspecies'], 1)
+
+    def test_genus_rank_excluded_from_breakdown(self):
+        _set_conservation_status_use_taxon_count(True)
+        data = self.ms.module_summary_data(self.group)
+        # Only SPECIES/SUBSPECIES ranks are counted, GENUS is not
+        self.assertEqual(
+            data['total_species'] + data['total_subspecies'], 2
+        )
