@@ -2819,13 +2819,15 @@ class UnitAdmin(admin.ModelAdmin):
 
 
 class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('name', 'description', 'get_users', 'site')
+    list_display = ('name', 'description', 'get_users')
 
     def get_users(self, obj):
         return ", ".join([user.username for user in obj.users.all()])
     get_users.short_description = 'Users'
 
     filter_horizontal = ('users',)
+
+    exclude = ('site',)
 
 
 class TaxonImageAdmin(admin.ModelAdmin):
