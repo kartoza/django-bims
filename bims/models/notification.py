@@ -67,19 +67,14 @@ def get_recipients_for_notification(
     Args:
     - notification_name (str): The name of the notification type to
         fetch recipients for.
-    - site (Site, optional): The current site instance. Defaults to the current site.
 
     Returns:
     - List[str]: A list of email addresses.
     """
-    if site is None:
-        site = Site.objects.get_current()
-
     try:
         # Attempt to find the notification for the specified site
         recipients = Notification.objects.get(
             name=notification_name,
-            site=site
         ).user_emails
     except Notification.DoesNotExist:
         # If not found, attempt to find a site-agnostic notification
