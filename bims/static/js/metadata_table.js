@@ -32,7 +32,9 @@ function renderSourceReferences() {
             if(keys[i] === 'DOI/URL' && document){
                 itemDiv.append('<td><a href="'+ source[keys[i]] + '" target="_blank">Download</a></td>')
             }else {
-                itemDiv.append('<td>' + source[keys[i]] + '</td>')
+                if (source[keys[i]]) {
+                    itemDiv.append('<td>' + source[keys[i]] + '</td>')
+                }
             }
         }
         bodyDiv.append(itemDiv);
