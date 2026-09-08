@@ -6,6 +6,8 @@
 <script>
 
     const conservationStatusUsesTaxonCount = {% if preferences.SiteSetting.conservation_status_chart_use_taxon_count %}true{% else %}false{% endif %};
+    const shouldAddLinkToTaxonGroup = {% if preferences.SiteSetting.allow_public_taxa_view or request.user.is_authenticated %}true{% else %}false{% endif %};
+    const taxaManagementUrl = '{% url "taxa-management" %}';
 
     function getNumberWithCommas(number) {
         try {
@@ -15,16 +17,28 @@
         }
     }
 
-    function createDonutGraph(container, data) {
+    function createDonutGraph(container, data, onSegmentClick) {
+        let options = {
+            cutoutPercentage: 70,
+            legend: {
+                display: false
+            },
+        };
+        if (typeof onSegmentClick === 'function') {
+            options.onClick = function (event, activeElements) {
+                if (!activeElements || !activeElements.length) {
+                    return;
+                }
+                if (event && event.stopPropagation) {
+                    event.stopPropagation();
+                }
+                onSegmentClick(activeElements[0]._index);
+            };
+        }
         let donutChart = new Chart(container, {
             type: 'doughnut',
             data: data,
-            options: {
-                cutoutPercentage: 70,
-                legend: {
-                    display: false
-                },
-            }
+            options: options
         });
     }
 
@@ -35,7 +49,14 @@
         const img = new Image();
         let chartWrapper = $('<div class="chart-icon-wrapper" />');
         img.classList = 'module-icon';
+        img.id = 'taxon-group-icon-' + moduleData['taxon_group_id'];
         img.src = moduleData['icon'];
+        if (shouldAddLinkToTaxonGroup && moduleData['taxon_group_id']) {
+            chartWrapper.css('cursor', 'pointer');
+            chartWrapper.on('click', function () {
+                window.location.href = `${taxaManagementUrl}?selected=${moduleData['taxon_group_id']}`;
+            });
+        }
         chartWrapper.append(img);
         let canvas = $(`<div class="donut-chart"><canvas id="chart-${moduleName}" width="150px" height="150px"></canvas></div>`);
         chartWrapper.append(canvas);
@@ -135,6 +156,7 @@
 
         container.append($moduleInfoContainer);
 
+
         let moduleContainer = document.getElementById("chart-" + moduleName);
         let moduleChartDataset = {
             labels: cons_labels,
@@ -152,7 +174,29 @@
                 borderWidth: 1
             }]
         };
-        createDonutGraph(moduleContainer, createSummaryChart(moduleData))
+        let consStatusCodes = (
+            moduleData['conservation-status'] &&
+            moduleData['conservation-status']['codes']
+        ) || null;
+        let onSegmentClick = null;
+        if (
+            shouldAddLinkToTaxonGroup &&
+            moduleData['taxon_group_id'] &&
+            consStatusCodes
+        ) {
+            moduleContainer.style.cursor = 'pointer';
+            onSegmentClick = function (index) {
+                let code = consStatusCodes[index];
+                if (!code) {
+                    return;
+                }
+                window.location.href = (
+                    `${taxaManagementUrl}?selected=${moduleData['taxon_group_id']}` +
+                    `&cons_status=${encodeURIComponent(code)}`
+                );
+            };
+        }
+        createDonutGraph(moduleContainer, createSummaryChart(moduleData), onSegmentClick)
     }
 
     if (showModuleSummaries) {
