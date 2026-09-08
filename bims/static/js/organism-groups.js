@@ -24,7 +24,7 @@
 
         var $logoWrapper = $('<div class="organism-group-logo-wrapper"></div>');
         $logoWrapper.append(
-            $('<img />').attr('src', summaryData['icon']).attr('alt', key)
+            $(`<a href="/taxa-management/?selected=${summaryData['taxon_group_id']}&page=1&page_size=25&o=canonical_name">`).append($('<img />').attr('src', summaryData['icon']).attr('alt', key))
         );
         $card.append($logoWrapper);
 
