@@ -142,7 +142,13 @@ async function renderFilterList($div, asTable = true) {
                 tableData[data['label']] = urlParams[key];
             } else if (data['type'] === 'spatial_filter') {
                 let spatialFilterContainer = $('.spatial-filter-container');
-                let json_data = JSON.parse(decodeURIComponent(urlParams[key]));
+                let decodedStr = decodeURIComponent(urlParams[key]);
+                let json_data = null;
+                try {
+                    json_data = JSON.parse(decodedStr);
+                } catch (e) {
+                    json_data = JSON.parse(decodeURIComponent(decodedStr));
+                }
                 let table_data = '';
 
                 $.each(json_data, function (index, spatial_filter) {
@@ -164,7 +170,9 @@ async function renderFilterList($div, asTable = true) {
 
                     let spatial_filter_value = 'All';
                     if (spatial_filter_values[0] === 'value') {
-                        spatial_filter_value = spatial_filter_values[2];
+                        let sfcCloned = Object.assign([], spatial_filter_values)
+                        let sfvKeys = sfcCloned.splice(0, 2).join(" ");
+                        spatial_filter_value = sfcCloned.join(",");
                     }
                     table_data += spatial_filter_name + ' : ' + spatial_filter_value;
                     table_data += '<br/>';
