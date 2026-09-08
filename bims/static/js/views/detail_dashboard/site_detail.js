@@ -299,6 +299,10 @@ define([
                             }, 1000);
                             return false;
                         }
+                        if (status === 'failure') {
+                            self.closeDashboard();
+                            return false
+                        }
                     }
 
                     if (typeof data['modules'] !== 'undefined') {
