@@ -83,6 +83,7 @@ class ModuleSummary(APIView):
             except (ValueError, AttributeError):
                 summary['icon'] = taxon_group.logo.url
 
+        summary['taxon_group_id'] = taxon_group.id
         summary['total'] = collections.count()
         summary['total_site'] = collections.distinct('site').count()
         summary['total_site_visit'] = collections.distinct('survey').count()
