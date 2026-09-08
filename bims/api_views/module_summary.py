@@ -234,11 +234,13 @@ class ModuleSummary(APIView):
         )
         updated_summary = {
             'chart_data': {},
-            'colors': []
+            'colors': [],
+            'codes': []
         }
         for key in summary_temp.keys():
             if key in iucn_category:
                 updated_summary['chart_data'][iucn_category[key]] = summary_temp[key]
+                updated_summary['codes'].append(key)
                 try:
                     updated_summary['colors'].append(
                         iucn_status.filter(category=key).first().colour
