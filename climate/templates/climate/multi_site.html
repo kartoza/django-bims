@@ -72,6 +72,12 @@
                 <div class="table-container ajax-container">
                     <div class="table-title">
                         Climate Summary
+                        <select id="station-type-filter" class="form-control form-control-sm"
+                                style="display:inline-block; width:auto; margin-left:10px;">
+                            <option value="">All stations</option>
+                            <option value="climate">Climate stations</option>
+                            <option value="rainfall_only">Rainfall only stations (monthly)</option>
+                        </select>
                         <div class="download-top-container">
                             Download summary data:
                             <button class="btn btn-info download-summary-as-csv">
@@ -88,6 +94,7 @@
                                 <th>Start Date</th>
                                 <th>End Date</th>
                                 <th>Site Code</th>
+                                <th>Data Type</th>
                                 <th>Avg Temperature (°C)</th>
                                 <th>Min Temperature (°C)</th>
                                 <th>Max Temperature (°C)</th>

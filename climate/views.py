@@ -30,6 +30,41 @@ from climate.tasks.climate_multi_site import climate_multi_site_summary
 # Sentinel value used in uploaded CSVs to indicate truly missing data.
 MISSING = -999.0
 
+# Measurements other than rainfall. A station that only has rainfall
+# values (one value per month) is a "rainfall only" station.
+NON_RAINFALL_FIELDS = (
+    'avg_temperature', 'min_temperature', 'max_temperature',
+    'avg_humidity', 'min_humidity', 'max_humidity',
+    'avg_windspeed',
+)
+
+STATION_TYPE_CLIMATE = 'climate'
+STATION_TYPE_RAINFALL_ONLY = 'rainfall_only'
+
+
+def station_type_aggregates():
+    """Aggregates to add to a Climate queryset aggregate() so the type of
+    the station can be worked out with ``get_station_type``."""
+    aggregates = {
+        'rainfall_values': Count(
+            NullIf('daily_rainfall', Value(MISSING))),
+    }
+    for field in NON_RAINFALL_FIELDS:
+        aggregates[f'{field}_values'] = Count(
+            NullIf(field, Value(MISSING)))
+    return aggregates
+
+
+def get_station_type(stats):
+    """Return the station type from the result of an aggregate() that
+    included ``station_type_aggregates``."""
+    has_other_values = any(
+        stats.get(f'{field}_values') for field in NON_RAINFALL_FIELDS
+    )
+    if stats.get('rainfall_values') and not has_other_values:
+        return STATION_TYPE_RAINFALL_ONLY
+    return STATION_TYPE_CLIMATE
+
 
 def _is_valid(value):
     """Return True when *value* is a real measurement."""
@@ -708,6 +743,13 @@ class ClimateSiteView(TemplateView):
         context['stats'] = stats
         context['stats_overall'] = stats_overall
 
+        station_type = get_station_type(
+            climate_data_by_site.aggregate(**station_type_aggregates())
+        )
+        context['station_type'] = station_type
+        context['is_rainfall_only'] = (
+            station_type == STATION_TYPE_RAINFALL_ONLY)
+
         # Get records
         context['total_records'] = climate_data.count()
         context['total_overall_records'] = climate_data_by_site.count()
@@ -715,11 +757,11 @@ class ClimateSiteView(TemplateView):
         context['execution_time'] = time.time() - start_time
         context['start_date'] = (
             self.start_date if self.start_date else
-            climate_data.first().date
+            climate_data.first().date if climate_data else None
         )
         context['end_date'] = (
             self.end_date if self.end_date else
-            climate_data.last().date
+            climate_data.last().date if climate_data else None
         )
         context['climate_data'] = climate_data.first()
         # Coverage of all data of the station, regardless of the filter
