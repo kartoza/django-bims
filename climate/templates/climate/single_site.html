@@ -54,7 +54,11 @@
             <div class="logo hide-logo pull-right"><img width="50"
                                                         src="{% static 'img/bims-stamp.png' %}"></div>
             <div class="dashboard-title">
-                <h2>Climate data for {{ site_code }}</h2>
+                <h2>Climate data for {{ site_code }}
+                    {% if data_start_date and data_end_date %}
+                        <small class="text-muted">({{ data_start_date|date:'Y-m-d' }} &ndash; {{ data_end_date|date:'Y-m-d' }})</small>
+                    {% endif %}
+                </h2>
                 <div class="dashboard-close"><i class="fa fa-times"
                                                 aria-hidden="true"></i></div>
                 <div class="filter-panel">

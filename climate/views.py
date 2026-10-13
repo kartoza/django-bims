@@ -722,6 +722,11 @@ class ClimateSiteView(TemplateView):
             climate_data.last().date
         )
         context['climate_data'] = climate_data.first()
+        # Coverage of all data of the station, regardless of the filter
+        coverage = climate_data_by_site.aggregate(
+            first=Min('date'), last=Max('date'))
+        context['data_start_date'] = coverage['first']
+        context['data_end_date'] = coverage['last']
 
         # Site details
         site_details = overview_site_detail(self.location_site.id)

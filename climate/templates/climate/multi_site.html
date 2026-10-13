@@ -22,7 +22,7 @@
 {% endblock %}
 
 {% block body_content %}
-    <div class="body-form container">
+    <div class="body-form container climate-multi-site">
         <div class="logo hide-logo pull-right">
             <img width="50" src="{% static 'img/bims-stamp.png' %}">
         </div>
@@ -85,6 +85,8 @@
                             <tr>
                                 {% if is_sanparks %}<th>Park Name</th>{% endif %}
                                 <th>Station Name</th>
+                                <th>Start Date</th>
+                                <th>End Date</th>
                                 <th>Site Code</th>
                                 <th>Avg Temperature (°C)</th>
                                 <th>Min Temperature (°C)</th>

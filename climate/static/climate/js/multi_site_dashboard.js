@@ -94,6 +94,8 @@ function renderClimateSummaryTable(data) {
             $tr.append('<td>' + (summaryData['park_name'][index] || '-') + '</td>');
         }
         $tr.append('<td>' + (summaryData['station_name'][index] || '-') + '</td>');
+        $tr.append('<td>' + ((summaryData['start_date'] || [])[index] || '-') + '</td>');
+        $tr.append('<td>' + ((summaryData['end_date'] || [])[index] || '-') + '</td>');
         $tr.append(
             '<td><a href="' + singleSiteUrl + '">' + siteCode + '</a></td>'
         );

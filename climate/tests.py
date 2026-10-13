@@ -1200,6 +1200,31 @@ class ClimateStationChangelistTests(FastTenantTestCase):
             [self.station_with_data.pk, self.weather_station.pk])
 
 
+class ClimateSiteDataCoverageTests(FastTenantTestCase):
+    """The dashboard shows the start and end date of a station's data."""
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+        self.site = LocationSiteF.create(site_code='COVER001')
+        for d in (date(2020, 3, 5), date(2022, 7, 9), date(2021, 1, 1)):
+            Climate.objects.create(
+                location_site=self.site, date=d,
+                year=d.year, month=d.month, day=d.day,
+                avg_temperature=Decimal('20.0'))
+
+    def test_coverage_in_context_and_page(self):
+        url = reverse('climate:climate-site', kwargs={
+            'site_id': self.site.id, 'year': 2021})
+        response = self.client.get(f'{url}?siteId={self.site.id}')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.context['data_start_date'], date(2020, 3, 5))
+        self.assertEqual(
+            response.context['data_end_date'], date(2022, 7, 9))
+        self.assertContains(response, '2020-03-05')
+        self.assertContains(response, '2022-07-09')
+
+
 class ClimateStationDescriptionTests(FastTenantTestCase):
     """Tests for editing the description of a climate station."""
 

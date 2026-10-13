@@ -53,6 +53,8 @@ def climate_multi_site_summary(parameters, search_process_id):
                 'site_code': [],
                 'station_name': [],
                 'park_name': [] if is_sanparks else None,
+                'start_date': [],
+                'end_date': [],
                 'avg_temp': [],
                 'min_temp': [],
                 'max_temp': [],
@@ -81,6 +83,8 @@ def climate_multi_site_summary(parameters, search_process_id):
                     total_rainfall=Sum(_ni('daily_rainfall')),
                     max_rainfall=Max(_ni('daily_rainfall')),
                     record_count=Count('id'),
+                    start_date=Min('date'),
+                    end_date=Max('date'),
                 )
                 summary['site_id'].append(site.id)
                 summary['site_code'].append(
@@ -97,6 +101,14 @@ def climate_multi_site_summary(parameters, search_process_id):
                         if park_context and park_context.value else ''
                     )
                     summary['park_name'].append(park_name)
+                summary['start_date'].append(
+                    stats['start_date'].isoformat()
+                    if stats['start_date'] else None
+                )
+                summary['end_date'].append(
+                    stats['end_date'].isoformat()
+                    if stats['end_date'] else None
+                )
                 summary['avg_temp'].append(
                     round(stats['avg_temp'], 1) if stats['avg_temp'] is not None else None
                 )
