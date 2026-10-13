@@ -6,9 +6,9 @@ from collections import OrderedDict
 from datetime import date, datetime
 
 from django.core.serializers.json import DjangoJSONEncoder
-from django.http import HttpResponse, Http404
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, get_object_or_404
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 from django.db.models import Avg, Min, Max, Sum, Count, Value
 from django.db.models.functions import NullIf
 from rest_framework.views import APIView
@@ -503,6 +503,42 @@ def _build_csv_response(records, start_date, end_date):
     return response
 
 
+def can_edit_station(user, location_site):
+    """Superusers, staff and the station owner may edit a station."""
+    if not user.is_authenticated:
+        return False
+    return bool(
+        user.is_superuser or user.is_staff or
+        (location_site.owner_id and location_site.owner_id == user.id)
+    )
+
+
+class ClimateStationDescriptionView(View):
+    """Update the description of a climate station."""
+
+    def post(self, request, site_id):
+        location_site = get_object_or_404(LocationSite, pk=site_id)
+        if not can_edit_station(request.user, location_site):
+            return JsonResponse(
+                {'error': 'You do not have permission to edit this station.'},
+                status=403
+            )
+        max_length = LocationSite._meta.get_field(
+            'site_description').max_length
+        description = (request.POST.get('description') or '').strip()
+        if len(description) > max_length:
+            return JsonResponse(
+                {'error': f'Description must be {max_length} characters '
+                          f'or fewer.'},
+                status=400
+            )
+        location_site.site_description = description
+        location_site.save(update_fields=['site_description'])
+        return JsonResponse({
+            'description': description or location_site.name
+        })
+
+
 class ClimateSiteView(TemplateView):
     """View for single site climate data display."""
     template_name = 'climate/single_site.html'
@@ -696,6 +732,8 @@ class ClimateSiteView(TemplateView):
         context['site_details'] = json.dumps(site_details)
 
         context['is_private_user'] = is_private_user
+        context['can_edit_station'] = can_edit_station(
+            self.request.user, self.location_site)
 
         # Monthly averaged records for display table (visible to all)
         monthly_records_list = []

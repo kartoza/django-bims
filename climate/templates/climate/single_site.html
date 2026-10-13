@@ -118,7 +118,24 @@
                                 {% for key, value in site_overview.items %}
                                     <tr>
                                         <td>{{ key }}</td>
-                                        <td>{{ value }}</td>
+                                        <td>
+                                            {% if key == 'Site description' and can_edit_station %}
+                                                <span id="station-description">{{ value }}</span>
+                                                <a href="#" id="edit-station-description" class="pull-right" title="Edit description"><i class="fa fa-pencil" aria-hidden="true"></i></a>
+                                                <div id="station-description-form" style="display:none;"
+                                                     data-url="{% url 'climate:climate-station-description' site_id=location_site.id %}"
+                                                     data-csrf="{{ csrf_token }}">
+                                                    <textarea id="station-description-input" class="form-control" rows="3" maxlength="500">{{ location_site.site_description }}</textarea>
+                                                    <div style="margin-top:6px;">
+                                                        <button type="button" class="btn btn-sm btn-primary" id="save-station-description">Save</button>
+                                                        <button type="button" class="btn btn-sm btn-default" id="cancel-station-description">Cancel</button>
+                                                        <span id="station-description-error" class="text-danger"></span>
+                                                    </div>
+                                                </div>
+                                            {% else %}
+                                                {{ value }}
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                 {% endfor %}
                                 </tbody>
@@ -321,6 +338,9 @@
     </script>
     {% endif %}
     <script src="{% static 'climate/js/dashboard.js' %}"></script>
+    {% if can_edit_station %}
+    <script src="{% static 'climate/js/station_description.js' %}"></script>
+    {% endif %}
     <script>
         $(document).ready(function() {
             if (typeof $.fn.datepicker === 'function') {

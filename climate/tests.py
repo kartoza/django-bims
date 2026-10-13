@@ -1198,3 +1198,52 @@ class ClimateStationChangelistTests(FastTenantTestCase):
         self.assertEqual(
             [station.pk for station in response.context['cl'].result_list],
             [self.station_with_data.pk, self.weather_station.pk])
+
+
+class ClimateStationDescriptionTests(FastTenantTestCase):
+    """Tests for editing the description of a climate station."""
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+        self.owner = get_user_model().objects.create_user(
+            username='station_owner', password='pw')
+        self.other = get_user_model().objects.create_user(
+            username='other_user', password='pw')
+        self.staff = get_user_model().objects.create_user(
+            username='staff_user', password='pw', is_staff=True)
+        self.site = LocationSiteF.create(
+            site_code='DESC001', owner=self.owner,
+            site_description='Old description')
+        self.url = reverse(
+            'climate:climate-station-description',
+            kwargs={'site_id': self.site.id})
+
+    def test_anonymous_cannot_edit(self):
+        response = self.client.post(self.url, {'description': 'New'})
+        self.assertEqual(response.status_code, 403)
+        self.site.refresh_from_db()
+        self.assertEqual(self.site.site_description, 'Old description')
+
+    def test_other_user_cannot_edit(self):
+        self.client.force_login(self.other)
+        response = self.client.post(self.url, {'description': 'New'})
+        self.assertEqual(response.status_code, 403)
+
+    def test_owner_can_edit(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(self.url, {'description': ' New text '})
+        self.assertEqual(response.status_code, 200)
+        self.site.refresh_from_db()
+        self.assertEqual(self.site.site_description, 'New text')
+
+    def test_staff_can_edit(self):
+        self.client.force_login(self.staff)
+        response = self.client.post(self.url, {'description': 'By staff'})
+        self.assertEqual(response.status_code, 200)
+
+    def test_description_too_long(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(self.url, {'description': 'x' * 501})
+        self.assertEqual(response.status_code, 400)
+        self.site.refresh_from_db()
+        self.assertEqual(self.site.site_description, 'Old description')
