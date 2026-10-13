@@ -27,6 +27,7 @@ from bims.api_views.reference import (
 )
 from bims.utils.search_process import clear_finished_search_in_background
 from bims.utils.user import get_user_from_name
+from bims.utils.gbif_metadata import parse_metadata_file
 from bims.models.source_reference import (
     SourceReference,
     SourceReferenceBibliography,
@@ -681,6 +682,15 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
         )
 
     def form_valid(self, form):
+        gbif_metadata_csv = self.request.FILES.get('gbif_metadata_csv')
+        if gbif_metadata_csv:
+            try:
+                parse_metadata_file(gbif_metadata_csv, self.object.pk)
+            except ValueError as e:
+                messages.error(
+                    self.request, f'GBIF metadata CSV not saved: {e}')
+                return self.form_invalid(form)
+
         post_dict = self.request.POST.dict()
         try:
             data_type_update = self.get_data_type_update(post_dict)
@@ -717,6 +727,12 @@ class EditSourceReferenceView(UserPassesTestMixin, UpdateView):
                 self.object.metadata_file.delete(save=False)
             self.object.metadata_file = metadata_file
         self.object.save()
+
+        if self.request.POST.get('remove_gbif_metadata') or gbif_metadata_csv:
+            if self.object.gbif_metadata_file:
+                self.object.gbif_metadata_file.delete(save=False)
+            self.object.gbif_metadata_file = gbif_metadata_csv or None
+            self.object.save(update_fields=['gbif_metadata_file'])
 
         if data_type_update:
             records, new_data_type, embargo_fields = data_type_update

@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('bims', '0550_add_conservation_status_chart_use_taxon_count'),
+        ('bims', '0551_delete_climatedata_gbifpublishconfigproxy_and_more'),
     ]
 
     operations = [
