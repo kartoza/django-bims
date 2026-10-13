@@ -73,3 +73,19 @@
 .climate-dashboard canvas {
   width: 100%;
 }
+
+/* Multi-site dashboard: use more of the screen so the summary table
+   shows more columns without horizontal scrolling */
+.climate-multi-site.container {
+  width: 96%;
+  max-width: 1900px;
+}
+
+.climate-multi-site #map {
+  height: 500px;
+}
+
+.climate-multi-site .table-overflow {
+  max-height: 700px;
+  overflow-y: auto;
+}
