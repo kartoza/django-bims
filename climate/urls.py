@@ -2,6 +2,7 @@ from django.urls import path, re_path
 
 from climate.views import (
     ClimateSiteView,
+    ClimateStationDescriptionView,
     ClimateUploadView,
     ClimateDashboardMultipleSitesView,
     ClimateDashboardMultipleSitesApiView,
@@ -21,6 +22,9 @@ urlpatterns = [
         ClimateDashboardMultipleSitesApiView.as_view(),
         name='climate-dashboard-multi-sites-api',
     ),
+    re_path(r'^(?P<site_id>\d+)/description/$',
+            ClimateStationDescriptionView.as_view(),
+            name='climate-station-description'),
     re_path(r'^(?P<site_id>\d+)/$',
             ClimateSiteView.as_view(),
             name='climate-site'),
