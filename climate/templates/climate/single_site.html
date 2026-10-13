@@ -61,6 +61,9 @@
                 </h2>
                 <div class="dashboard-close"><i class="fa fa-times"
                                                 aria-hidden="true"></i></div>
+                {% if is_rainfall_only %}
+                    <div class="badge badge-info" title="This station only provides monthly rainfall">Monthly rainfall only</div>
+                {% endif %}
                 <div class="filter-panel">
                     <select id="filter-mode-select" class="form-control form-control-sm" style="max-width:220px;">
                         <option value="last-year"   {% if filter_mode == 'last-year'   %}selected{% endif %}>Last year</option>
@@ -164,35 +167,35 @@
                                 </tr>
                                 </thead>
                                 <tbody>
-                                <tr><td>Average Temperature</td>
+                                {% if not is_rainfall_only %}<tr><td>Average Temperature</td>
                                     <td>{{ stats_overall.avg_temp|floatformat:1|default:"--" }} °C</td>
                                     <td>{{ stats.avg_temp|floatformat:1|default:"--" }} °C</td>
-                                </tr>
-                                <tr><td>Min Temperature</td>
+                                </tr>{% endif %}
+                                {% if not is_rainfall_only %}<tr><td>Min Temperature</td>
                                     <td>{{ stats_overall.min_temp|floatformat:1|default:"--" }} °C</td>
                                     <td>{{ stats.min_temp|floatformat:1|default:"--" }} °C</td>
-                                </tr>
-                                <tr><td>Max Temperature</td>
+                                </tr>{% endif %}
+                                {% if not is_rainfall_only %}<tr><td>Max Temperature</td>
                                     <td>{{ stats_overall.max_temp|floatformat:1|default:"--" }} °C</td>
                                     <td>{{ stats.max_temp|floatformat:1|default:"--" }} °C</td>
-                                </tr>
-                                <tr><td>Average Humidity</td>
+                                </tr>{% endif %}
+                                {% if not is_rainfall_only %}<tr><td>Average Humidity</td>
                                     <td>{{ stats_overall.avg_humidity|floatformat:1|default:"--" }} %</td>
                                     <td>{{ stats.avg_humidity|floatformat:1|default:"--" }} %</td>
-                                </tr>
-                                <tr><td>Average Wind Speed</td>
+                                </tr>{% endif %}
+                                {% if not is_rainfall_only %}<tr><td>Average Wind Speed</td>
                                     <td>{{ stats_overall.avg_windspeed|floatformat:2|default:"--" }} m/s</td>
                                     <td>{{ stats.avg_windspeed|floatformat:2|default:"--" }} m/s</td>
-                                </tr>
+                                </tr>{% endif %}
                                 <tr><td>Total Rainfall</td>
                                     <td>{{ stats_overall.total_rainfall|floatformat:2|default:"--" }} mm</td>
                                     <td>{{ stats.total_rainfall|floatformat:2|default:"--" }} mm</td>
                                 </tr>
-                                <tr><td>Maximum Daily Rainfall</td>
+                                {% if not is_rainfall_only %}<tr><td>Maximum Daily Rainfall</td>
                                     <td>{{ stats_overall.max_rainfall|floatformat:2|default:"--" }} mm</td>
                                     <td>{{ stats.max_rainfall|floatformat:2|default:"--" }} mm</td>
-                                </tr>
-                                <tr><td>Total days on records</td>
+                                </tr>{% endif %}
+                                <tr><td>{% if is_rainfall_only %}Months with data{% else %}Total days on records{% endif %}</td>
                                     <td>{{ total_overall_records }}</td>
                                     <td>{{ total_records }}</td>
                                 </tr>
@@ -208,12 +211,13 @@
             <div class="form-group" style="max-width: 250px;">
                 <label for="granularity-select">Display graphs as:</label>
                 <select id="granularity-select" class="form-control form-control-sm">
-                    <option value="daily">Daily averages</option>
+                    {% if not is_rainfall_only %}<option value="daily">Daily averages</option>{% endif %}
                     <option value="monthly" selected>Monthly averages</option>
                     <option value="annual">Annual averages</option>
                 </select>
             </div>
 
+            {% if not is_rainfall_only %}
             <div class="row">
                 <div class="col-md-6">
                     <div class="chart-container">
@@ -245,6 +249,7 @@
                 </div>
             </div>
 
+            {% endif %}
             <div class="vertical-space"></div>
 
             <div class="chart-container">
@@ -264,7 +269,7 @@
             <div class="table-container">
                 <div class="table-title">
                     Monthly Climate Summary
-                    {% if is_private_user %}
+                    {% if is_private_user and not is_rainfall_only %}
                     <i data-download-title="Daily Climate Records (Raw Data)"
                        data-toggle="tooltip" data-placement="left"
                        title="Download daily raw data (CSV)"
@@ -281,11 +286,13 @@
                         <thead>
                         <tr>
                             <th>Period</th>
+                            {% if not is_rainfall_only %}
                             <th>Avg Temp (°C)</th>
                             <th>Min Temp (°C)</th>
                             <th>Max Temp (°C)</th>
                             <th>Avg Humidity (%)</th>
                             <th>Avg Wind (m/s)</th>
+                            {% endif %}
                             <th>Total Rain (mm)</th>
                         </tr>
                         </thead>
@@ -293,11 +300,13 @@
                         {% for record in climate_records %}
                             <tr>
                                 <td>{{ record.period_formatted }}</td>
+                                {% if not is_rainfall_only %}
                                 <td>{{ record.avg_temperature|floatformat:1|default:"--" }}</td>
                                 <td>{{ record.min_temperature|floatformat:1|default:"--" }}</td>
                                 <td>{{ record.max_temperature|floatformat:1|default:"--" }}</td>
                                 <td>{{ record.avg_humidity|floatformat:1|default:"--" }}</td>
                                 <td>{{ record.avg_windspeed|floatformat:2|default:"--" }}</td>
+                                {% endif %}
                                 <td>{{ record.total_rainfall|floatformat:2|default:"--" }}</td>
                             </tr>
                         {% endfor %}

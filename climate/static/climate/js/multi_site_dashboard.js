@@ -99,6 +99,12 @@ function renderClimateSummaryTable(data) {
         $tr.append(
             '<td><a href="' + singleSiteUrl + '">' + siteCode + '</a></td>'
         );
+        let stationType = (summaryData['station_type'] || [])[index] || 'climate';
+        $tr.attr('data-station-type', stationType);
+        $tr.append(
+            '<td>' + (stationType === 'rainfall_only' ?
+                'Rainfall only (monthly)' : 'Climate') + '</td>'
+        );
         $tr.append('<td>' + formatValue(summaryData['avg_temp'][index], 1) + '</td>');
         $tr.append('<td>' + formatValue(summaryData['min_temp'][index], 1) + '</td>');
         $tr.append('<td>' + formatValue(summaryData['max_temp'][index], 1) + '</td>');
@@ -110,6 +116,15 @@ function renderClimateSummaryTable(data) {
 
         table.append($tr);
     });
+    filterSummaryByStationType();
+}
+
+function filterSummaryByStationType() {
+    let stationType = $('#station-type-filter').val();
+    $('#climate-summary-table tr').each(function () {
+        let rowType = $(this).attr('data-station-type');
+        $(this).toggle(!stationType || rowType === stationType);
+    });
 }
 
 
@@ -120,7 +135,9 @@ function buildSummaryCSVBlob() {
     });
 
     let rows = [headers];
-    $('#climate-summary-table tr').each(function () {
+    $('#climate-summary-table tr').filter(function () {
+        return this.style.display !== 'none';
+    }).each(function () {
         let row = [];
         $(this).find('td').each(function () {
             row.push($(this).text().trim());
@@ -195,6 +212,7 @@ $(function () {
     });
 
     $('.download-summary-as-csv').click(onDownloadSummaryCSVClicked);
+    $('#station-type-filter').change(filterSummaryByStationType);
     $('.download-map').click(onDownloadMapClicked);
     $('[data-toggle="tooltip"]').tooltip();
 });

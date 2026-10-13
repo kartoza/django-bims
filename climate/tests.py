@@ -1225,6 +1225,69 @@ class ClimateSiteDataCoverageTests(FastTenantTestCase):
         self.assertContains(response, '2022-07-09')
 
 
+class ClimateRainfallOnlyStationTests(FastTenantTestCase):
+    """Stations that only provide monthly rainfall are told apart from
+    full climate stations."""
+
+    def setUp(self):
+        self.client = TenantClient(self.tenant)
+        self.rain_site = LocationSiteF.create(site_code='RAIN001')
+        self.full_site = LocationSiteF.create(site_code='FULL001')
+        for month in (1, 2, 3):
+            d = date(2023, month, 1)
+            Climate.objects.create(
+                location_site=self.rain_site, date=d, year=2023,
+                month=month, day=1, daily_rainfall=Decimal('50.0'))
+            Climate.objects.create(
+                location_site=self.full_site, date=d, year=2023,
+                month=month, day=1, daily_rainfall=Decimal('5.0'),
+                avg_temperature=Decimal('21.0'))
+
+    def _get(self, site):
+        url = reverse('climate:climate-site', kwargs={'site_id': site.id})
+        return self.client.get(f'{url}?siteId={site.id}')
+
+    def test_station_type_aggregate(self):
+        from climate.views import (
+            station_type_aggregates, get_station_type,
+            STATION_TYPE_CLIMATE, STATION_TYPE_RAINFALL_ONLY)
+        rain = Climate.objects.filter(location_site=self.rain_site)
+        full = Climate.objects.filter(location_site=self.full_site)
+        self.assertEqual(
+            get_station_type(rain.aggregate(**station_type_aggregates())),
+            STATION_TYPE_RAINFALL_ONLY)
+        self.assertEqual(
+            get_station_type(full.aggregate(**station_type_aggregates())),
+            STATION_TYPE_CLIMATE)
+
+    def test_missing_sentinel_is_not_a_value(self):
+        from climate.views import (
+            station_type_aggregates, get_station_type,
+            STATION_TYPE_RAINFALL_ONLY)
+        Climate.objects.filter(location_site=self.rain_site).update(
+            avg_temperature=-999.0)
+        stats = Climate.objects.filter(
+            location_site=self.rain_site
+        ).aggregate(**station_type_aggregates())
+        self.assertEqual(get_station_type(stats), STATION_TYPE_RAINFALL_ONLY)
+
+    def test_year_without_data(self):
+        url = reverse('climate:climate-site', kwargs={
+            'site_id': self.rain_site.id, 'year': 2026})
+        response = self.client.get(f'{url}?siteId={self.rain_site.id}')
+        self.assertEqual(response.status_code, 200)
+
+    def test_single_site_dashboard(self):
+        response = self._get(self.rain_site)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['is_rainfall_only'])
+        self.assertContains(response, 'Monthly rainfall only')
+        self.assertNotContains(response, 'id="temperature-chart"')
+        response = self._get(self.full_site)
+        self.assertFalse(response.context['is_rainfall_only'])
+        self.assertNotContains(response, 'Monthly rainfall only')
+
+
 class ClimateStationDescriptionTests(FastTenantTestCase):
     """Tests for editing the description of a climate station."""
 

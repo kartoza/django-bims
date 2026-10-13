@@ -8,7 +8,9 @@ from celery import shared_task
 def climate_multi_site_summary(parameters, search_process_id):
     from django.db.models import Avg, Min, Max, Sum, Count, Value
     from django.db.models.functions import NullIf
-    from climate.views import MISSING
+    from climate.views import (
+        MISSING, station_type_aggregates, get_station_type
+    )
 
     from bims.api_views.search_module import ClimateModule
     from bims.models import BaseMapLayer, LocationContext
@@ -53,6 +55,7 @@ def climate_multi_site_summary(parameters, search_process_id):
                 'site_code': [],
                 'station_name': [],
                 'park_name': [] if is_sanparks else None,
+                'station_type': [],
                 'start_date': [],
                 'end_date': [],
                 'avg_temp': [],
@@ -101,6 +104,11 @@ def climate_multi_site_summary(parameters, search_process_id):
                         if park_context and park_context.value else ''
                     )
                     summary['park_name'].append(park_name)
+                # Separate query: the aliases above are named after the
+                # model fields and would shadow them
+                summary['station_type'].append(get_station_type(
+                    qs.aggregate(**station_type_aggregates())
+                ))
                 summary['start_date'].append(
                     stats['start_date'].isoformat()
                     if stats['start_date'] else None
