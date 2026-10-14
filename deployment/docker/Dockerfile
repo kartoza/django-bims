@@ -4,6 +4,8 @@ MAINTAINER Dimas Ciputra <dimas@kartoza.com>
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 ENV UV_SYSTEM_PYTHON=1
+# uv sync installs into the system Python instead of a project .venv
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
 
 # Set up directories
 RUN mkdir -p /usr/src/{app,geonode}
@@ -33,10 +35,11 @@ RUN echo "Updating apt-get" && \
     uv pip install --no-cache uwsgi
 
 # Add application requirements (do this while libpq-dev is still installed)
-COPY deployment/docker/REQUIREMENTS.txt /REQUIREMENTS.txt
-# Ensure pg_config is available, then install requirements
+COPY pyproject.toml uv.lock /usr/src/app/
+# Ensure pg_config is available, then install the locked requirements.
+# --inexact keeps packages that are not in the lock (uwsgi, pip).
 RUN which pg_config && pg_config --version && \
-    uv pip install --no-cache -r /REQUIREMENTS.txt
+    uv sync --locked --no-dev --inexact --no-cache
 
 # NOW it's safe to remove build-only deps (keep libpq5)
 RUN echo "Removing build dependencies and cleaning up" && \
@@ -88,7 +91,7 @@ FROM prod as dev
 
 USER root
 
-RUN apt-get update && apt-get install -y openssh-server sudo
+RUN apt-get update && apt-get install -y openssh-server sudo rsync
 RUN mkdir /var/run/sshd
 RUN echo 'root:docker' | chpasswd
 RUN echo "PermitRootLogin yes" >> /etc/ssh/sshd_config
@@ -96,8 +99,7 @@ RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so
 ENV NOTVISIBLE "in users profile"
 RUN echo "export VISIBLE=now" >> /etc/profile
 
-ADD deployment/docker/REQUIREMENTS-dev.txt /REQUIREMENTS-dev.txt
-RUN uv pip install --no-cache -r /REQUIREMENTS-dev.txt
+RUN cd /usr/src/app && uv sync --locked --inexact --no-cache
 ADD bashrc /root/.bashrc
 
 RUN apt-get install -y vim

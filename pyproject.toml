@@ -13,7 +13,7 @@ version = "1.0.0"
 description = "Biodiversity Information Management System"
 readme = "README.md"
 license = {text = "AGPL-3.0"}
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 authors = [
     {name = "Kartoza", email = "info@kartoza.com"},
 ]
@@ -27,12 +27,102 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: GIS",
 ]
+dependencies = [
+    "bibtexparser==1.1.0",
+    "celery==5.3.6",
+    "cloud-native-gis",
+    "dj-database-url==0.5.0",
+    "dj-pagination==2.5.0",
+    "django==6.0.4",
+    "django-admin-inline-paginator==0.4.0",
+    "django-admin-rangefilter==0.13.3",
+    "django-allauth==65.14.1",
+    "django-autocomplete-light==3.12.1",
+    "django-braces==1.14.0",
+    "django-celery-beat",
+    "django-celery-results==2.5.1",
+    "django-ckeditor==6.6.1",
+    "django-colorfield==0.9.0",
+    "django-contact-us==0.4.3",
+    "django-cors-headers==4.3.1",
+    "django-crispy-forms==1.9.1",
+    "django-cryptography-5==2.0.3",
+    "django-easy-audit==1.3.9a1",
+    "django-extensions==3.2.3",
+    "django-filter==23.5",
+    "django-forms-bootstrap==3.1.0",
+    "django-grappelli==4.0.3",
+    "django-guardian==2.3.0",
+    "django-imagekit==4.0.2",
+    "django-invitations==2.0.0",
+    "django-json-widget==1.1.1",
+    "django-model-utils==4.0.0",
+    "django-modelsdoc==0.1.11",
+    "django-modeltranslation==0.16.2",
+    "django-mptt==0.18.0",
+    "django-ordered-model==3.7.4",
+    "django-pipeline==2.1.0",
+    "django-polymorphic==3.1.0",
+    "django-preferences==1.0.0",
+    "django-prometheus==2.0.0",
+    "django-role-permissions==2.2.1",
+    "django-sentry==1.13.5",
+    "django-taggit==5.0.1",
+    "django-tenants==3.10.0",
+    "django-treebeard==4.7",
+    "django-uuid-upload-path==1.0.0",
+    "django-webpack-loader==1.3.0",
+    "djangorestframework==3.15.2",
+    "djangorestframework-gis==1.0",
+    "djangorestframework-guardian==0.3.0",
+    "drf-nested-routers==0.93.5",
+    "drf-yasg==1.21.15",
+    "eutils==0.6.0",
+    "geoalchemy2==0.15.1",
+    "geopandas==1.1.2",
+    "geopy==2.0.0",
+    "habanero==0.7.2",
+    "importlib-metadata==4.11.4",
+    "markupsafe==1.1.1",
+    "mock==4.0.3",
+    "openpyxl==3.1.2",
+    "pandas==2.2.1",
+    "pika==1.2.0",
+    "prometheus-client==0.7.1",
+    "psycopg2==2.9.9",
+    "pycurl==7.45.2",
+    "pygbif==0.6.0",
+    "pygithub==2.7.0",
+    "pymemcache==4.0.0",
+    "pyshp==2.1.0",
+    "python-dwca-reader==0.16.0",
+    "python-memcached==1.59",
+    "pytz",
+    "raven==6.10.0",
+    "requests>=2.23.0",
+    "requests-cache==0.6.0",
+    "sentry-sdk==2.8.0",
+    "service-identity==18.1.0",
+    "setuptools==69.5.1",
+    "simplejson==3.17.0",
+    "sorl-thumbnail==13.0.0",
+    "svglib==1.0.0",
+    "tenant-schemas-celery==2.2.0",
+]
 
 [project.urls]
 Homepage = "https://github.com/kartoza/django-bims"
 Documentation = "https://github.com/kartoza/django-bims#readme"
 Repository = "https://github.com/kartoza/django-bims.git"
 Issues = "https://github.com/kartoza/django-bims/issues"
+
+[tool.uv]
+# Django project, not an installable package: only sync its dependencies.
+package = false
+
+[tool.uv.sources]
+django-celery-beat = { git = "https://github.com/celery/django-celery-beat", rev = "bd429063cbb227c00905e7693c38895e44ff8e47" }
+cloud-native-gis = { git = "https://github.com/kartoza/CloudNativeGIS.git", rev = "0.0.5bims" }
 
 [tool.black]
 line-length = 120
@@ -123,3 +213,17 @@ exclude = [
 [[tool.mypy.overrides]]
 module = "django.*"
 ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "debugpy>=1.8.0",
+    "django-debug-toolbar==4.4.2",
+    "factory-boy==2.12.0",
+    "flake8==3.8.1",
+    "pdbpp>=0.12.1",
+    "pep8>=1.5.7,<1.6",
+    "pylint==3.0.3",
+    "selenium==4.14.0",
+    "watchdog>=3.0.0",
+    "wrapt==1.16.0",
+]

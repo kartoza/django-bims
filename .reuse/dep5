@@ -58,8 +58,8 @@ Files: Makefile
 Copyright: Kartoza
 License: AGPL-3.0-or-later
 
-# Requirements files
-Files: deployment/docker/REQUIREMENTS*.txt
+# Dependency lock files
+Files: uv.lock .python-version
 Copyright: Kartoza
 License: AGPL-3.0-or-later
 
