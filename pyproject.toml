@@ -80,7 +80,7 @@ dependencies = [
     "eutils==0.6.0",
     "geoalchemy2==0.15.1",
     "geopandas==1.1.2",
-    "geopy==2.0.0",
+    "geopy==2.5.0",
     "habanero==0.7.2",
     "importlib-metadata==4.11.4",
     "markupsafe==1.1.1",
