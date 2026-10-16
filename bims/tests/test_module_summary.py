@@ -6,6 +6,9 @@
 - _validated_count_for_group deduplicates taxa shared across children
 - Conservation status chart counts occurrences by default, or distinct taxa
   when SiteSetting.conservation_status_chart_use_taxon_count is enabled
+- the taxon count chart uses the taxa of the group, not its occurrences
+- the cached summary is refreshed (debounced) when group taxa or site
+  settings change
 - total_species / total_subspecies breakdown is only added when that
   setting is enabled
 """
@@ -332,3 +335,148 @@ class TestModuleSummarySpeciesSubspeciesBreakdown(FastTenantTestCase):
         self.assertEqual(
             data['total_species'] + data['total_subspecies'], 2
         )
+
+
+class TestConservationStatusTaxonCountIndependentOfOccurrences(
+        FastTenantTestCase):
+    """With the taxon count option the chart uses the taxa of the group,
+    including the taxa without any occurrence."""
+
+    def setUp(self):
+        self.ms = ModuleSummary()
+        self.group = _species_group('Reptiles')
+        lc = IUCNStatusF.create(category='LC', national=False)
+        with_records = TaxonomyF.create(
+            scientific_name='Has Records',
+            rank=TaxonomicRank.SPECIES.name, iucn_status=lc)
+        no_records = TaxonomyF.create(
+            scientific_name='No Records',
+            rank=TaxonomicRank.SPECIES.name, iucn_status=lc)
+        for taxon in (with_records, no_records):
+            TaxonGroupTaxonomyF.create(taxongroup=self.group, taxonomy=taxon)
+        BiologicalCollectionRecordF.create(taxonomy=with_records)
+
+    def tearDown(self):
+        _set_conservation_status_use_taxon_count(False)
+
+    def test_chart_counts_taxa_without_occurrences(self):
+        _set_conservation_status_use_taxon_count(True)
+        self.group.chart_data = 'conservation status'
+        data = self.ms.module_summary_data(self.group)
+        self.assertEqual(
+            data['conservation-status']['chart_data']['Least Concern'], 2)
+        self.assertEqual(data['total_species'], 2)
+
+
+class TestConservationStatusTaxonCountGroupScope(FastTenantTestCase):
+    """The taxon count chart only uses the taxa of its own group, counts
+    NE for taxa without an IUCN status and ignores occurrences."""
+
+    def setUp(self):
+        self.ms = ModuleSummary()
+        self.group = _species_group('Birds')
+        self.other_group = _species_group('Frogs')
+        lc = IUCNStatusF.create(category='LC', national=False)
+        self.lc_taxon = TaxonomyF.create(
+            scientific_name='Bird LC',
+            rank=TaxonomicRank.SPECIES.name, iucn_status=lc)
+        self.ne_taxon = TaxonomyF.create(
+            scientific_name='Bird NE', rank=TaxonomicRank.SPECIES.name)
+        self.other_taxon = TaxonomyF.create(
+            scientific_name='Frog LC',
+            rank=TaxonomicRank.SPECIES.name, iucn_status=lc)
+        TaxonGroupTaxonomyF.create(
+            taxongroup=self.group, taxonomy=self.lc_taxon)
+        TaxonGroupTaxonomyF.create(
+            taxongroup=self.group, taxonomy=self.ne_taxon)
+        TaxonGroupTaxonomyF.create(
+            taxongroup=self.other_group, taxonomy=self.other_taxon)
+        # Many occurrences of one taxon must not inflate the count
+        for _ in range(3):
+            BiologicalCollectionRecordF.create(taxonomy=self.lc_taxon)
+
+    def tearDown(self):
+        _set_conservation_status_use_taxon_count(False)
+
+    def _chart(self, **kwargs):
+        collections = BiologicalCollectionRecord.objects.filter(
+            taxonomy__in=self.group.taxonomies.all())
+        return self.ms.get_conservation_status_summary(
+            collections, **kwargs)['chart_data']
+
+    def test_counts_only_taxa_of_the_group(self):
+        _set_conservation_status_use_taxon_count(True)
+        self.assertEqual(
+            self._chart(taxon_group=self.group), {'Least Concern': 1})
+
+    def test_default_still_counts_occurrences_with_group_given(self):
+        _set_conservation_status_use_taxon_count(False)
+        self.assertEqual(
+            self._chart(taxon_group=self.group), {'Least Concern': 3})
+
+    def test_group_without_occurrences_still_has_chart(self):
+        _set_conservation_status_use_taxon_count(True)
+        self.assertEqual(
+            self._chart(taxon_group=self.other_group), {'Least Concern': 1})
+
+    def test_species_totals_independent_of_occurrences(self):
+        _set_conservation_status_use_taxon_count(True)
+        data = self.ms.module_summary_data(self.other_group)
+        self.assertEqual(data['total'], 0)
+        self.assertEqual(data['total_species'], 1)
+
+
+class TestModuleSummaryRefreshTriggers(FastTenantTestCase):
+    """The cached module summary is regenerated when the taxa of a group or
+    the site settings change, and bursts are collapsed into one task."""
+
+    def setUp(self):
+        from django.core.cache import cache
+        self.cache = cache
+        self.key = 'module_summary_refresh_{}'.format(
+            self.get_test_schema_name())
+        self.cache.delete(self.key)
+
+    def tearDown(self):
+        self.cache.delete(self.key)
+
+    def test_queue_is_debounced(self):
+        from bims.tasks.module_summary import queue_module_summary_refresh
+        with self.settings(TESTING=False), patch(
+                'bims.tasks.module_summary.generate_module_summary'
+        ) as task, patch('bims.tasks.module_summary.connection') as conn:
+            conn.schema_name = self.get_test_schema_name()
+            queue_module_summary_refresh()
+            queue_module_summary_refresh()
+        self.assertEqual(task.apply_async.call_count, 1)
+
+    def test_queue_skipped_when_testing(self):
+        with patch(
+                'bims.tasks.module_summary.generate_module_summary'
+        ) as task:
+            from bims.tasks.module_summary import (
+                queue_module_summary_refresh
+            )
+            queue_module_summary_refresh()
+        task.apply_async.assert_not_called()
+
+    def test_taxon_group_taxonomy_change_queues_refresh(self):
+        group = _species_group('Insects')
+        taxon = _accepted(scientific_name='Bug')
+        with patch(
+                'bims.tasks.module_summary.queue_module_summary_refresh'
+        ) as queue:
+            link = TaxonGroupTaxonomyF.create(
+                taxongroup=group, taxonomy=taxon)
+            queue.assert_called()
+            queue.reset_mock()
+            link.delete()
+            queue.assert_called()
+
+    def test_site_setting_save_queues_refresh(self):
+        with patch(
+                'bims.tasks.module_summary.queue_module_summary_refresh'
+        ) as queue:
+            _set_conservation_status_use_taxon_count(True)
+            _set_conservation_status_use_taxon_count(False)
+        self.assertGreaterEqual(queue.call_count, 2)

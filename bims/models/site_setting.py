@@ -3,6 +3,8 @@ from django.db import models, connection
 from django.db.models import JSONField
 from preferences.models import Preferences
 from django_cryptography.fields import encrypt
+from django.db.models.signals import post_save
+from django.dispatch import receiver
 
 
 def gbif_default_exclusion_rules():
@@ -617,3 +619,9 @@ class SiteSetting(Preferences):
         if self.site_code_generator:
             return self.site_code_generator.lower()
         return 'bims'
+
+
+@receiver(post_save, sender=SiteSetting)
+def site_setting_saved(sender, **kwargs):
+    from bims.tasks.module_summary import queue_module_summary_refresh
+    queue_module_summary_refresh()
