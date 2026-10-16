@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_delete, post_save
+from django.dispatch import receiver
 
 
 class TaxonGroupTaxonomy(models.Model):
@@ -73,3 +75,10 @@ class TaxonGroupTaxonomy(models.Model):
 
     class Meta:
         unique_together = ('taxongroup', 'taxonomy')
+
+
+@receiver([post_save, post_delete], sender=TaxonGroupTaxonomy)
+def taxon_group_taxonomy_changed(sender, **kwargs):
+    # Taxa of a group changed, so the landing page summary is outdated
+    from bims.tasks.module_summary import queue_module_summary_refresh
+    queue_module_summary_refresh()

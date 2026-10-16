@@ -74,3 +74,24 @@ def generate_module_summary(schema_name):
     finally:
         # Always release the lock
         cache.delete(lock_id)
+
+
+DEBOUNCE_SECONDS = 30
+
+
+def queue_module_summary_refresh():
+    """
+    Queue a regeneration of the module summary of the current tenant.
+    """
+    from django.conf import settings
+
+    if getattr(settings, 'TESTING', False):
+        return
+    schema_name = str(connection.schema_name)
+    if not cache.add(
+            f'module_summary_refresh_{schema_name}', 'true', DEBOUNCE_SECONDS):
+        return
+    generate_module_summary.apply_async(
+        args=[schema_name],
+        countdown=DEBOUNCE_SECONDS
+    )

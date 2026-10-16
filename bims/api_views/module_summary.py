@@ -16,7 +16,6 @@ from bims.models import (
     Survey
 )
 from bims.models.taxonomy import Taxonomy
-from bims.models.taxon_group_taxonomy import TaxonGroupTaxonomy
 from bims.enums.taxonomic_group_category import TaxonomicGroupCategory
 from bims.cache import get_cache, LANDING_PAGE_MODULE_SUMMARY_CACHE, set_cache
 from bims.templatetags.site import is_fada_site
@@ -70,9 +69,10 @@ class ModuleSummary(APIView):
         elif taxon_group.chart_data == 'sass':
             summary.update(self.get_sass_summary())
         else:
-            summary[
-                'conservation-status'] = self.get_conservation_status_summary(
-                collections)
+            summary['conservation-status'] = self.get_conservation_status_summary(
+                collections,
+                taxon_group=taxon_group
+            )
 
         # Add additional details
         if taxon_group.logo:
@@ -88,12 +88,12 @@ class ModuleSummary(APIView):
         summary['total_site'] = collections.distinct('site').count()
         summary['total_site_visit'] = collections.distinct('survey').count()
         if preferences.SiteSetting.conservation_status_chart_use_taxon_count:
-            summary['total_species'] = collections.filter(
-                taxonomy__rank='SPECIES'
-            ).distinct('taxonomy').count()
-            summary['total_subspecies'] = collections.filter(
-                taxonomy__rank='SUBSPECIES'
-            ).distinct('taxonomy').count()
+            summary['total_species'] = taxon_group.taxonomies.filter(
+                rank='SPECIES'
+            ).distinct().count()
+            summary['total_subspecies'] = taxon_group.taxonomies.filter(
+                rank='SUBSPECIES'
+            ).distinct().count()
 
         tg = taxon_group.taxonomies.filter(
             taxonomic_status=TaxonomicStatus.ACCEPTED.name
@@ -205,19 +205,29 @@ class ModuleSummary(APIView):
             'total_sass': SiteVisit.objects.all().count()
         }
 
-    def get_conservation_status_summary(self, collections):
+    def get_conservation_status_summary(self, collections, taxon_group=None):
         """
-        Returns conservation status summary data from the provided collections.
+        Returns conservation status summary data.
         """
         use_taxon_count = (
             preferences.SiteSetting.conservation_status_chart_use_taxon_count
         )
-        count_annotation = (
-            Count('taxonomy', distinct=True) if use_taxon_count
-            else Count('value')
-        )
-        summary_temp = dict(
-            collections.annotate(
+        if use_taxon_count and taxon_group is not None:
+            rows = taxon_group.taxonomies.annotate(
+                value=Case(When(iucn_status__isnull=False,
+                                then=F('iucn_status__category')),
+                           default=Value('NE')),
+                cons_order=Coalesce(F('iucn_status__order'), Value(9999))
+            ).values('value').annotate(
+                count=Count('id', distinct=True),
+                min_order=Min('cons_order')
+            ).order_by('min_order').values_list('value', 'count')
+        else:
+            count_annotation = (
+                Count('taxonomy', distinct=True) if use_taxon_count
+                else Count('value')
+            )
+            rows = collections.annotate(
                 value=Case(When(taxonomy__iucn_status__isnull=False,
                                 then=F('taxonomy__iucn_status__category')),
                            default=Value('NE')),
@@ -228,7 +238,7 @@ class ModuleSummary(APIView):
                 count=count_annotation,
                 min_order=Min('cons_order')
             ).order_by('min_order').values_list('value', 'count')
-        )
+        summary_temp = dict(rows)
         iucn_category = dict(IUCNStatus.CATEGORY_CHOICES)
         iucn_status = IUCNStatus.objects.filter(
             national=False
