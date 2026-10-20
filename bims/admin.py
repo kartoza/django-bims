@@ -1194,6 +1194,61 @@ class SearchProcessAdmin(admin.ModelAdmin):
         'file_path',
         'category',
         'finished')
+    actions = ['create_ogc_layer']
+
+    def create_ogc_layer(self, request, queryset):
+        """Create an OGC layer from the filter of finished searches.
+
+        The layer is owned by the search requester, or by the current user
+        when the search has none. The new token is shown once.
+        """
+        from urllib.parse import urlparse, parse_qsl
+        from django.core.exceptions import ValidationError
+        from bims.models.search_process import SEARCH_RESULTS
+        from bims.utils.ogc_layer import OgcLayerError, validate_layer
+
+        finished = queryset.filter(finished=True)
+        skipped = queryset.count() - finished.count()
+        if skipped:
+            self.message_user(
+                request,
+                '%d search process(es) skipped because they are not '
+                'finished.' % skipped,
+                level='warning')
+
+        for search_process in finished:
+            if search_process.category != SEARCH_RESULTS:
+                self.message_user(
+                    request,
+                    'Search process %d skipped: only search results can be '
+                    'published.' % search_process.id,
+                    level='warning')
+                continue
+            query = dict(parse_qsl(urlparse(search_process.query).query))
+            query.pop('requester', None)
+            layer = OgcLayer(
+                name='Search process %d' % search_process.id,
+                owner=search_process.requester or request.user,
+                query=query
+            )
+            try:
+                layer.clean()
+                count = validate_layer(layer)
+            except (OgcLayerError, ValidationError) as error:
+                self.message_user(
+                    request,
+                    'Search process %d: %s' % (search_process.id, error),
+                    level='error')
+                continue
+            layer.save()
+            self.message_user(
+                request,
+                'Search process %d: layer "%s" created with %d record(s). '
+                'Token (shown once): %s' % (
+                    search_process.id, layer.name, count, layer.raw_token))
+
+    create_ogc_layer.short_description = (
+        'Create OGC layer from selected (finished only)')
 
     def delete_model(self, request, obj):
         if obj.locked:
