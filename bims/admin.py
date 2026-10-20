@@ -112,6 +112,7 @@ from bims.models import (
     generate_site_code,
     location_site_post_save_handler,
     DownloadRequest,
+    OgcLayer,
     DownloadRequestPurpose,
     BaseMapLayer,
     RequestLog,
@@ -2493,6 +2494,41 @@ class DownloadRequestStatusFilter(django_admin.SimpleListFilter):
         return queryset
 
 
+class OgcLayerAdmin(admin.ModelAdmin):
+    raw_id_fields = ('owner',)
+    list_display = (
+        'name',
+        'owner',
+        'token_hint',
+        'is_active',
+        'expires_at',
+        'record_count_cached',
+        'created',
+        'last_accessed',
+    )
+    list_filter = ('is_active', 'include_sensitive', 'include_private')
+    search_fields = ('name', 'owner__username', 'token_hint')
+    readonly_fields = (
+        'token_hint',
+        'created',
+        'last_accessed',
+        'record_count_cached',
+        'record_count_updated',
+    )
+    actions = ['revoke', 'rotate_token']
+
+    def revoke(self, request, queryset):
+        updated = queryset.update(is_active=False)
+        self.message_user(request, '%d layer(s) revoked.' % updated)
+
+    def rotate_token(self, request, queryset):
+        """Rotate tokens. The new token is shown once and not stored."""
+        for layer in queryset:
+            token = layer.rotate_token()
+            self.message_user(
+                request,
+                'New token for "%s" (shown once): %s' % (layer.name, token))
+
 class DownloadRequestAdmin(admin.ModelAdmin):
     raw_id_fields = (
         'requester',
@@ -3254,6 +3290,7 @@ admin.site.register(UploadSession, UploadSessionAdmin)
 admin.site.register(HarvestSession, HarvestSessionAdmin)
 admin.site.register(DashboardConfiguration)
 admin.site.register(DownloadRequest, DownloadRequestAdmin)
+admin.site.register(OgcLayer, OgcLayerAdmin)
 admin.site.register(DownloadRequestPurpose, DownloadRequestPurposeAdmin)
 admin.site.register(BaseMapLayer, BaseMapLayerAdmin)
 admin.site.register(RequestLog, RequestLogAdmin)
