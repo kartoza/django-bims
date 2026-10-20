@@ -157,6 +157,7 @@ MIDDLEWARE = (
     'django.middleware.security.SecurityMiddleware',
 )
 
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 TESTING = sys.argv[1:2] == ['test']
 if not TESTING and not on_travis:
