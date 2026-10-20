@@ -190,3 +190,6 @@ coverage.xml
 .rabbitmq/mnesia
 .claude
 media/cloud_native_gis_files
+
+bims/package-lock.json
+
