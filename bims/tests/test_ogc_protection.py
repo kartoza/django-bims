@@ -72,6 +72,23 @@ class TestStatementTimeout(ProtectionTestCase):
                 with connection.cursor() as cursor:
                     cursor.execute('SELECT * FROM table_that_is_missing')
 
+    def test_index_scans_can_be_switched_off_for_a_block(self):
+        def setting():
+            with connection.cursor() as cursor:
+                cursor.execute('SHOW enable_indexscan')
+                return cursor.fetchone()[0]
+
+        self.assertEqual(setting(), 'on')
+        with statement_timeout(5, avoid_index_scan=True):
+            self.assertEqual(setting(), 'off')
+        self.assertEqual(setting(), 'on')
+
+    def test_index_scans_can_be_switched_off_without_a_timeout(self):
+        with statement_timeout(0, avoid_index_scan=True):
+            with connection.cursor() as cursor:
+                cursor.execute('SHOW enable_indexscan')
+                self.assertEqual(cursor.fetchone()[0], 'off')
+
     def test_timeout_does_not_outlive_the_block(self):
         with connection.cursor() as cursor:
             cursor.execute('SHOW statement_timeout')
@@ -218,6 +235,33 @@ class TestSingleFlight(ProtectionTestCase):
             with evaluation_slot():
                 pass
 
+    def test_waits_for_a_slot_that_is_given_back(self):
+        sleeps = []
+        with evaluation_slot():
+            with evaluation_slot():
+                def give_back(_):
+                    sleeps.append(1)
+                    # Another request finishes while this one waits
+                    cache.decr(_schema_key('slots'))
+
+                with self.settings(OGC_LAYER_LOCK_WAIT=5):
+                    with mock.patch('time.sleep', side_effect=give_back):
+                        with evaluation_slot():
+                            pass
+        self.assertEqual(sleeps, [1])
+
+    def test_gives_up_after_waiting_for_a_slot(self):
+        with evaluation_slot():
+            with evaluation_slot():
+                with self.settings(OGC_LAYER_LOCK_WAIT=1):
+                    with mock.patch(
+                        'time.monotonic', side_effect=[0, 0.5, 2, 2, 2]
+                    ):
+                        with mock.patch('time.sleep'):
+                            with self.assertRaises(OgcLayerBusyError):
+                                with evaluation_slot():
+                                    pass
+
     def test_slot_is_given_back_when_the_block_fails(self):
         for _ in range(5):
             with self.assertRaises(ValueError):
@@ -316,7 +360,7 @@ class TestProtectedEndpoints(FastTenantTestCase):
 
     def test_timeout_returns_503(self):
         with mock.patch.object(
-            ogc_layer_utils, 'get_layer_queryset',
+            ogc_layer_utils, 'get_matched_queryset',
             side_effect=OgcLayerTimeoutError('too slow', retry_after=7)
         ):
             response = self.client.get(self.items_url())

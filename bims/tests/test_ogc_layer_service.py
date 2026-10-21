@@ -22,7 +22,7 @@ from bims.utils.ogc_layer import (
     count_layer_records,
     get_layer_extent,
     get_layer_ids,
-    get_layer_queryset,
+    get_matched_queryset,
     has_narrowing_filter,
     validate_layer,
     validate_query,
@@ -86,10 +86,10 @@ class OgcLayerServiceTestCase(TestCase):
             name='Layer', owner=self.owner, query=query, **kwargs)
 
     def ids(self, layer):
-        return list(get_layer_queryset(layer).values_list('id', flat=True))
+        return get_layer_ids(layer, use_cache=False)
 
 
-class TestGetLayerQueryset(OgcLayerServiceTestCase):
+class TestLayerFilter(OgcLayerServiceTestCase):
 
     def test_returns_records_matching_filter(self):
         match = self.create_record()
@@ -116,14 +116,14 @@ class TestGetLayerQueryset(OgcLayerServiceTestCase):
 
     def test_empty_filter_is_rejected(self):
         with self.assertRaises(OgcLayerFilterError):
-            get_layer_queryset(self.create_layer(query={}))
+            get_matched_queryset(self.create_layer(query={}))
 
     def test_sass_filter_is_rejected(self):
         layer = self.create_layer(query={
             'taxon': str(self.taxon.id),
             'validated': '["sass accredited"]'})
         with self.assertRaises(OgcLayerFilterError):
-            get_layer_queryset(layer)
+            get_matched_queryset(layer)
 
     def test_unvalidated_records_are_excluded(self):
         self.create_record(validated=False)

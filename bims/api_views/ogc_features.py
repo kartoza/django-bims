@@ -22,7 +22,10 @@ from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
 from bims.models.ogc_layer import OgcLayer
-from bims.serializers.ogc_feature_serializer import feature_from_record
+from bims.serializers.ogc_feature_serializer import (
+    feature_from_record,
+    features_from_records,
+)
 from bims.utils.ogc_layer import (
     OgcLayerError,
     OgcLayerFilterError,
@@ -514,9 +517,8 @@ class ItemsView(OgcFeaturesView):
                 self.layer
             ).select_related(*SELECT_RELATED).order_by('pk'))
         features, size = [], 0
-        for record in page:
-            chunk = json.dumps(
-                feature_from_record(record), cls=DjangoJSONEncoder)
+        for feature in features_from_records(page):
+            chunk = json.dumps(feature, cls=DjangoJSONEncoder)
             size += len(chunk)
             # A page stops growing once it is too big, but never ends up
             # empty, so a client can always make progress

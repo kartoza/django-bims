@@ -26,6 +26,7 @@ from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
 from bims.utils.ogc_protection import (
+    OgcLayerTimeoutError,
     check_rate,
     single_flight,
     statement_timeout,
@@ -62,6 +63,9 @@ NARROWING_PARAMS = (
 
 # Search modules that do not return biological collection records
 UNSUPPORTED_MODULES = ('water_temperature', 'physico_chemistry', 'climate')
+
+# Ids checked for visibility in one query
+VISIBILITY_CHUNK = 10000
 
 SENSITIVE_GROUP = 'SensitiveDataGroup'
 PRIVATE_GROUP = 'PrivateDataGroup'
@@ -189,15 +193,12 @@ def visible_records(queryset, layer):
     )
 
 
-def get_layer_queryset(layer):
-    """Return the records a layer serves, as a queryset ordered by id.
+def get_matched_queryset(layer):
+    """Return the records that match the saved filter of a layer.
 
-    The saved filter is evaluated as the layer owner, then restricted with
-    visible_records().
-
-    Do not combine this queryset with ``ORDER BY id LIMIT n`` on a large
-    tenant: Postgres then walks the whole records table in id order. Use
-    get_layer_ids() to find the matching ids and read pages by id.
+    The filter is evaluated as the layer owner. The result is not yet
+    restricted to what the layer may serve: visible_records() has to be
+    applied, see visible_ids().
     """
     from bims.api_views.search import CollectionSearch
 
@@ -213,14 +214,32 @@ def get_layer_queryset(layer):
         raise OgcLayerFilterError(
             'SASS filters are not supported for layers.'
         )
-    matched = search.process_search()
+    try:
+        return search.process_search()
+    except (ValueError, TypeError, SyntaxError) as exc:
+        # Parameters in a format the search does not understand
+        logger.warning(
+            'OGC layer %s has a filter that cannot be evaluated',
+            layer.pk, exc_info=True)
+        raise OgcLayerFilterError(
+            'The layer filter could not be evaluated: %s' % exc) from exc
 
-    # Select by id so that joins in the filter cannot return a record twice
-    return visible_records(
-        BiologicalCollectionRecord.objects.filter(
-            pk__in=matched.order_by().values('pk')),
-        layer
-    ).order_by('pk')
+
+def visible_ids(layer, ids):
+    """Return the sorted ids, of those given, that the layer may serve.
+
+    The visibility rules are checked by primary key in chunks, which reads
+    only the records that were found. Applying them to the search query
+    instead makes Postgres scan the whole records table.
+    """
+    visible = []
+    for start in range(0, len(ids), VISIBILITY_CHUNK):
+        chunk = ids[start:start + VISIBILITY_CHUNK]
+        visible.extend(visible_records(
+            BiologicalCollectionRecord.objects.filter(pk__in=chunk),
+            layer
+        ).order_by().values_list('pk', flat=True))
+    return sorted(visible)
 
 
 def bbox_filter(bbox):
@@ -322,6 +341,38 @@ def get_layer_version(layer, bbox=None):
         return None
 
 
+def _matching_ids(matched, cap):
+    """Return up to cap + 1 distinct ids of a queryset of records.
+
+    DISTINCT is left to Python: with ``DISTINCT ... LIMIT`` Postgres reads
+    the records in id order, which scans the whole table when few match.
+    """
+    ids = matched.order_by().values_list('pk', flat=True)
+
+    def read(avoid_index_scan, distinct=False):
+        # Short first attempt: when Postgres picks the slow plan, a
+        # second attempt without plain index scans is much faster than
+        # waiting for the first
+        timeout = (
+            None if avoid_index_scan
+            else settings.OGC_LAYER_FIRST_ATTEMPT_TIMEOUT)
+        with statement_timeout(timeout, avoid_index_scan=avoid_index_scan):
+            return list((ids.distinct() if distinct else ids)[:cap + 1])
+
+    try:
+        avoid = False
+        rows = read(avoid)
+    except OgcLayerTimeoutError:
+        avoid = True
+        rows = read(avoid)
+    found = set(rows)
+    if len(rows) > cap and len(found) <= cap:
+        # Joins repeated some ids, so the limit may have cut the result
+        # short. Let the database remove the repeats to know for sure.
+        found = set(read(avoid, distinct=True))
+    return found if len(found) > cap else sorted(found)
+
+
 def _evaluate_ids(layer, bbox, cache_key, use_cache):
     cap = settings.OGC_LAYER_MAX_RECORDS
     if use_cache:
@@ -329,11 +380,16 @@ def _evaluate_ids(layer, bbox, cache_key, use_cache):
             'evaluate', layer.pk, settings.OGC_RATE_LIMIT_EVALUATIONS,
             message='This layer is being re-evaluated too often.')
     with statement_timeout():
-        queryset = get_layer_queryset(layer)
+        matched = get_matched_queryset(layer)
         if bbox:
-            queryset = queryset.filter(bbox_filter(bbox))
-        ids = sorted(
-            queryset.order_by().values_list('pk', flat=True)[:cap + 1])
+            matched = matched.filter(bbox_filter(bbox))
+    # Reading one id past the cap is enough to know it is exceeded. The cap
+    # counts matches before the visibility rules, so a filter that matches
+    # more than the cap is refused even if some of them are hidden.
+    found = _matching_ids(matched, cap)
+    # The visibility rules are checked by primary key, the index is fine
+    with statement_timeout():
+        ids = found if len(found) > cap else visible_ids(layer, found)
     over_cap = len(ids) > cap
     if use_cache:
         try:
@@ -386,16 +442,20 @@ def get_layer_ids(layer, bbox=None, use_cache=True):
         lambda: _evaluate_ids(layer, bbox, cache_key, use_cache=True))
 
 
-def _compute_extent(layer):
+def _compute_extent(ids):
     from bims.models.location_site import LocationSite
 
+    boxes = []
     with statement_timeout():
-        sites = LocationSite.objects.filter(
-            id__in=get_layer_queryset(layer).order_by().values('site_id'))
-        extents = sites.aggregate(**{
-            field: Extent(field) for field in GEOMETRY_FIELDS
-        })
-    boxes = [box for box in extents.values() if box]
+        for start in range(0, len(ids), VISIBILITY_CHUNK):
+            sites = LocationSite.objects.filter(
+                id__in=BiologicalCollectionRecord.objects.filter(
+                    pk__in=ids[start:start + VISIBILITY_CHUNK]
+                ).order_by().values('site_id'))
+            extents = sites.aggregate(**{
+                field: Extent(field) for field in GEOMETRY_FIELDS
+            })
+            boxes.extend(box for box in extents.values() if box)
     if not boxes:
         return None
     return [
@@ -417,7 +477,7 @@ def get_layer_extent(layer, use_cache=True):
     :return: the bounding box, or None if no record has a geometry.
     """
     # Enforces the cap, and avoids the search for a layer that is too big
-    get_layer_ids(layer, use_cache=use_cache)
+    ids = get_layer_ids(layer, use_cache=use_cache)
 
     cache_key = _cache_key(layer).replace(
         'ogc_layer_ids:', 'ogc_layer_extent:', 1)
@@ -430,7 +490,7 @@ def get_layer_extent(layer, use_cache=True):
             return None
 
     def build():
-        extent = _compute_extent(layer)
+        extent = _compute_extent(ids)
         if use_cache:
             try:
                 cache.set(

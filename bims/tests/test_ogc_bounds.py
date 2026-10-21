@@ -122,9 +122,9 @@ class TestBboxCache(OgcBoundsTestCase):
     def test_nearby_bboxes_evaluate_the_layer_once(self):
         self.create_records(2)
         self.items()
-        real = ogc_layer_utils.get_layer_queryset
+        real = ogc_layer_utils.get_matched_queryset
         with mock.patch.object(
-            ogc_layer_utils, 'get_layer_queryset', side_effect=real
+            ogc_layer_utils, 'get_matched_queryset', side_effect=real
         ) as spy:
             first = self.items(bbox='-39.5,-39.5,39.5,39.5')
             second = self.items(bbox='-39.7,-39.2,39.1,39.9')

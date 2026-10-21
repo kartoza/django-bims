@@ -21,15 +21,15 @@ OGC_LAYER_MAX_CONCURRENT_EVALUATIONS = int(
 # Seconds a request waits for another request already evaluating the layer
 OGC_LAYER_LOCK_WAIT = int(os.environ.get('OGC_LAYER_LOCK_WAIT', 3))
 # A lock or slot held by a crashed worker is released after this long
-OGC_LAYER_LOCK_TTL = int(os.environ.get('OGC_LAYER_LOCK_TTL', 60))
+OGC_LAYER_LOCK_TTL = int(os.environ.get('OGC_LAYER_LOCK_TTL', 90))
 # Retry-After sent with 503 responses
 OGC_LAYER_RETRY_AFTER = int(os.environ.get('OGC_LAYER_RETRY_AFTER', 10))
 # Number of reverse proxies in front of BIMS that append to X-Forwarded-For
 OGC_TRUSTED_PROXIES = int(os.environ.get('OGC_TRUSTED_PROXIES', 1))
 # Requests allowed per minute (0 disables a limit)
-OGC_RATE_LIMIT_IP = int(os.environ.get('OGC_RATE_LIMIT_IP', 300))
-OGC_RATE_LIMIT_LAYER = int(os.environ.get('OGC_RATE_LIMIT_LAYER', 600))
-OGC_RATE_LIMIT_OWNER = int(os.environ.get('OGC_RATE_LIMIT_OWNER', 1200))
+OGC_RATE_LIMIT_IP = int(os.environ.get('OGC_RATE_LIMIT_IP', 600))
+OGC_RATE_LIMIT_LAYER = int(os.environ.get('OGC_RATE_LIMIT_LAYER', 1200))
+OGC_RATE_LIMIT_OWNER = int(os.environ.get('OGC_RATE_LIMIT_OWNER', 2400))
 # Requests with an unknown or revoked token, per IP
 OGC_RATE_LIMIT_BAD_TOKEN = int(
     os.environ.get('OGC_RATE_LIMIT_BAD_TOKEN', 20))
@@ -47,3 +47,9 @@ OGC_BBOX_MIN_STEP = float(os.environ.get('OGC_BBOX_MIN_STEP', 0.001))
 # A page of features stops growing once its JSON passes this size
 OGC_RESPONSE_MAX_BYTES = int(
     os.environ.get('OGC_RESPONSE_MAX_BYTES', 10 * 1024 * 1024))
+
+# Seconds the first attempt to read the matching ids may take. If it takes
+# longer, Postgres probably chose a slow plan and the query is retried
+# without plain index scans (see statement_timeout in ogc_protection.py).
+OGC_LAYER_FIRST_ATTEMPT_TIMEOUT = int(
+    os.environ.get('OGC_LAYER_FIRST_ATTEMPT_TIMEOUT', 3))

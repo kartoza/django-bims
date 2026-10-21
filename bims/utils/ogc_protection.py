@@ -53,36 +53,46 @@ def _is_query_canceled(exc):
 
 
 @contextmanager
-def statement_timeout(seconds=None):
+def statement_timeout(seconds=None, avoid_index_scan=False):
     """Run the queries in the block under a statement timeout.
 
     Queries must be evaluated inside the block, not returned lazily.
 
+    :param avoid_index_scan: also stop Postgres from choosing a plain index
+        scan. For ``LIMIT`` queries on a huge table with few matches it can
+        walk the primary key of the whole table, since it expects to find
+        enough rows early. Bitmap and sequential scans are not affected.
     :raises OgcLayerTimeoutError: if a query was cancelled by the timeout.
     """
     seconds = (
         settings.OGC_LAYER_STATEMENT_TIMEOUT if seconds is None else seconds)
-    if not seconds:
+    local = {}
+    if seconds:
+        local['statement_timeout'] = str(int(seconds * 1000))
+    if avoid_index_scan:
+        local['enable_indexscan'] = 'off'
+    if not local:
         yield
         return
     # SET LOCAL lasts until the end of the outermost transaction, so inside
-    # a wider transaction the previous value is put back by hand
-    previous = None
+    # a wider transaction the previous values are put back by hand
+    previous = {}
     nested = connection.in_atomic_block
     try:
         with transaction.atomic():
             with connection.cursor() as cursor:
-                if nested:
-                    cursor.execute('SHOW statement_timeout')
-                    previous = cursor.fetchone()[0]
-                cursor.execute(
-                    'SET LOCAL statement_timeout = %s',
-                    [int(seconds * 1000)])
+                for name, value in local.items():
+                    if nested:
+                        cursor.execute('SHOW %s' % name)
+                        previous[name] = cursor.fetchone()[0]
+                    cursor.execute('SELECT set_config(%s, %s, true)',
+                                   [name, value])
             yield
-            if previous is not None:
+            if previous:
                 with connection.cursor() as cursor:
-                    cursor.execute(
-                        'SET LOCAL statement_timeout = %s', [previous])
+                    for name, value in previous.items():
+                        cursor.execute(
+                            'SELECT set_config(%s, %s, true)', [name, value])
     except OperationalError as exc:
         if not _is_query_canceled(exc):
             raise
@@ -110,7 +120,10 @@ def _cache_call(func, default=None):
 def evaluation_slot():
     """Take one of the OGC_LAYER_MAX_CONCURRENT_EVALUATIONS slots.
 
-    :raises OgcLayerBusyError: if all slots are taken.
+    Waits up to OGC_LAYER_LOCK_WAIT seconds for a slot, since evaluations
+    are short, before giving up.
+
+    :raises OgcLayerBusyError: if all slots stay taken.
     """
     limit = settings.OGC_LAYER_MAX_CONCURRENT_EVALUATIONS
     key = _schema_key('slots')
@@ -120,19 +133,25 @@ def evaluation_slot():
         cache.add(key, 0, ttl)
         return cache.incr(key)
 
-    taken = _cache_call(acquire)
-    if taken is None:
-        # Cache unavailable, do not block
-        yield
-        return
-    try:
-        if limit and taken > limit:
+    def release():
+        _cache_call(lambda: cache.decr(key))
+
+    deadline = time.monotonic() + settings.OGC_LAYER_LOCK_WAIT
+    while True:
+        taken = _cache_call(acquire)
+        if taken is None or not limit or taken <= limit:
+            break
+        release()
+        if time.monotonic() >= deadline:
             raise OgcLayerBusyError(
                 'Too many layers are being prepared. Try again shortly.',
                 retry_after=settings.OGC_LAYER_RETRY_AFTER)
+        time.sleep(0.1)
+    try:
         yield
     finally:
-        _cache_call(lambda: cache.decr(key))
+        if taken is not None:
+            release()
 
 
 def single_flight(name, read, build):
