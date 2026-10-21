@@ -843,9 +843,9 @@ class TaxaProcessor(object):
 
     def process_data(self, row, taxon_group: TaxonGroup, harvest_synonyms: bool = False):
         """Process a single CSV row."""
-        if not self.all_keys:
-            for key in row.keys():
-                self.all_keys[key.upper()] = key
+        # Rebuilt for every row on the instance: a class-level mapping would be
+        # shared across uploads and keep another CSV's header casing.
+        self.all_keys = {key.upper(): key for key in row.keys()}
 
         row, name_addendum_code = self.strip_name_addendum(row)
 
