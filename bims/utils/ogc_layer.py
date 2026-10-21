@@ -23,6 +23,11 @@ from django.utils import timezone
 from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
+from bims.utils.ogc_protection import (
+    check_rate,
+    single_flight,
+    statement_timeout,
+)
 
 # Search parameters that narrow the result set. A layer needs at least one,
 # so that an unfiltered layer can never expose the whole dataset.
@@ -248,38 +253,41 @@ def _decode_ids(value):
     return ids.tolist()
 
 
-def get_layer_ids(layer, bbox=None, use_cache=True):
-    """Return the sorted ids of the records a layer serves.
-
-    Ids are found with one unordered query that never reads past the cap,
-    then cached for OGC_LAYER_COUNT_CACHE_TTL seconds, so paging through a
-    layer does not repeat the search. Pages are then read by id.
-
-    :param bbox: optional (minx, miny, maxx, maxy) to restrict the ids to.
-    :raises OgcLayerOverCapError: if the layer, or the bbox part of it,
-        has more records than OGC_LAYER_MAX_RECORDS.
-    """
-    cap = settings.OGC_LAYER_MAX_RECORDS
-    cache_key = _cache_key(layer, bbox)
-    cached = cache.get(cache_key) if use_cache else None
-    if cached == OVER_CAP:
-        raise OgcLayerOverCapError(cap)
-    if cached is not None:
-        return _decode_ids(cached)
-
-    queryset = get_layer_queryset(layer)
-    if bbox:
-        queryset = queryset.filter(bbox_filter(bbox))
-    # Reading one id past the cap is enough to know it is exceeded
-    ids = sorted(queryset.order_by().values_list('pk', flat=True)[:cap + 1])
-    over_cap = len(ids) > cap
+def _read_cached_ids(cache_key):
+    """Cached ids, or None. Raises OgcLayerOverCapError for a cached overflow."""
     try:
-        cache.set(
-            cache_key,
-            OVER_CAP if over_cap else _encode_ids(ids),
-            settings.OGC_LAYER_COUNT_CACHE_TTL)
+        cached = cache.get(cache_key)
     except Exception:  # The cache is an optimisation, not required
-        logger.warning('Could not cache OGC layer ids', exc_info=True)
+        logger.warning('Could not read OGC layer ids', exc_info=True)
+        return None
+    if cached == OVER_CAP:
+        raise OgcLayerOverCapError(settings.OGC_LAYER_MAX_RECORDS)
+    if cached is None:
+        return None
+    return _decode_ids(cached)
+
+
+def _evaluate_ids(layer, bbox, cache_key, use_cache):
+    cap = settings.OGC_LAYER_MAX_RECORDS
+    if use_cache:
+        check_rate(
+            'evaluate', layer.pk, settings.OGC_RATE_LIMIT_EVALUATIONS,
+            message='This layer is being re-evaluated too often.')
+    with statement_timeout():
+        queryset = get_layer_queryset(layer)
+        if bbox:
+            queryset = queryset.filter(bbox_filter(bbox))
+        ids = sorted(
+            queryset.order_by().values_list('pk', flat=True)[:cap + 1])
+    over_cap = len(ids) > cap
+    if use_cache:
+        try:
+            cache.set(
+                cache_key,
+                OVER_CAP if over_cap else _encode_ids(ids),
+                settings.OGC_LAYER_COUNT_CACHE_TTL)
+        except Exception:  # The cache is an optimisation, not required
+            logger.warning('Could not cache OGC layer ids', exc_info=True)
     if over_cap:
         raise OgcLayerOverCapError(cap)
     if not bbox and layer.pk:
@@ -293,6 +301,49 @@ def get_layer_ids(layer, bbox=None, use_cache=True):
     return ids
 
 
+def get_layer_ids(layer, bbox=None, use_cache=True):
+    """Return the sorted ids of the records a layer serves.
+
+    Only one request at a time evaluates a layer; the query runs under
+    OGC_LAYER_STATEMENT_TIMEOUT (see bims/utils/ogc_protection.py).
+
+    :param bbox: optional (minx, miny, maxx, maxy) to restrict the ids to.
+    :raises OgcLayerOverCapError: if the layer, or the bbox part of it,
+        has more records than OGC_LAYER_MAX_RECORDS.
+    :raises OgcLayerProtectionError: if the layer cannot be evaluated now.
+    """
+    cache_key = _cache_key(layer, bbox)
+    if not use_cache:
+        return _evaluate_ids(layer, bbox, cache_key, use_cache=False)
+
+    def read():
+        return _read_cached_ids(cache_key)
+
+    return single_flight(
+        cache_key, read,
+        lambda: _evaluate_ids(layer, bbox, cache_key, use_cache=True))
+
+
+def _compute_extent(layer):
+    from bims.models.location_site import LocationSite
+
+    with statement_timeout():
+        sites = LocationSite.objects.filter(
+            id__in=get_layer_queryset(layer).order_by().values('site_id'))
+        extents = sites.aggregate(**{
+            field: Extent(field) for field in GEOMETRY_FIELDS
+        })
+    boxes = [box for box in extents.values() if box]
+    if not boxes:
+        return None
+    return [
+        min(box[0] for box in boxes),
+        min(box[1] for box in boxes),
+        max(box[2] for box in boxes),
+        max(box[3] for box in boxes),
+    ]
+
+
 def get_layer_extent(layer, use_cache=True):
     """Return the bounding box of a layer as [minx, miny, maxx, maxy].
 
@@ -300,43 +351,40 @@ def get_layer_extent(layer, use_cache=True):
     It is cached like the ids.
 
     :raises OgcLayerOverCapError: if the layer is over the cap.
+    :raises OgcLayerProtectionError: if the layer cannot be evaluated now.
     :return: the bounding box, or None if no record has a geometry.
     """
-    from bims.models.location_site import LocationSite
-
     # Enforces the cap, and avoids the search for a layer that is too big
     get_layer_ids(layer, use_cache=use_cache)
 
     cache_key = _cache_key(layer).replace(
         'ogc_layer_ids:', 'ogc_layer_extent:', 1)
-    cached = cache.get(cache_key) if use_cache else None
-    if cached == NO_EXTENT:
-        return None
-    if cached is not None:
-        return cached
 
-    sites = LocationSite.objects.filter(
-        id__in=get_layer_queryset(layer).order_by().values('site_id'))
-    extents = sites.aggregate(**{
-        field: Extent(field) for field in GEOMETRY_FIELDS
-    })
-    boxes = [box for box in extents.values() if box]
-    extent = None
-    if boxes:
-        extent = [
-            min(box[0] for box in boxes),
-            min(box[1] for box in boxes),
-            max(box[2] for box in boxes),
-            max(box[3] for box in boxes),
-        ]
-    try:
-        cache.set(
-            cache_key,
-            NO_EXTENT if extent is None else extent,
-            settings.OGC_LAYER_COUNT_CACHE_TTL)
-    except Exception:  # The cache is an optimisation, not required
-        logger.warning('Could not cache OGC layer extent', exc_info=True)
-    return extent
+    def read():
+        try:
+            return cache.get(cache_key) if use_cache else None
+        except Exception:
+            logger.warning('Could not read OGC layer extent', exc_info=True)
+            return None
+
+    def build():
+        extent = _compute_extent(layer)
+        if use_cache:
+            try:
+                cache.set(
+                    cache_key,
+                    NO_EXTENT if extent is None else extent,
+                    settings.OGC_LAYER_COUNT_CACHE_TTL)
+            except Exception:
+                logger.warning(
+                    'Could not cache OGC layer extent', exc_info=True)
+        return NO_EXTENT if extent is None else extent
+
+    if use_cache:
+        cached = single_flight(cache_key, read, build)
+    else:
+        cached = build()
+    return None if cached == NO_EXTENT else cached
 
 
 def count_layer_records(layer, use_cache=True):

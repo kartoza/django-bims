@@ -25,6 +25,13 @@ from bims.utils.ogc_layer import (
     get_layer_ids,
     visible_records,
 )
+from bims.utils.ogc_protection import (
+    OgcLayerProtectionError,
+    OgcLayerThrottledError,
+    check_rate,
+    client_ip,
+    statement_timeout,
+)
 
 COLLECTION_ID = 'records'
 
@@ -65,12 +72,22 @@ def ogc_exception_response(exc):
     )
 
 
-def get_active_layer(token):
+def get_active_layer(token, ip=None):
     layer = OgcLayer.get_by_token(token)
     if layer is None or not layer.is_available:
+        check_rate(
+            'bad_token', ip, settings.OGC_RATE_LIMIT_BAD_TOKEN,
+            message='Too many requests with an unknown layer token.')
         raise OgcApiException(
             404, 'NotFound', 'Unknown or revoked layer token.')
     return layer
+
+
+def protection_exception(exc):
+    """Map a back-off error to a 429 or 503 response description."""
+    if isinstance(exc, OgcLayerThrottledError):
+        return OgcApiException(429, 'TooManyRequests', str(exc))
+    return OgcApiException(503, 'ServiceUnavailable', str(exc))
 
 
 def is_in_sorted(values, value):
@@ -141,10 +158,21 @@ class OgcFeaturesView(View):
     """Resolves the layer token and maps evaluation errors to responses."""
 
     def dispatch(self, request, token, *args, **kwargs):
+        retry_after = None
         try:
-            self.layer = get_active_layer(token)
+            ip = client_ip(request)
+            check_rate('ip', ip, settings.OGC_RATE_LIMIT_IP)
+            self.layer = get_active_layer(token, ip)
+            check_rate(
+                'layer', self.layer.pk, settings.OGC_RATE_LIMIT_LAYER)
+            check_rate(
+                'owner', self.layer.owner_id,
+                settings.OGC_RATE_LIMIT_OWNER)
             self.layer.touch()
             response = super().dispatch(request, token, *args, **kwargs)
+        except OgcLayerProtectionError as exc:
+            retry_after = exc.retry_after
+            response = ogc_exception_response(protection_exception(exc))
         except OgcApiException as exc:
             response = ogc_exception_response(exc)
         except OgcLayerOverCapError as exc:
@@ -156,6 +184,8 @@ class OgcFeaturesView(View):
         except OgcLayerError as exc:
             response = ogc_exception_response(
                 OgcApiException(400, 'InvalidLayer', str(exc)))
+        if retry_after is not None:
+            response['Retry-After'] = str(retry_after)
         response['Access-Control-Allow-Origin'] = '*'
         return response
 
@@ -393,11 +423,12 @@ class ItemsView(OgcFeaturesView):
             ids = get_layer_ids(self.layer, bbox=bbox)
 
         number_matched = len(ids)
-        page = list(visible_records(
-            BiologicalCollectionRecord.objects.filter(
-                pk__in=ids[offset:offset + limit]),
-            self.layer
-        ).select_related(*SELECT_RELATED).order_by('pk'))
+        with statement_timeout():
+            page = list(visible_records(
+                BiologicalCollectionRecord.objects.filter(
+                    pk__in=ids[offset:offset + limit]),
+                self.layer
+            ).select_related(*SELECT_RELATED).order_by('pk'))
         number_returned = len(page)
 
         links = [
@@ -448,11 +479,11 @@ class ItemView(OgcFeaturesView):
     def get(self, request, token, collection_id, item_id):
         self.require_collection(collection_id)
 
-        record = visible_records(
-            BiologicalCollectionRecord.objects.filter(uuid=item_id),
-            self.layer
-        ).select_related(*SELECT_RELATED).first()
-        # Only serve records that belong to the layer
+        with statement_timeout():
+            record = visible_records(
+                BiologicalCollectionRecord.objects.filter(uuid=item_id),
+                self.layer
+            ).select_related(*SELECT_RELATED).first()
         ids = get_layer_ids(self.layer)
         if record is None or not is_in_sorted(ids, record.pk):
             raise OgcApiException(404, 'NotFound', 'Unknown feature.')

@@ -1,0 +1,38 @@
+# coding=utf-8
+"""Settings for OGC API - Features layers, imported by project.py."""
+import os
+
+# Live layers for GIS clients
+OGC_LAYER_MAX_RECORDS = int(os.environ.get('OGC_LAYER_MAX_RECORDS', 100000))
+OGC_LAYER_DEFAULT_PAGE_SIZE = int(
+    os.environ.get('OGC_LAYER_DEFAULT_PAGE_SIZE', 1000))
+OGC_LAYER_MAX_PAGE_SIZE = int(
+    os.environ.get('OGC_LAYER_MAX_PAGE_SIZE', 5000))
+OGC_LAYER_COUNT_CACHE_TTL = int(
+    os.environ.get('OGC_LAYER_COUNT_CACHE_TTL', 300))
+
+# Protection of the shared database, see bims/utils/ogc_protection.py.
+# Seconds a layer query may run before Postgres cancels it (0 to disable)
+OGC_LAYER_STATEMENT_TIMEOUT = int(
+    os.environ.get('OGC_LAYER_STATEMENT_TIMEOUT', 20))
+# Layers that may be evaluated at the same time, per tenant
+OGC_LAYER_MAX_CONCURRENT_EVALUATIONS = int(
+    os.environ.get('OGC_LAYER_MAX_CONCURRENT_EVALUATIONS', 4))
+# Seconds a request waits for another request already evaluating the layer
+OGC_LAYER_LOCK_WAIT = int(os.environ.get('OGC_LAYER_LOCK_WAIT', 3))
+# A lock or slot held by a crashed worker is released after this long
+OGC_LAYER_LOCK_TTL = int(os.environ.get('OGC_LAYER_LOCK_TTL', 60))
+# Retry-After sent with 503 responses
+OGC_LAYER_RETRY_AFTER = int(os.environ.get('OGC_LAYER_RETRY_AFTER', 10))
+# Number of reverse proxies in front of BIMS that append to X-Forwarded-For
+OGC_TRUSTED_PROXIES = int(os.environ.get('OGC_TRUSTED_PROXIES', 1))
+# Requests allowed per minute (0 disables a limit)
+OGC_RATE_LIMIT_IP = int(os.environ.get('OGC_RATE_LIMIT_IP', 300))
+OGC_RATE_LIMIT_LAYER = int(os.environ.get('OGC_RATE_LIMIT_LAYER', 600))
+OGC_RATE_LIMIT_OWNER = int(os.environ.get('OGC_RATE_LIMIT_OWNER', 1200))
+# Requests with an unknown or revoked token, per IP
+OGC_RATE_LIMIT_BAD_TOKEN = int(
+    os.environ.get('OGC_RATE_LIMIT_BAD_TOKEN', 20))
+# Fresh evaluations of the same layer, which bypass the cache
+OGC_RATE_LIMIT_EVALUATIONS = int(
+    os.environ.get('OGC_RATE_LIMIT_EVALUATIONS', 6))
