@@ -9,6 +9,7 @@ import datetime
 import hashlib
 import json
 import logging
+import math
 import time
 import zlib
 from array import array
@@ -231,6 +232,43 @@ def bbox_filter(bbox):
     return query
 
 
+def snap_bbox(bbox):
+    """Widen a bbox to a grid, so nearby requests share one cache entry.
+
+    The step is about an eighth of the larger side, rounded down to
+    1, 2 or 5 times a power of ten, and never smaller than
+    OGC_BBOX_MIN_STEP degrees. The result always contains the original
+    bbox and stays within the world (lon/lat).
+
+    :return: (minx, miny, maxx, maxy), or None if no bbox was given.
+    """
+    if not bbox:
+        return None
+    minx, miny, maxx, maxy = bbox
+    size = max(maxx - minx, maxy - miny)
+    step = settings.OGC_BBOX_MIN_STEP
+    target = size / 8
+    if target > step:
+        power = 10 ** math.floor(math.log10(target))
+        step = max(
+            (m * power for m in (1, 2, 5) if m * power <= target),
+            default=power)
+    # Rounding keeps float noise out of the cache key
+    snapped = (
+        round(max(math.floor(minx / step) * step, -180.0), 6),
+        round(max(math.floor(miny / step) * step, -90.0), 6),
+        round(min(math.ceil(maxx / step) * step, 180.0), 6),
+        round(min(math.ceil(maxy / step) * step, 90.0), 6),
+    )
+    return snapped
+
+
+def _cache_ttl(bbox):
+    if bbox:
+        return settings.OGC_BBOX_CACHE_TTL
+    return settings.OGC_LAYER_COUNT_CACHE_TTL
+
+
 def _cache_key(layer, bbox=None):
     digest = hashlib.sha256(json.dumps({
         'query': layer.query,
@@ -278,7 +316,7 @@ def get_layer_version(layer, bbox=None):
     :return: the timestamp, or None if the ids are not cached.
     """
     try:
-        return cache.get(_version_key(_cache_key(layer, bbox)))
+        return cache.get(_version_key(_cache_key(layer, snap_bbox(bbox))))
     except Exception:
         logger.warning('Could not read OGC layer version', exc_info=True)
         return None
@@ -302,11 +340,11 @@ def _evaluate_ids(layer, bbox, cache_key, use_cache):
             cache.set(
                 cache_key,
                 OVER_CAP if over_cap else _encode_ids(ids),
-                settings.OGC_LAYER_COUNT_CACHE_TTL)
+                _cache_ttl(bbox))
             if not over_cap:
                 cache.set(
                     _version_key(cache_key), int(time.time()),
-                    settings.OGC_LAYER_COUNT_CACHE_TTL)
+                    _cache_ttl(bbox))
         except Exception:  # The cache is an optimisation, not required
             logger.warning('Could not cache OGC layer ids', exc_info=True)
     if over_cap:
@@ -329,10 +367,13 @@ def get_layer_ids(layer, bbox=None, use_cache=True):
     OGC_LAYER_STATEMENT_TIMEOUT (see bims/utils/ogc_protection.py).
 
     :param bbox: optional (minx, miny, maxx, maxy) to restrict the ids to.
+        It is widened with snap_bbox(), so records slightly outside it can
+        be included, and cached for OGC_BBOX_CACHE_TTL seconds.
     :raises OgcLayerOverCapError: if the layer, or the bbox part of it,
         has more records than OGC_LAYER_MAX_RECORDS.
     :raises OgcLayerProtectionError: if the layer cannot be evaluated now.
     """
+    bbox = snap_bbox(bbox)
     cache_key = _cache_key(layer, bbox)
     if not use_cache:
         return _evaluate_ids(layer, bbox, cache_key, use_cache=False)

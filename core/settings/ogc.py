@@ -39,3 +39,11 @@ OGC_RATE_LIMIT_EVALUATIONS = int(
 
 # Seconds a GIS client may reuse a response without asking again
 OGC_HTTP_CACHE_MAX_AGE = int(os.environ.get('OGC_HTTP_CACHE_MAX_AGE', 60))
+
+# Requests with a bbox are widened to a grid and cached for a short time
+OGC_BBOX_CACHE_TTL = int(os.environ.get('OGC_BBOX_CACHE_TTL', 60))
+# Smallest grid step, in degrees (0.001 is about 100 m)
+OGC_BBOX_MIN_STEP = float(os.environ.get('OGC_BBOX_MIN_STEP', 0.001))
+# A page of features stops growing once its JSON passes this size
+OGC_RESPONSE_MAX_BYTES = int(
+    os.environ.get('OGC_RESPONSE_MAX_BYTES', 10 * 1024 * 1024))

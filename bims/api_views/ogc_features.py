@@ -5,11 +5,14 @@ Serves the saved filter of an OgcLayer as a single feature collection,
 named "records", under /ogc/layers/<token>/...
 """
 import hashlib
+import json
+import math
 from bisect import bisect_left
 from datetime import datetime, timezone as dt_timezone
 
 from django.conf import settings
-from django.http import JsonResponse
+from django.core.serializers.json import DjangoJSONEncoder
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
 from django.utils.cache import get_conditional_response
 from django.utils import timezone
@@ -49,6 +52,7 @@ CONFORMANCE_CLASSES = [
 
 SELECT_RELATED = (
     'site',
+    'site__location_type',
     'taxonomy',
     'taxonomy__origin',
     'taxonomy__iucn_status',
@@ -142,6 +146,9 @@ def parse_bbox_param(request):
     except ValueError:
         raise OgcApiException(
             400, 'InvalidParameter', '"bbox" values must be numbers.')
+    if not all(math.isfinite(value) for value in (minx, miny, maxx, maxy)):
+        raise OgcApiException(
+            400, 'InvalidParameter', '"bbox" values must be finite numbers.')
     if minx > maxx or miny > maxy:
         raise OgcApiException(
             400, 'InvalidParameter', '"bbox" min must not exceed max.')
@@ -506,7 +513,23 @@ class ItemsView(OgcFeaturesView):
                     pk__in=ids[offset:offset + limit]),
                 self.layer
             ).select_related(*SELECT_RELATED).order_by('pk'))
-        number_returned = len(page)
+        features, size = [], 0
+        for record in page:
+            chunk = json.dumps(
+                feature_from_record(record), cls=DjangoJSONEncoder)
+            size += len(chunk)
+            # A page stops growing once it is too big, but never ends up
+            # empty, so a client can always make progress
+            if features and size > settings.OGC_RESPONSE_MAX_BYTES:
+                break
+            features.append(chunk)
+        number_returned = len(features)
+        step = limit
+        if number_returned < len(page):
+            # The page was cut short: the next one starts at the first
+            # record left out, which is found by its place among the ids
+            step = bisect_left(
+                ids[offset:offset + limit], page[number_returned].pk)
 
         links = [
             {
@@ -515,10 +538,10 @@ class ItemsView(OgcFeaturesView):
                 'type': 'application/geo+json',
             },
         ]
-        if offset + limit < number_matched:
+        if offset + step < number_matched:
             links.append({
                 'href': items_url(
-                    request, token, limit=limit, offset=offset + limit),
+                    request, token, limit=limit, offset=offset + step),
                 'rel': 'next',
                 'type': 'application/geo+json',
             })
@@ -538,15 +561,15 @@ class ItemsView(OgcFeaturesView):
             'type': 'application/json',
         })
 
-        return JsonResponse(
-            {
-                'type': 'FeatureCollection',
-                'numberMatched': number_matched,
-                'numberReturned': number_returned,
-                'timeStamp': timezone.now().isoformat(),
-                'links': links,
-                'features': [feature_from_record(r) for r in page],
-            },
+        header = json.dumps({
+            'type': 'FeatureCollection',
+            'numberMatched': number_matched,
+            'numberReturned': number_returned,
+            'timeStamp': timezone.now().isoformat(),
+            'links': links,
+        }, cls=DjangoJSONEncoder)
+        return HttpResponse(
+            '%s, "features": [%s]}' % (header[:-1], ','.join(features)),
             content_type='application/geo+json',
         )
 
