@@ -9,6 +9,7 @@ import datetime
 import hashlib
 import json
 import logging
+import time
 import zlib
 from array import array
 
@@ -267,6 +268,22 @@ def _read_cached_ids(cache_key):
     return _decode_ids(cached)
 
 
+def _version_key(cache_key):
+    return cache_key.replace('ogc_layer_ids:', 'ogc_layer_version:', 1)
+
+
+def get_layer_version(layer, bbox=None):
+    """Return when the cached ids of a layer were built, as a timestamp.
+
+    :return: the timestamp, or None if the ids are not cached.
+    """
+    try:
+        return cache.get(_version_key(_cache_key(layer, bbox)))
+    except Exception:
+        logger.warning('Could not read OGC layer version', exc_info=True)
+        return None
+
+
 def _evaluate_ids(layer, bbox, cache_key, use_cache):
     cap = settings.OGC_LAYER_MAX_RECORDS
     if use_cache:
@@ -286,6 +303,10 @@ def _evaluate_ids(layer, bbox, cache_key, use_cache):
                 cache_key,
                 OVER_CAP if over_cap else _encode_ids(ids),
                 settings.OGC_LAYER_COUNT_CACHE_TTL)
+            if not over_cap:
+                cache.set(
+                    _version_key(cache_key), int(time.time()),
+                    settings.OGC_LAYER_COUNT_CACHE_TTL)
         except Exception:  # The cache is an optimisation, not required
             logger.warning('Could not cache OGC layer ids', exc_info=True)
     if over_cap:

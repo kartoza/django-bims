@@ -36,3 +36,6 @@ OGC_RATE_LIMIT_BAD_TOKEN = int(
 # Fresh evaluations of the same layer, which bypass the cache
 OGC_RATE_LIMIT_EVALUATIONS = int(
     os.environ.get('OGC_RATE_LIMIT_EVALUATIONS', 6))
+
+# Seconds a GIS client may reuse a response without asking again
+OGC_HTTP_CACHE_MAX_AGE = int(os.environ.get('OGC_HTTP_CACHE_MAX_AGE', 60))

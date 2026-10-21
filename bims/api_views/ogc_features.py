@@ -4,11 +4,14 @@
 Serves the saved filter of an OgcLayer as a single feature collection,
 named "records", under /ogc/layers/<token>/...
 """
+import hashlib
 from bisect import bisect_left
+from datetime import datetime, timezone as dt_timezone
 
 from django.conf import settings
 from django.http import JsonResponse
 from django.urls import reverse
+from django.utils.cache import get_conditional_response
 from django.utils import timezone
 from django.views import View
 
@@ -23,6 +26,7 @@ from bims.utils.ogc_layer import (
     OgcLayerOverCapError,
     get_layer_extent,
     get_layer_ids,
+    get_layer_version,
     visible_records,
 )
 from bims.utils.ogc_protection import (
@@ -154,8 +158,59 @@ def items_url(request, token, **overrides):
     return base + ('?' + query if query else '')
 
 
+def make_etag(*parts):
+    digest = hashlib.sha256(
+        '|'.join(str(part) for part in parts).encode('utf-8')).hexdigest()
+    return 'W/"%s"' % digest[:32]
+
+
 class OgcFeaturesView(View):
-    """Resolves the layer token and maps evaluation errors to responses."""
+    """Resolves the layer token and maps evaluation errors to responses.
+
+    Views that can be revalidated define ``cache_parts()``. It returns what
+    the response depends on, so that a request with a matching
+    If-None-Match is answered with 304 before any data is read.
+    """
+
+    # Whether the response changes when the layer data is rebuilt
+    depends_on_data = False
+
+    def cache_parts(self, request, **kwargs):
+        """Values the response depends on, or None to skip validators."""
+        return [self.__class__.__name__, sorted(kwargs.items())]
+
+    def validators(self, request, **kwargs):
+        """Return (etag, last_modified) for the request, or (None, None)."""
+        parts = self.cache_parts(request, **kwargs)
+        if parts is None:
+            return None, None
+        version = None
+        if self.depends_on_data:
+            version = get_layer_version(self.layer, self.bbox_for_cache)
+            if version is None:
+                # Data is not cached, so there is nothing to validate against
+                return None, None
+        etag = make_etag(
+            self.layer.pk, self.layer.name, request.scheme,
+            request.get_host(), parts, version)
+        last_modified = (
+            int(version) if version is not None else None)
+        return etag, last_modified
+
+    bbox_for_cache = None
+
+    def apply_validators(self, response, etag, last_modified):
+        max_age = settings.OGC_HTTP_CACHE_MAX_AGE
+        if response.status_code not in (200, 304) or not etag:
+            return
+        response['ETag'] = etag
+        if last_modified is not None:
+            response['Last-Modified'] = datetime.fromtimestamp(
+                last_modified, dt_timezone.utc).strftime(
+                '%a, %d %b %Y %H:%M:%S GMT')
+        response['Cache-Control'] = (
+            'private, max-age=%d' % max_age if max_age else
+            'private, no-cache')
 
     def dispatch(self, request, token, *args, **kwargs):
         retry_after = None
@@ -169,7 +224,18 @@ class OgcFeaturesView(View):
                 'owner', self.layer.owner_id,
                 settings.OGC_RATE_LIMIT_OWNER)
             self.layer.touch()
-            response = super().dispatch(request, token, *args, **kwargs)
+            etag = last_modified = None
+            response = None
+            if request.method in ('GET', 'HEAD'):
+                etag, last_modified = self.validators(request, **kwargs)
+                response = get_conditional_response(
+                    request, etag=etag, last_modified=last_modified)
+            if response is None:
+                response = super().dispatch(request, token, *args, **kwargs)
+                if etag is None and request.method in ('GET', 'HEAD'):
+                    # The data was not cached before, it is now
+                    etag, last_modified = self.validators(request, **kwargs)
+            self.apply_validators(response, etag, last_modified)
         except OgcLayerProtectionError as exc:
             retry_after = exc.retry_after
             response = ogc_exception_response(protection_exception(exc))
@@ -187,6 +253,7 @@ class OgcFeaturesView(View):
         if retry_after is not None:
             response['Retry-After'] = str(retry_after)
         response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Expose-Headers'] = 'ETag, Retry-After'
         return response
 
     def require_collection(self, collection_id):
@@ -377,6 +444,7 @@ def collection_metadata(request, token, layer):
 
 
 class CollectionsView(OgcFeaturesView):
+    depends_on_data = True
 
     def get(self, request, token):
         return JsonResponse({
@@ -393,6 +461,7 @@ class CollectionsView(OgcFeaturesView):
 
 
 class CollectionView(OgcFeaturesView):
+    depends_on_data = True
 
     def get(self, request, token, collection_id):
         self.require_collection(collection_id)
@@ -400,6 +469,14 @@ class CollectionView(OgcFeaturesView):
 
 
 class ItemsView(OgcFeaturesView):
+    depends_on_data = True
+
+    def cache_parts(self, request, **kwargs):
+        self.bbox_for_cache = parse_bbox_param(request)
+        return [
+            self.__class__.__name__, sorted(kwargs.items()),
+            sorted(request.GET.items()),
+        ]
 
     def get(self, request, token, collection_id):
         self.require_collection(collection_id)
@@ -475,6 +552,7 @@ class ItemsView(OgcFeaturesView):
 
 
 class ItemView(OgcFeaturesView):
+    depends_on_data = True
 
     def get(self, request, token, collection_id, item_id):
         self.require_collection(collection_id)
