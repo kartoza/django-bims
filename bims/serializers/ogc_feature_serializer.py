@@ -109,14 +109,32 @@ def feature_geometry(record):
     return json.loads(geometry.geojson)
 
 
-def feature_from_record(record):
+def feature_from_record(record, properties=None):
     """Return a GeoJSON Feature dict for a BiologicalCollectionRecord.
 
     The feature id is the record uuid.
+
+    :param properties: the serialized properties, if already known. See
+        features_from_records().
     """
+    if properties is None:
+        properties = OgcFeaturePropertiesSerializer(record).data
     return {
         'type': 'Feature',
         'id': str(record.uuid) if record.uuid else record.pk,
         'geometry': feature_geometry(record),
-        'properties': OgcFeaturePropertiesSerializer(record).data,
+        'properties': properties,
     }
+
+
+def features_from_records(records):
+    """Return a GeoJSON Feature dict for each record, lazily.
+
+    Serializing the properties of all records together builds the
+    serializer fields once instead of once per record, which is much
+    faster for a page of features.
+    """
+    records = list(records)
+    properties = OgcFeaturePropertiesSerializer(records, many=True).data
+    for record, props in zip(records, properties):
+        yield feature_from_record(record, props)

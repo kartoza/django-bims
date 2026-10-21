@@ -100,14 +100,7 @@ WEBPACK_LOADER = {
 
 CITES_TOKEN_API = os.environ.get('CITES_TOKEN_API', '')
 
-# OGC API - Features layers (live layers for GIS clients)
-OGC_LAYER_MAX_RECORDS = int(os.environ.get('OGC_LAYER_MAX_RECORDS', 100000))
-OGC_LAYER_DEFAULT_PAGE_SIZE = int(
-    os.environ.get('OGC_LAYER_DEFAULT_PAGE_SIZE', 1000))
-OGC_LAYER_MAX_PAGE_SIZE = int(
-    os.environ.get('OGC_LAYER_MAX_PAGE_SIZE', 5000))
-OGC_LAYER_COUNT_CACHE_TTL = int(
-    os.environ.get('OGC_LAYER_COUNT_CACHE_TTL', 300))
+from .ogc import *  # noqa
 
 # ---------------------------------------------------------------------------
 # FIPS site-code generator – spatial layer configuration

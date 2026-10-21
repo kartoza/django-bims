@@ -4,11 +4,19 @@
 Serves the saved filter of an OgcLayer as a single feature collection,
 named "records", under /ogc/layers/<token>/...
 """
+import hashlib
+import json
+import logging
+import math
+import time
 from bisect import bisect_left
+from datetime import datetime, timezone as dt_timezone
 
 from django.conf import settings
-from django.http import JsonResponse
+from django.core.serializers.json import DjangoJSONEncoder
+from django.http import HttpResponse, JsonResponse
 from django.urls import reverse
+from django.utils.cache import get_conditional_response
 from django.utils import timezone
 from django.views import View
 
@@ -16,15 +24,30 @@ from bims.models.biological_collection_record import (
     BiologicalCollectionRecord
 )
 from bims.models.ogc_layer import OgcLayer
-from bims.serializers.ogc_feature_serializer import feature_from_record
+from bims.serializers.ogc_feature_serializer import (
+    feature_from_record,
+    features_from_records,
+)
 from bims.utils.ogc_layer import (
     OgcLayerError,
     OgcLayerFilterError,
     OgcLayerOverCapError,
     get_layer_extent,
     get_layer_ids,
+    get_layer_version,
     visible_records,
 )
+from bims.utils.ogc_protection import (
+    OgcLayerProtectionError,
+    OgcLayerThrottledError,
+    check_rate,
+    client_ip,
+    count_request,
+    statement_timeout,
+    take_request_count,
+)
+
+logger = logging.getLogger(__name__)
 
 COLLECTION_ID = 'records'
 
@@ -38,6 +61,7 @@ CONFORMANCE_CLASSES = [
 
 SELECT_RELATED = (
     'site',
+    'site__location_type',
     'taxonomy',
     'taxonomy__origin',
     'taxonomy__iucn_status',
@@ -65,12 +89,22 @@ def ogc_exception_response(exc):
     )
 
 
-def get_active_layer(token):
+def get_active_layer(token, ip=None):
     layer = OgcLayer.get_by_token(token)
     if layer is None or not layer.is_available:
+        check_rate(
+            'bad_token', ip, settings.OGC_RATE_LIMIT_BAD_TOKEN,
+            message='Too many requests with an unknown layer token.')
         raise OgcApiException(
             404, 'NotFound', 'Unknown or revoked layer token.')
     return layer
+
+
+def protection_exception(exc):
+    """Map a back-off error to a 429 or 503 response description."""
+    if isinstance(exc, OgcLayerThrottledError):
+        return OgcApiException(429, 'TooManyRequests', str(exc))
+    return OgcApiException(503, 'ServiceUnavailable', str(exc))
 
 
 def is_in_sorted(values, value):
@@ -121,6 +155,9 @@ def parse_bbox_param(request):
     except ValueError:
         raise OgcApiException(
             400, 'InvalidParameter', '"bbox" values must be numbers.')
+    if not all(math.isfinite(value) for value in (minx, miny, maxx, maxy)):
+        raise OgcApiException(
+            400, 'InvalidParameter', '"bbox" values must be finite numbers.')
     if minx > maxx or miny > maxy:
         raise OgcApiException(
             400, 'InvalidParameter', '"bbox" min must not exceed max.')
@@ -137,14 +174,122 @@ def items_url(request, token, **overrides):
     return base + ('?' + query if query else '')
 
 
+def make_etag(*parts):
+    digest = hashlib.sha256(
+        '|'.join(str(part) for part in parts).encode('utf-8')).hexdigest()
+    return 'W/"%s"' % digest[:32]
+
+
 class OgcFeaturesView(View):
-    """Resolves the layer token and maps evaluation errors to responses."""
+    """Resolves the layer token and maps evaluation errors to responses.
+
+    Views that can be revalidated define ``cache_parts()``. It returns what
+    the response depends on, so that a request with a matching
+    If-None-Match is answered with 304 before any data is read.
+    """
+
+    # Whether the response changes when the layer data is rebuilt
+    depends_on_data = False
+
+    def cache_parts(self, request, **kwargs):
+        """Values the response depends on, or None to skip validators."""
+        return [self.__class__.__name__, sorted(kwargs.items())]
+
+    def validators(self, request, **kwargs):
+        """Return (etag, last_modified) for the request, or (None, None)."""
+        parts = self.cache_parts(request, **kwargs)
+        if parts is None:
+            return None, None
+        version = None
+        if self.depends_on_data:
+            version = get_layer_version(self.layer, self.bbox_for_cache)
+            if version is None:
+                # Data is not cached, so there is nothing to validate against
+                return None, None
+        etag = make_etag(
+            self.layer.pk, self.layer.name, request.scheme,
+            request.get_host(), parts, version)
+        last_modified = (
+            int(version) if version is not None else None)
+        return etag, last_modified
+
+    bbox_for_cache = None
+
+    def apply_validators(self, response, etag, last_modified):
+        max_age = settings.OGC_HTTP_CACHE_MAX_AGE
+        if response.status_code not in (200, 304) or not etag:
+            return
+        response['ETag'] = etag
+        if last_modified is not None:
+            response['Last-Modified'] = datetime.fromtimestamp(
+                last_modified, dt_timezone.utc).strftime(
+                '%a, %d %b %Y %H:%M:%S GMT')
+        response['Cache-Control'] = (
+            'private, max-age=%d' % max_age if max_age else
+            'private, no-cache')
 
     def dispatch(self, request, token, *args, **kwargs):
+        if not settings.OGC_LAYERS_ENABLED:
+            response = ogc_exception_response(OgcApiException(
+                503, 'ServiceUnavailable',
+                'Live layers are switched off on this site.'))
+            response['Retry-After'] = str(settings.OGC_LAYER_RETRY_AFTER)
+            response['Access-Control-Allow-Origin'] = '*'
+            return response
+        started = time.monotonic()
+        self.layer = None
+        response = self.handle(request, token, *args, **kwargs)
+        self.log_if_slow(request, response, started)
+        return response
+
+    def log_if_slow(self, request, response, started):
+        """Log slow requests. The URL holds the token, so it is not logged."""
+        duration = time.monotonic() - started
+        limit = settings.OGC_SLOW_REQUEST_SECONDS
+        if not limit or duration < limit:
+            return
+        params = {
+            name: request.GET[name]
+            for name in ('limit', 'offset', 'bbox', 'f')
+            if name in request.GET
+        }
+        logger.warning(
+            'Slow OGC request: layer=%s view=%s status=%s duration=%.2fs '
+            'params=%s',
+            self.layer.pk if self.layer else None,
+            self.__class__.__name__, response.status_code, duration, params)
+
+    def handle(self, request, token, *args, **kwargs):
+        retry_after = None
         try:
-            self.layer = get_active_layer(token)
-            self.layer.touch()
-            response = super().dispatch(request, token, *args, **kwargs)
+            ip = client_ip(request)
+            check_rate('ip', ip, settings.OGC_RATE_LIMIT_IP)
+            self.layer = get_active_layer(token, ip)
+            check_rate(
+                'layer', self.layer.pk, settings.OGC_RATE_LIMIT_LAYER)
+            check_rate(
+                'owner', self.layer.owner_id,
+                settings.OGC_RATE_LIMIT_OWNER)
+            count_request(self.layer.pk)
+            if self.layer.touch():
+                # Written now and then, not on every request
+                self.layer.add_requests(
+                    max(take_request_count(self.layer.pk), 1))
+            etag = last_modified = None
+            response = None
+            if request.method in ('GET', 'HEAD'):
+                etag, last_modified = self.validators(request, **kwargs)
+                response = get_conditional_response(
+                    request, etag=etag, last_modified=last_modified)
+            if response is None:
+                response = super().dispatch(request, token, *args, **kwargs)
+                if etag is None and request.method in ('GET', 'HEAD'):
+                    # The data was not cached before, it is now
+                    etag, last_modified = self.validators(request, **kwargs)
+            self.apply_validators(response, etag, last_modified)
+        except OgcLayerProtectionError as exc:
+            retry_after = exc.retry_after
+            response = ogc_exception_response(protection_exception(exc))
         except OgcApiException as exc:
             response = ogc_exception_response(exc)
         except OgcLayerOverCapError as exc:
@@ -156,7 +301,10 @@ class OgcFeaturesView(View):
         except OgcLayerError as exc:
             response = ogc_exception_response(
                 OgcApiException(400, 'InvalidLayer', str(exc)))
+        if retry_after is not None:
+            response['Retry-After'] = str(retry_after)
         response['Access-Control-Allow-Origin'] = '*'
+        response['Access-Control-Expose-Headers'] = 'ETag, Retry-After'
         return response
 
     def require_collection(self, collection_id):
@@ -347,6 +495,7 @@ def collection_metadata(request, token, layer):
 
 
 class CollectionsView(OgcFeaturesView):
+    depends_on_data = True
 
     def get(self, request, token):
         return JsonResponse({
@@ -363,6 +512,7 @@ class CollectionsView(OgcFeaturesView):
 
 
 class CollectionView(OgcFeaturesView):
+    depends_on_data = True
 
     def get(self, request, token, collection_id):
         self.require_collection(collection_id)
@@ -370,6 +520,14 @@ class CollectionView(OgcFeaturesView):
 
 
 class ItemsView(OgcFeaturesView):
+    depends_on_data = True
+
+    def cache_parts(self, request, **kwargs):
+        self.bbox_for_cache = parse_bbox_param(request)
+        return [
+            self.__class__.__name__, sorted(kwargs.items()),
+            sorted(request.GET.items()),
+        ]
 
     def get(self, request, token, collection_id):
         self.require_collection(collection_id)
@@ -393,12 +551,28 @@ class ItemsView(OgcFeaturesView):
             ids = get_layer_ids(self.layer, bbox=bbox)
 
         number_matched = len(ids)
-        page = list(visible_records(
-            BiologicalCollectionRecord.objects.filter(
-                pk__in=ids[offset:offset + limit]),
-            self.layer
-        ).select_related(*SELECT_RELATED).order_by('pk'))
-        number_returned = len(page)
+        with statement_timeout():
+            page = list(visible_records(
+                BiologicalCollectionRecord.objects.filter(
+                    pk__in=ids[offset:offset + limit]),
+                self.layer
+            ).select_related(*SELECT_RELATED).order_by('pk'))
+        features, size = [], 0
+        for feature in features_from_records(page):
+            chunk = json.dumps(feature, cls=DjangoJSONEncoder)
+            size += len(chunk)
+            # A page stops growing once it is too big, but never ends up
+            # empty, so a client can always make progress
+            if features and size > settings.OGC_RESPONSE_MAX_BYTES:
+                break
+            features.append(chunk)
+        number_returned = len(features)
+        step = limit
+        if number_returned < len(page):
+            # The page was cut short: the next one starts at the first
+            # record left out, which is found by its place among the ids
+            step = bisect_left(
+                ids[offset:offset + limit], page[number_returned].pk)
 
         links = [
             {
@@ -407,10 +581,10 @@ class ItemsView(OgcFeaturesView):
                 'type': 'application/geo+json',
             },
         ]
-        if offset + limit < number_matched:
+        if offset + step < number_matched:
             links.append({
                 'href': items_url(
-                    request, token, limit=limit, offset=offset + limit),
+                    request, token, limit=limit, offset=offset + step),
                 'rel': 'next',
                 'type': 'application/geo+json',
             })
@@ -430,29 +604,30 @@ class ItemsView(OgcFeaturesView):
             'type': 'application/json',
         })
 
-        return JsonResponse(
-            {
-                'type': 'FeatureCollection',
-                'numberMatched': number_matched,
-                'numberReturned': number_returned,
-                'timeStamp': timezone.now().isoformat(),
-                'links': links,
-                'features': [feature_from_record(r) for r in page],
-            },
+        header = json.dumps({
+            'type': 'FeatureCollection',
+            'numberMatched': number_matched,
+            'numberReturned': number_returned,
+            'timeStamp': timezone.now().isoformat(),
+            'links': links,
+        }, cls=DjangoJSONEncoder)
+        return HttpResponse(
+            '%s, "features": [%s]}' % (header[:-1], ','.join(features)),
             content_type='application/geo+json',
         )
 
 
 class ItemView(OgcFeaturesView):
+    depends_on_data = True
 
     def get(self, request, token, collection_id, item_id):
         self.require_collection(collection_id)
 
-        record = visible_records(
-            BiologicalCollectionRecord.objects.filter(uuid=item_id),
-            self.layer
-        ).select_related(*SELECT_RELATED).first()
-        # Only serve records that belong to the layer
+        with statement_timeout():
+            record = visible_records(
+                BiologicalCollectionRecord.objects.filter(uuid=item_id),
+                self.layer
+            ).select_related(*SELECT_RELATED).first()
         ids = get_layer_ids(self.layer)
         if record is None or not is_in_sorted(ids, record.pk):
             raise OgcApiException(404, 'NotFound', 'Unknown feature.')
