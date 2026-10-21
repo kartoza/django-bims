@@ -2558,6 +2558,9 @@ class OgcLayerAdmin(admin.ModelAdmin):
         'is_active',
         'expires_at',
         'record_count_cached',
+        'last_evaluation_ms',
+        'request_count',
+        'failure_count',
         'created',
         'last_accessed',
     )
@@ -2569,8 +2572,31 @@ class OgcLayerAdmin(admin.ModelAdmin):
         'last_accessed',
         'record_count_cached',
         'record_count_updated',
+        'last_evaluated',
+        'last_evaluation_ms',
+        'request_count',
+        'failure_count',
+        'disabled_reason',
     )
-    actions = ['revoke', 'rotate_token']
+    actions = ['revoke', 'rotate_token', 'reactivate']
+
+    def save_model(self, request, obj, form, change):
+        # Switching a layer back on by hand clears why it was switched off
+        if change and 'is_active' in form.changed_data and obj.is_active:
+            obj.failure_count = 0
+            obj.disabled_reason = ''
+        super().save_model(request, obj, form, change)
+
+    def reactivate(self, request, queryset):
+        """Switch layers back on and clear their failure count."""
+        count = 0
+        for layer in queryset:
+            layer.reset_failures()
+            if not layer.is_active:
+                layer.is_active = True
+                layer.save(update_fields=['is_active'])
+            count += 1
+        self.message_user(request, '%d layer(s) switched back on.' % count)
 
     def revoke(self, request, queryset):
         updated = queryset.update(is_active=False)

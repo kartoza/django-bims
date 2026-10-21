@@ -374,6 +374,29 @@ def _matching_ids(matched, cap):
 
 
 def _evaluate_ids(layer, bbox, cache_key, use_cache):
+    """Run _find_ids() and keep the cost figures of the layer up to date."""
+    started = time.monotonic()
+    try:
+        ids = _find_ids(layer, bbox, cache_key, use_cache)
+    except OgcLayerOverCapError:
+        # The search worked, the layer just matches too much
+        _record_evaluation(layer, bbox, started)
+        raise
+    except OgcLayerTimeoutError:
+        layer.record_failure()
+        raise
+    _record_evaluation(layer, bbox, started)
+    return ids
+
+
+def _record_evaluation(layer, bbox, started):
+    if bbox:
+        # Only whole-layer evaluations say how costly the layer is
+        return
+    layer.record_evaluation(int((time.monotonic() - started) * 1000))
+
+
+def _find_ids(layer, bbox, cache_key, use_cache):
     cap = settings.OGC_LAYER_MAX_RECORDS
     if use_cache:
         check_rate(
@@ -490,7 +513,11 @@ def get_layer_extent(layer, use_cache=True):
             return None
 
     def build():
-        extent = _compute_extent(ids)
+        try:
+            extent = _compute_extent(ids)
+        except OgcLayerTimeoutError:
+            layer.record_failure()
+            raise
         if use_cache:
             try:
                 cache.set(

@@ -53,3 +53,14 @@ OGC_RESPONSE_MAX_BYTES = int(
 # without plain index scans (see statement_timeout in ogc_protection.py).
 OGC_LAYER_FIRST_ATTEMPT_TIMEOUT = int(
     os.environ.get('OGC_LAYER_FIRST_ATTEMPT_TIMEOUT', 3))
+
+# Switch the whole feature off (every layer URL answers 503)
+OGC_LAYERS_ENABLED = os.environ.get(
+    'OGC_LAYERS_ENABLED', 'true').lower() not in ('0', 'false', 'no', 'off')
+# Evaluations that time out in a row before a layer is switched off (0: never)
+OGC_LAYER_MAX_FAILURES = int(os.environ.get('OGC_LAYER_MAX_FAILURES', 5))
+# Active layers one owner may have (0: no limit)
+OGC_MAX_LAYERS_PER_OWNER = int(os.environ.get('OGC_MAX_LAYERS_PER_OWNER', 20))
+# Requests slower than this are logged, with the layer id and no token
+OGC_SLOW_REQUEST_SECONDS = float(
+    os.environ.get('OGC_SLOW_REQUEST_SECONDS', 3))

@@ -233,3 +233,31 @@ def check_rate(scope, identifier, limit, window=60, message=None):
         raise OgcLayerThrottledError(
             message or 'Too many requests. Slow down and try again.',
             retry_after=window - (now % window) or 1)
+
+
+def count_request(layer_pk):
+    """Count a request to a layer in the cache.
+
+    The count is written to the database now and then, see
+    take_request_count(), so that serving a request does not add a write.
+    """
+    key = _schema_key('requests', layer_pk)
+
+    def count():
+        cache.add(key, 0, 24 * 3600)
+        cache.incr(key)
+
+    _cache_call(count)
+
+
+def take_request_count(layer_pk):
+    """Return the requests counted since the last call, and subtract them."""
+    key = _schema_key('requests', layer_pk)
+
+    def take():
+        counted = cache.get(key) or 0
+        if counted:
+            cache.decr(key, counted)
+        return counted
+
+    return _cache_call(take, default=0) or 0

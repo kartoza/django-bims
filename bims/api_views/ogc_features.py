@@ -6,7 +6,9 @@ named "records", under /ogc/layers/<token>/...
 """
 import hashlib
 import json
+import logging
 import math
+import time
 from bisect import bisect_left
 from datetime import datetime, timezone as dt_timezone
 
@@ -40,8 +42,12 @@ from bims.utils.ogc_protection import (
     OgcLayerThrottledError,
     check_rate,
     client_ip,
+    count_request,
     statement_timeout,
+    take_request_count,
 )
+
+logger = logging.getLogger(__name__)
 
 COLLECTION_ID = 'records'
 
@@ -223,6 +229,37 @@ class OgcFeaturesView(View):
             'private, no-cache')
 
     def dispatch(self, request, token, *args, **kwargs):
+        if not settings.OGC_LAYERS_ENABLED:
+            response = ogc_exception_response(OgcApiException(
+                503, 'ServiceUnavailable',
+                'Live layers are switched off on this site.'))
+            response['Retry-After'] = str(settings.OGC_LAYER_RETRY_AFTER)
+            response['Access-Control-Allow-Origin'] = '*'
+            return response
+        started = time.monotonic()
+        self.layer = None
+        response = self.handle(request, token, *args, **kwargs)
+        self.log_if_slow(request, response, started)
+        return response
+
+    def log_if_slow(self, request, response, started):
+        """Log slow requests. The URL holds the token, so it is not logged."""
+        duration = time.monotonic() - started
+        limit = settings.OGC_SLOW_REQUEST_SECONDS
+        if not limit or duration < limit:
+            return
+        params = {
+            name: request.GET[name]
+            for name in ('limit', 'offset', 'bbox', 'f')
+            if name in request.GET
+        }
+        logger.warning(
+            'Slow OGC request: layer=%s view=%s status=%s duration=%.2fs '
+            'params=%s',
+            self.layer.pk if self.layer else None,
+            self.__class__.__name__, response.status_code, duration, params)
+
+    def handle(self, request, token, *args, **kwargs):
         retry_after = None
         try:
             ip = client_ip(request)
@@ -233,7 +270,11 @@ class OgcFeaturesView(View):
             check_rate(
                 'owner', self.layer.owner_id,
                 settings.OGC_RATE_LIMIT_OWNER)
-            self.layer.touch()
+            count_request(self.layer.pk)
+            if self.layer.touch():
+                # Written now and then, not on every request
+                self.layer.add_requests(
+                    max(take_request_count(self.layer.pk), 1))
             etag = last_modified = None
             response = None
             if request.method in ('GET', 'HEAD'):
