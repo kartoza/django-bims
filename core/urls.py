@@ -20,6 +20,7 @@ from django.contrib import admin
 from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 from bims.views.documents import BimsDocumentUploadView
+from bims.api_views.ogc_features import LandingPageView
 from django.urls import re_path
 from django.contrib.flatpages import views
 from bims.api_schema import schema_view
@@ -50,6 +51,8 @@ urlpatterns = [
         BimsDocumentUploadView.as_view()),
         name='document_upload'),
     re_path(r'^api-auth/', include('rest_framework.urls')),
+    path('ogc/layers/<str:token>/', include('bims.urls_ogc')),
+    path('ogc/layers/<str:token>', LandingPageView.as_view()),
 
     re_path(r'^api/schema/swagger(?P<format>\.json|\.yaml)$',
         schema_view.without_ui(cache_timeout=0), name='schema-json'),

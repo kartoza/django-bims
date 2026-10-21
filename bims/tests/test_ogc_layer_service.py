@@ -13,14 +13,22 @@ from bims.tests.model_factories import (
     TaxonomyF,
     UserF,
 )
+from bims.models.biological_collection_record import (
+    BiologicalCollectionRecord
+)
 from bims.utils.ogc_layer import (
     OgcLayerFilterError,
     OgcLayerOverCapError,
     count_layer_records,
+    get_layer_extent,
+    get_layer_ids,
     get_layer_queryset,
     has_narrowing_filter,
     validate_layer,
     validate_query,
+    visible_records,
+    _decode_ids,
+    _encode_ids,
 )
 
 
@@ -394,3 +402,155 @@ class TestCreateLayerFromSearchProcess(OgcLayerServiceTestCase):
         self.run_action()
         self.assertFalse(OgcLayer.objects.exists())
         self.assertIn('more than 1', self.messages()[-1])
+
+
+class TestGetLayerIds(OgcLayerServiceTestCase):
+
+    def test_ids_are_sorted_and_match_queryset(self):
+        records = [self.create_record() for _ in range(3)]
+        records.append(self.create_record(taxonomy=self.other_taxon))
+        layer = self.create_layer()
+        ids = get_layer_ids(layer)
+        self.assertEqual(ids, sorted(ids))
+        self.assertEqual(ids, self.ids(layer))
+        self.assertEqual(len(ids), 3)
+
+    def test_ids_are_cached(self):
+        self.create_record()
+        layer = self.create_layer()
+        first = get_layer_ids(layer)
+        self.create_record()
+        self.assertEqual(get_layer_ids(layer), first)
+        self.assertEqual(len(get_layer_ids(layer, use_cache=False)), 2)
+
+    def test_encode_round_trip(self):
+        ids = [1, 2, 5, 4294967296, 90000000000]
+        self.assertEqual(_decode_ids(_encode_ids(ids)), ids)
+        self.assertEqual(_decode_ids(_encode_ids([])), [])
+
+    def test_cache_failure_is_tolerated(self):
+        from unittest import mock
+        self.create_record()
+        layer = self.create_layer()
+        with mock.patch(
+            'bims.utils.ogc_layer.cache.set',
+            side_effect=Exception('too large')
+        ):
+            self.assertEqual(len(get_layer_ids(layer)), 1)
+
+    @override_settings(OGC_LAYER_MAX_RECORDS=2)
+    def test_reads_at_most_one_past_the_cap(self):
+        for _ in range(5):
+            self.create_record()
+        layer = self.create_layer()
+        with self.assertRaises(OgcLayerOverCapError):
+            get_layer_ids(layer)
+        # The over-cap result is cached too
+        with self.assertNumQueries(0):
+            with self.assertRaises(OgcLayerOverCapError):
+                get_layer_ids(layer)
+
+    def test_bbox_restricts_ids(self):
+        from django.contrib.gis.geos import Point
+        inside_site = LocationSiteF.create(geometry_point=Point(10.0, 10.0))
+        outside_site = LocationSiteF.create(
+            geometry_point=Point(-80.0, -80.0))
+        inside = self.create_record(site=inside_site)
+        self.create_record(site=outside_site)
+        layer = self.create_layer()
+        self.assertEqual(len(get_layer_ids(layer)), 2)
+        self.assertEqual(
+            get_layer_ids(layer, bbox=(0, 0, 20, 20)), [inside.id])
+        self.assertEqual(get_layer_ids(layer, bbox=(50, 50, 60, 60)), [])
+
+    def test_bbox_ids_cached_separately(self):
+        from django.contrib.gis.geos import Point
+        site = LocationSiteF.create(geometry_point=Point(10.0, 10.0))
+        self.create_record(site=site)
+        layer = self.create_layer()
+        self.assertEqual(len(get_layer_ids(layer, bbox=(0, 0, 20, 20))), 1)
+        self.assertEqual(get_layer_ids(layer, bbox=(50, 50, 60, 60)), [])
+
+    def test_does_not_update_saved_count_for_bbox(self):
+        self.create_record()
+        layer = self.create_layer()
+        get_layer_ids(layer, bbox=(50, 50, 60, 60))
+        layer.refresh_from_db()
+        self.assertIsNone(layer.record_count_cached)
+
+
+class TestVisibleRecords(OgcLayerServiceTestCase):
+
+    def test_cached_id_is_not_served_after_embargo(self):
+        record = self.create_record()
+        layer = self.create_layer()
+        ids = get_layer_ids(layer)
+        self.assertEqual(ids, [record.id])
+        BiologicalCollectionRecord.objects.filter(pk=record.pk).update(
+            end_embargo_date=timezone.now().date() + timedelta(days=10))
+        page = visible_records(
+            BiologicalCollectionRecord.objects.filter(pk__in=ids), layer)
+        self.assertEqual(list(page), [])
+
+    def test_cached_id_is_not_served_after_unvalidated(self):
+        record = self.create_record()
+        layer = self.create_layer()
+        ids = get_layer_ids(layer)
+        BiologicalCollectionRecord.objects.filter(pk=record.pk).update(
+            validated=False)
+        page = visible_records(
+            BiologicalCollectionRecord.objects.filter(pk__in=ids), layer)
+        self.assertEqual(list(page), [])
+
+    def test_cached_id_is_not_served_after_data_type_change(self):
+        record = self.create_record()
+        layer = self.create_layer()
+        ids = get_layer_ids(layer)
+        BiologicalCollectionRecord.objects.filter(pk=record.pk).update(
+            data_type='private')
+        page = visible_records(
+            BiologicalCollectionRecord.objects.filter(pk__in=ids), layer)
+        self.assertEqual(list(page), [])
+
+
+class TestGetLayerExtent(OgcLayerServiceTestCase):
+
+    def test_extent_of_points(self):
+        from django.contrib.gis.geos import Point
+        self.create_record(site=LocationSiteF.create(
+            geometry_point=Point(10.0, 20.0)))
+        self.create_record(site=LocationSiteF.create(
+            geometry_point=Point(-5.0, 30.0)))
+        self.assertEqual(
+            get_layer_extent(self.create_layer()), [-5.0, 20.0, 10.0, 30.0])
+
+    def test_extent_ignores_records_outside_the_filter(self):
+        from django.contrib.gis.geos import Point
+        self.create_record(site=LocationSiteF.create(
+            geometry_point=Point(10.0, 20.0)))
+        self.create_record(
+            taxonomy=self.other_taxon,
+            site=LocationSiteF.create(geometry_point=Point(80.0, 60.0)))
+        self.assertEqual(
+            get_layer_extent(self.create_layer()), [10.0, 20.0, 10.0, 20.0])
+
+    def test_no_records_has_no_extent(self):
+        self.assertIsNone(get_layer_extent(self.create_layer()))
+
+    def test_extent_is_cached(self):
+        from django.contrib.gis.geos import Point
+        self.create_record(site=LocationSiteF.create(
+            geometry_point=Point(10.0, 20.0)))
+        layer = self.create_layer()
+        first = get_layer_extent(layer)
+        self.create_record(site=LocationSiteF.create(
+            geometry_point=Point(50.0, 50.0)))
+        self.assertEqual(get_layer_extent(layer), first)
+        self.assertNotEqual(get_layer_extent(layer, use_cache=False), first)
+
+    @override_settings(OGC_LAYER_MAX_RECORDS=1)
+    def test_over_cap_raises(self):
+        self.create_record()
+        self.create_record()
+        with self.assertRaises(OgcLayerOverCapError):
+            get_layer_extent(self.create_layer())
