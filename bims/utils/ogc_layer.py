@@ -8,10 +8,15 @@ that are safe to serve behind a shared URL.
 import datetime
 import hashlib
 import json
+import logging
+import zlib
+from array import array
 
 from django.conf import settings
+from django.contrib.gis.geos import Polygon as GEOSPolygon
 from django.core.cache import cache
 from django.db import connection
+from django.contrib.gis.db.models import Extent
 from django.db.models import Q
 from django.utils import timezone
 
@@ -53,6 +58,20 @@ UNSUPPORTED_MODULES = ('water_temperature', 'physico_chemistry', 'climate')
 
 SENSITIVE_GROUP = 'SensitiveDataGroup'
 PRIVATE_GROUP = 'PrivateDataGroup'
+
+GEOMETRY_FIELDS = (
+    'geometry_point',
+    'geometry_polygon',
+    'geometry_multipolygon',
+    'geometry_line',
+)
+
+# Cached marker for a layer that matches more records than the cap
+OVER_CAP = 'over_cap'
+# Cached marker for a layer without any geometry
+NO_EXTENT = 'no_extent'
+
+logger = logging.getLogger('bims')
 
 
 class OgcLayerError(Exception):
@@ -142,12 +161,36 @@ def _allowed_data_types(layer):
     return data_types
 
 
+def visible_records(queryset, layer):
+    """Restrict records to what a layer may serve.
+
+    Only validated records that are not under embargo (even the owner's
+    own) and only the data types allowed for the layer are kept. This is
+    applied again when a page is read, so a record that becomes embargoed
+    or unvalidated stops being served even if its id is still cached.
+    """
+    today = datetime.date.today()
+    return queryset.filter(
+        validated=True
+    ).filter(
+        Q(end_embargo_date__isnull=True) |
+        Q(end_embargo_date__lte=today) |
+        Q(start_embargo_date__gt=today)
+    ).filter(
+        Q(data_type='') |
+        Q(data_type__in=_allowed_data_types(layer))
+    )
+
+
 def get_layer_queryset(layer):
     """Return the records a layer serves, as a queryset ordered by id.
 
-    The saved filter is evaluated as the layer owner. On top of that the
-    layer only serves validated records that are not under embargo, even
-    when they belong to the owner, and only the data types allowed for it.
+    The saved filter is evaluated as the layer owner, then restricted with
+    visible_records().
+
+    Do not combine this queryset with ``ORDER BY id LIMIT n`` on a large
+    tenant: Postgres then walks the whole records table in id order. Use
+    get_layer_ids() to find the matching ids and read pages by id.
     """
     from bims.api_views.search import CollectionSearch
 
@@ -165,60 +208,145 @@ def get_layer_queryset(layer):
         )
     matched = search.process_search()
 
-    today = datetime.date.today()
     # Select by id so that joins in the filter cannot return a record twice
-    return BiologicalCollectionRecord.objects.filter(
-        pk__in=matched.order_by().values('pk'),
-        validated=True
-    ).filter(
-        Q(end_embargo_date__isnull=True) |
-        Q(end_embargo_date__lte=today) |
-        Q(start_embargo_date__gt=today)
-    ).filter(
-        Q(data_type='') |
-        Q(data_type__in=_allowed_data_types(layer))
+    return visible_records(
+        BiologicalCollectionRecord.objects.filter(
+            pk__in=matched.order_by().values('pk')),
+        layer
     ).order_by('pk')
 
 
-def _count_cache_key(layer):
+def bbox_filter(bbox):
+    """Q object for records whose site overlaps (minx, miny, maxx, maxy)."""
+    bbox_polygon = GEOSPolygon.from_bbox(bbox)
+    query = Q()
+    for field in GEOMETRY_FIELDS:
+        query |= Q(**{'site__%s__bboverlaps' % field: bbox_polygon})
+    return query
+
+
+def _cache_key(layer, bbox=None):
     digest = hashlib.sha256(json.dumps({
         'query': layer.query,
         'owner': layer.owner_id,
         'sensitive': layer.include_sensitive,
         'private': layer.include_private,
+        'bbox': list(bbox) if bbox else None,
     }, sort_keys=True, default=str).encode('utf-8')).hexdigest()
-    return 'ogc_layer_count:%s:%s:%s' % (
+    return 'ogc_layer_ids:%s:%s:%s' % (
         connection.schema_name, layer.pk, digest)
+
+
+def _encode_ids(ids):
+    """Pack sorted ids compactly, to stay under the cache item size limit."""
+    return zlib.compress(array('Q', ids).tobytes())
+
+
+def _decode_ids(value):
+    ids = array('Q')
+    ids.frombytes(zlib.decompress(value))
+    return ids.tolist()
+
+
+def get_layer_ids(layer, bbox=None, use_cache=True):
+    """Return the sorted ids of the records a layer serves.
+
+    Ids are found with one unordered query that never reads past the cap,
+    then cached for OGC_LAYER_COUNT_CACHE_TTL seconds, so paging through a
+    layer does not repeat the search. Pages are then read by id.
+
+    :param bbox: optional (minx, miny, maxx, maxy) to restrict the ids to.
+    :raises OgcLayerOverCapError: if the layer, or the bbox part of it,
+        has more records than OGC_LAYER_MAX_RECORDS.
+    """
+    cap = settings.OGC_LAYER_MAX_RECORDS
+    cache_key = _cache_key(layer, bbox)
+    cached = cache.get(cache_key) if use_cache else None
+    if cached == OVER_CAP:
+        raise OgcLayerOverCapError(cap)
+    if cached is not None:
+        return _decode_ids(cached)
+
+    queryset = get_layer_queryset(layer)
+    if bbox:
+        queryset = queryset.filter(bbox_filter(bbox))
+    # Reading one id past the cap is enough to know it is exceeded
+    ids = sorted(queryset.order_by().values_list('pk', flat=True)[:cap + 1])
+    over_cap = len(ids) > cap
+    try:
+        cache.set(
+            cache_key,
+            OVER_CAP if over_cap else _encode_ids(ids),
+            settings.OGC_LAYER_COUNT_CACHE_TTL)
+    except Exception:  # The cache is an optimisation, not required
+        logger.warning('Could not cache OGC layer ids', exc_info=True)
+    if over_cap:
+        raise OgcLayerOverCapError(cap)
+    if not bbox and layer.pk:
+        now = timezone.now()
+        type(layer).objects.filter(pk=layer.pk).update(
+            record_count_cached=len(ids),
+            record_count_updated=now
+        )
+        layer.record_count_cached = len(ids)
+        layer.record_count_updated = now
+    return ids
+
+
+def get_layer_extent(layer, use_cache=True):
+    """Return the bounding box of a layer as [minx, miny, maxx, maxy].
+
+    The extent covers the sites of the layer records, in lon/lat (EPSG:4326).
+    It is cached like the ids.
+
+    :raises OgcLayerOverCapError: if the layer is over the cap.
+    :return: the bounding box, or None if no record has a geometry.
+    """
+    from bims.models.location_site import LocationSite
+
+    # Enforces the cap, and avoids the search for a layer that is too big
+    get_layer_ids(layer, use_cache=use_cache)
+
+    cache_key = _cache_key(layer).replace(
+        'ogc_layer_ids:', 'ogc_layer_extent:', 1)
+    cached = cache.get(cache_key) if use_cache else None
+    if cached == NO_EXTENT:
+        return None
+    if cached is not None:
+        return cached
+
+    sites = LocationSite.objects.filter(
+        id__in=get_layer_queryset(layer).order_by().values('site_id'))
+    extents = sites.aggregate(**{
+        field: Extent(field) for field in GEOMETRY_FIELDS
+    })
+    boxes = [box for box in extents.values() if box]
+    extent = None
+    if boxes:
+        extent = [
+            min(box[0] for box in boxes),
+            min(box[1] for box in boxes),
+            max(box[2] for box in boxes),
+            max(box[3] for box in boxes),
+        ]
+    try:
+        cache.set(
+            cache_key,
+            NO_EXTENT if extent is None else extent,
+            settings.OGC_LAYER_COUNT_CACHE_TTL)
+    except Exception:  # The cache is an optimisation, not required
+        logger.warning('Could not cache OGC layer extent', exc_info=True)
+    return extent
 
 
 def count_layer_records(layer, use_cache=True):
     """Count the records of a layer, never counting beyond the cap.
 
-    The count is cached for OGC_LAYER_COUNT_CACHE_TTL seconds so paging
-    through a layer does not repeat the search for every page.
-
     :raises OgcLayerOverCapError: if the layer has more records than
         OGC_LAYER_MAX_RECORDS.
     :return: number of records, at most OGC_LAYER_MAX_RECORDS.
     """
-    cap = settings.OGC_LAYER_MAX_RECORDS
-    cache_key = _count_cache_key(layer)
-    count = cache.get(cache_key) if use_cache else None
-    if count is None:
-        # Counting one record past the cap is enough to know it is exceeded
-        count = get_layer_queryset(layer).values('pk')[:cap + 1].count()
-        cache.set(cache_key, count, settings.OGC_LAYER_COUNT_CACHE_TTL)
-        if count <= cap and layer.pk:
-            now = timezone.now()
-            type(layer).objects.filter(pk=layer.pk).update(
-                record_count_cached=count,
-                record_count_updated=now
-            )
-            layer.record_count_cached = count
-            layer.record_count_updated = now
-    if count > cap:
-        raise OgcLayerOverCapError(cap)
-    return count
+    return len(get_layer_ids(layer, use_cache=use_cache))
 
 
 def validate_layer(layer):
