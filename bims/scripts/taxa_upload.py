@@ -101,6 +101,20 @@ def _bare_subgenus(subgenus_val: str, genus_name: str = '') -> str:
     return name
 
 
+def _has_infraspecific_epithet(name: str, epithet: str) -> bool:
+    """
+    True when `name` already carries `epithet` as its third (infraspecific)
+    epithet. Epithets are compared token by token after the genus, so an
+    autonym such as "Cyprideis salebrosa salebrosa" is not mistaken for the
+    binomial "Cyprideis salebrosa" just because the epithet repeats.
+    """
+    tokens = [
+        t for t in _canon(name).split()[1:]
+        if not (t.startswith('(') and t.endswith(')'))
+    ]
+    return epithet.strip().lower() in tokens[1:]
+
+
 class TaxaProcessor(object):
 
     all_keys = {}
@@ -184,7 +198,7 @@ class TaxaProcessor(object):
         rank_l = (rank or '').lower()
         if 'sub' in rank_l and 'species' in rank_l:
             sub_species_epithet = _safe_strip(self.get_row_value(row, SUBSPECIES))
-            if sub_species_epithet and sub_species_epithet.lower() not in name.lower():
+            if sub_species_epithet and not _has_infraspecific_epithet(name, sub_species_epithet):
                 name = f'{name} {sub_species_epithet.lower()}'.strip()
 
         return name
@@ -811,6 +825,19 @@ class TaxaProcessor(object):
 
         return taxon
 
+    def _find_accepted_taxon(self, accepted_name, own_name=''):
+        """
+        Look up the accepted taxon by name. A synonym can share its name with
+        its accepted taxon (and a name can have several records), so prefer
+        accepted, then doubtful, records over synonyms.
+        """
+        candidates = Taxonomy.objects.filter(canonical_name__iexact=accepted_name)
+        priority = {'ACCEPTED': 0, 'DOUBTFUL': 1}
+        return sorted(
+            candidates,
+            key=lambda t: (priority.get(_safe_upper(t.taxonomic_status), 2), t.pk)
+        )[0] if candidates.exists() else None
+
     def synonym_key(self, field_key):
         return f'{SYNONYM} {field_key}'
 
@@ -879,7 +906,7 @@ class TaxaProcessor(object):
         if rank == SUBSPECIES:
             sub_species_name = _safe_strip(self.get_row_value(row, SUBSPECIES))
             if (sub_species_name
-                    and sub_species_name.lower() not in taxon_name.lower()
+                    and not _has_infraspecific_epithet(taxon_name, sub_species_name)
                     and not sub_species_name[0].isupper()):
                 taxon_name = f'{taxon_name} {sub_species_name}'
 
@@ -1038,15 +1065,14 @@ class TaxaProcessor(object):
         # FADA id (integer part)
         fada_id = self.get_row_value(row, FADA_ID)
 
-        if is_synonym:
-            accepted_taxon_val = self.get_row_value(row, ACCEPTED_TAXON)
-            if accepted_taxon_val:
-                accepted_taxon = Taxonomy.objects.filter(
-                    canonical_name__iexact=accepted_taxon_val
-                ).first()
-                if not accepted_taxon:
-                    self.handle_error(row=row, message=f'Accepted taxon not found: {accepted_taxon_val}')
-                    return
+        # Synonyms always resolve to an accepted taxon. Doubtful taxa keep their
+        # own parent hierarchy but may also name an accepted taxon.
+        accepted_taxon_val = _safe_strip(self.get_row_value(row, ACCEPTED_TAXON))
+        if accepted_taxon_val:
+            accepted_taxon = self._find_accepted_taxon(accepted_taxon_val, taxon_name)
+            if not accepted_taxon:
+                self.handle_error(row=row, message=f'Accepted taxon not found: {accepted_taxon_val}')
+                return
 
         authors = _safe_strip(self.get_row_value(row, AUTHORS))
 
@@ -1406,8 +1432,9 @@ class TaxaProcessor(object):
 
             # Only set proposal parent for accepted/doubtful taxa (not synonyms)
             if use_proposal and proposal and not is_synonym:
-                # Ensure proposal is not its own parent
-                if taxonomy.parent and proposal.pk and taxonomy.parent.pk == proposal.pk:
+                # Ensure the taxon is not its own parent. (Proposals live in a
+                # separate table, so their pk must not be compared to a parent's.)
+                if taxonomy.parent and taxonomy.pk and taxonomy.parent.pk == taxonomy.pk:
                     self.handle_error(row=row, message='Proposal cannot be its own parent')
                     return
                 # Allow sub-ranks to have same name as parent non-sub rank (e.g., subgenus can have same name as genus)
@@ -1620,6 +1647,9 @@ class TaxaProcessor(object):
                             use_name_lookup=False,
                             preserve_taxonomic_status=False
                         )
+
+            if accepted_taxon and accepted_taxon.pk == taxonomy.pk:
+                accepted_taxon = None
 
             if accepted_taxon and accepted_taxon.accepted_taxonomy:
                 accepted_taxon.accepted_taxonomy = None

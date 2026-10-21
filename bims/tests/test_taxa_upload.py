@@ -4,6 +4,7 @@ from django.core.files import File
 from django_tenants.test.cases import FastTenantTestCase
 from django_tenants.test.client import TenantClient
 from mock import mock
+from preferences import preferences
 
 from bims.enums import TaxonomicRank
 from bims.enums.taxon_addendum import TaxonAddendum
@@ -1891,3 +1892,68 @@ class TestCollidingTaxaUpload(FastTenantTestCase):
         self.assertEqual(existing.col_id, 'QLSH')
         self.assertEqual(
             existing.subgenus.canonical_name, 'Candonopsis (Abcandonopsis)')
+
+
+class TestFadaDoubtfulAndAutonymUpload(FastTenantTestCase):
+    """Regression tests for the FADA Ostracoda upload."""
+
+    def setUp(self):
+        self.taxon_group = TaxonGroupF.create()
+        self.owner = UserF.create(first_name='tester')
+
+    def _upload(self):
+        with open(os.path.join(
+            test_data_directory, 'taxa_upload_fada_doubtful_autonym.csv'
+        ), 'rb') as file:
+            upload_session = UploadSessionF.create(
+                uploader=self.owner,
+                process_file=File(file),
+                module_group=self.taxon_group
+            )
+        taxa_csv_upload = TaxaCSVUpload()
+        taxa_csv_upload.upload_session = upload_session
+        taxa_csv_upload.start('utf-8-sig')
+        return upload_session
+
+    @mock.patch('bims.scripts.data_upload.DataCSVUpload.finish')
+    @mock.patch('bims.scripts.taxa_upload.fetch_all_species_from_gbif')
+    @mock.patch('bims.scripts.taxa_upload.is_fada_site')
+    def test_upload(self, mock_is_fada_site, mock_fetch_gbif, mock_finish):
+        mock_finish.return_value = None
+        mock_is_fada_site.return_value = True
+        mock_fetch_gbif.return_value = None
+
+        for auto_validate in (True, False):
+            with self.subTest(auto_validate=auto_validate):
+                site_setting = preferences.SiteSetting
+                site_setting.auto_validate_taxa_on_upload = auto_validate
+                site_setting.save()
+                Taxonomy.objects.all().delete()
+                upload_session = self._upload()
+                self.assertFalse(
+                    upload_session.error_file,
+                    msg='No row should have been rejected')
+
+                # Doubtful taxon keeps its own parent but links to its accepted name
+                doubtful = Taxonomy.objects.get(fada_id='SYN-501349')
+                self.assertEqual(doubtful.taxonomic_status, 'DOUBTFUL')
+                self.assertEqual(doubtful.parent.canonical_name, 'Eurycypris')
+                self.assertEqual(
+                    doubtful.accepted_taxonomy.canonical_name, 'Cypris matthaii')
+
+                # The autonym is a subspecies named as a trinomial
+                autonym = Taxonomy.objects.get(fada_id='82505')
+                self.assertEqual(
+                    autonym.canonical_name, 'Cyprideis salebrosa salebrosa')
+                self.assertEqual(autonym.rank, 'SUBSPECIES')
+                self.assertEqual(
+                    autonym.parent.canonical_name, 'Cyprideis salebrosa')
+                self.assertEqual(Taxonomy.objects.filter(
+                    canonical_name='Cyprideis salebrosa',
+                    rank='SUBSPECIES').count(), 0)
+
+                # A synonym sharing the accepted taxon's name points at the
+                # accepted record, never at itself or another synonym.
+                for fada_id in ('SYN-500434', 'SYN-34690'):
+                    syn = Taxonomy.objects.get(fada_id=fada_id)
+                    self.assertEqual(syn.accepted_taxonomy.fada_id, '83959')

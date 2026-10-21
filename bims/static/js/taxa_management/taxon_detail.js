@@ -65,15 +65,34 @@ export const taxonDetail = (() => {
         return data;
     }
 
+    // A synonym can have been described under a different family/subfamily than
+    // its accepted taxon. The upload keeps the original classification in
+    // additional_data, so show it alongside the accepted hierarchy.
+    function originalClassification(data) {
+        const extra = data?.additional_data;
+        if (!extra) {
+            return '';
+        }
+        const parts = [['Family', 'Family'], ['SubFamily', 'Subfamily'],
+            ['Tribe', 'Tribe'], ['SubTribe', 'Subtribe'], ['Genus', 'Genus']]
+            .filter(([key]) => extra[key])
+            .map(([key, label]) => `${label}: <strong>${extra[key]}</strong>`);
+        if (!parts.length) {
+            return '';
+        }
+        return `<br/>As originally classified &mdash; ${parts.join(' &middot; ')}`;
+    }
+
     function acceptedHierarchyNotice(data, hierarchySource) {
         if (!shouldUseAcceptedHierarchy(data)) {
             return '';
         }
+        const originalNote = originalClassification(data);
         if (!hierarchySource || hierarchySource === data) {
             const statusLabel = (data?.taxonomic_status || 'Synonym').replace(/_/g, ' ');
             return `
                 <div class="alert alert-warning synonym-summary mb-3 mx-4">
-                    <strong>${statusLabel}</strong>: Accepted hierarchy data is unavailable.
+                    <strong>${statusLabel}</strong>: Accepted hierarchy data is unavailable.${originalNote}
                 </div>
             `;
         }
@@ -86,7 +105,7 @@ export const taxonDetail = (() => {
             <div class="alert alert-info synonym-summary mb-3 mx-4">
                 <strong>${statusLabel}</strong>: Showing hierarchical information for
                 <a href="#" class="accepted-taxon-link" data-accepted-name="${safeAcceptedName}"><strong>${acceptedName}</strong></a>. Metadata below refers to
-                <strong>${data.canonical_name}</strong>.
+                <strong>${data.canonical_name}</strong>.${originalNote}
             </div>
         `;
     }
