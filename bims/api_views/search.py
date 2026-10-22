@@ -155,10 +155,16 @@ class CollectionSearchAPIView(BimsApiView):
             return Response(search_results)
 
 
+# Above this many sites a polygon filter is kept as a subquery
+POLYGON_SITE_ID_LIMIT = 50000
+
+
 class CollectionSearch(object):
     location_sites_raw_query = ''
     collection_records = None
     filtered_taxa_records = None
+    # Sites left by the site level filters (polygon, ...), None if no such filter
+    filtered_location_sites = None
     sass_only = False
     site = None
     taxon_groups = TaxonGroup.objects.all()
@@ -650,6 +656,51 @@ class CollectionSearch(object):
                 **query_dict
             )
 
+    def free_text_records(self, records):
+        """
+        Resolve the free text search to records. Sources are tried in order
+        and the first one that matches records wins. Each source is looked up
+        on the small tables (taxonomy, sites) first, so the records table is
+        only touched through the taxonomy_id/site_id indexes, and a search
+        without match never scans it.
+        :param records: base queryset of records
+        :return: queryset of records, empty if nothing matched
+        """
+        query = self.search_query
+        sources = [
+            ('taxonomy',
+             Q(canonical_name__icontains=query) |
+             Q(accepted_taxonomy__canonical_name__icontains=query) |
+             Q(synonym__canonical_name__icontains=query)),
+            ('original', None),
+            ('taxonomy', Q(scientific_name__icontains=query)),
+            ('site', Q(site_code__icontains=query)),
+            ('site', Q(legacy_river_name__icontains=query)),
+            ('site', Q(river__name__icontains=query)),
+            ('taxonomy', Q(vernacular_names__name__icontains=query)),
+            ('taxonomy',
+             Q(tags__name__icontains=query) | Q(tags__slug__icontains=query)),
+        ]
+        for kind, condition in sources:
+            if kind == 'original':
+                matched = records.filter(
+                    original_species_name__icontains=query)
+            elif kind == 'taxonomy':
+                ids = list(Taxonomy.objects.filter(
+                    condition).values_list('id', flat=True).distinct())
+                if not ids:
+                    continue
+                matched = records.filter(taxonomy_id__in=ids)
+            else:
+                sites = LocationSite.objects.filter(condition)
+                if not sites.exists():
+                    continue
+                matched = records.filter(
+                    site_id__in=sites.values('id'))
+            if matched.exists():
+                return matched
+        return records.none()
+
     def process_search(self):
         """
         Do the search process.
@@ -686,45 +737,7 @@ class CollectionSearch(object):
                 'biologicalcollectionrecord__isnull': False
             })
         elif self.search_query:
-            bio = collection_records_by_site.filter(
-                Q(taxonomy__canonical_name__icontains=self.search_query) |
-                Q(taxonomy__accepted_taxonomy__canonical_name__icontains=self.search_query) |
-                Q(taxonomy__synonym__canonical_name__icontains=self.search_query)
-            )
-
-            if not bio.exists():
-                bio = collection_records_by_site.filter(
-                    original_species_name__icontains=self.search_query
-                )
-
-            if not bio.exists():
-                bio = collection_records_by_site.filter(
-                    taxonomy__scientific_name__icontains=self.search_query
-                )
-
-            if not bio.exists():
-                bio = collection_records_by_site.filter(
-                    site__site_code__icontains=self.search_query
-                )
-            if not bio.exists():
-                bio = collection_records_by_site.filter(
-                    site__legacy_river_name__icontains=self.search_query
-                )
-            if not bio.exists():
-                bio = collection_records_by_site.filter(
-                    site__river__name__icontains=self.search_query
-                )
-
-            if not bio.exists():
-                bio = collection_records_by_site.filter(
-                    taxonomy__vernacular_names__name__icontains=self.search_query
-                )
-
-            if not bio.exists():
-                bio = collection_records_by_site.filter(
-                    Q(taxonomy__tags__name__icontains=self.search_query) |
-                    Q(taxonomy__tags__slug__icontains=self.search_query)
-                ).distinct()
+            bio = self.free_text_records(collection_records_by_site)
 
         if bio is None:
             bio = collection_records_by_site
@@ -853,7 +866,11 @@ class CollectionSearch(object):
             ) = self.ecological_category
 
         if self.filtered_taxa_records is not None:
-            filters['taxonomy__in'] = self.filtered_taxa_records
+            # Resolve the taxa first (the taxonomy table is small) so the
+            # planner sees a short id list and uses the taxonomy_id index.
+            filters['taxonomy__in'] = list(
+                self.filtered_taxa_records.values_list('id', flat=True)
+            )
 
         if filters:
             filters['taxonomy__isnull'] = False
@@ -1021,9 +1038,18 @@ class CollectionSearch(object):
             polygon = self.polygon
             if polygon:
                 if not isinstance(filtered_location_sites, QuerySet):
-                    filtered_location_sites = LocationSite.objects.filter(
+                    # Resolve the sites with the GiST index first so the
+                    # records are fetched by site_id, not walked one by one.
+                    # Large results stay a subquery to keep the SQL small.
+                    polygon_sites = LocationSite.objects.filter(
                         geometry_point__within=polygon
                     )
+                    site_ids = list(polygon_sites.values_list(
+                        'id', flat=True)[:POLYGON_SITE_ID_LIMIT + 1])
+                    if len(site_ids) <= POLYGON_SITE_ID_LIMIT:
+                        polygon_sites = LocationSite.objects.filter(
+                            id__in=site_ids)
+                    filtered_location_sites = polygon_sites
                     bio = bio.filter(
                         site__in=filtered_location_sites
                     )
@@ -1041,11 +1067,8 @@ class CollectionSearch(object):
                 survey__chemical_collection_record__isnull=False
             )
 
-        # If advanced spatial filter is applied, we should filter the bio even if the filtered_location_sites is empty
-        if (
-            isinstance(filtered_location_sites, QuerySet) and
-            (filtered_location_sites.count() > 0 or adv_spatial_filter)
-        ):
+        # A site filter that matches no site must give no records, not all
+        if isinstance(filtered_location_sites, QuerySet):
             bio = bio.filter(
                 site__in=filtered_location_sites
             )
@@ -1101,10 +1124,15 @@ class CollectionSearch(object):
             if self.search_query and LocationSite.objects.filter(
                 site_code__icontains=self.search_query
             ).exists():
+                # Sites matching the code are listed even without records,
+                # but must still respect the site filters (polygon, ...)
+                site_code_match = Q(site_code__icontains=self.search_query)
+                if isinstance(filtered_location_sites, QuerySet):
+                    site_code_match &= Q(id__in=filtered_location_sites)
                 location_sites_filter = LocationSite.objects.filter(
                     Q(id__in=bio.values('site_id')) |
                     Q(id__in=water_temperature) |
-                    Q(site_code__icontains=self.search_query)
+                    site_code_match
                 )
 
                 location_sites_filter = location_sites_filter.filter(
@@ -1128,20 +1156,27 @@ class CollectionSearch(object):
             ).query.sql_with_params()
 
         if not self.location_sites_raw_query and self.search_query:
-            self.location_sites_raw_query = LocationSite.objects.filter(
+            code_sites = LocationSite.objects.filter(
                 Q(owner_id=requester_id) |
                 Q(
                     Q(end_embargo_date__lte=datetime.date.today()) |
                     Q(end_embargo_date__isnull=True)
                 ),
                 site_code__icontains=self.search_query
-            ).annotate(site_id=F('id')).values(
+            )
+            if isinstance(filtered_location_sites, QuerySet):
+                code_sites = code_sites.filter(id__in=filtered_location_sites)
+            self.location_sites_raw_query = code_sites.annotate(site_id=F('id')).values(
                 'site_id',
                 'geometry_point',
                 'name',
                 'ecosystem_type'
             ).query.sql_with_params()
 
+        self.filtered_location_sites = (
+            filtered_location_sites
+            if isinstance(filtered_location_sites, QuerySet) else None
+        )
         self.collection_records = bio
         return self.collection_records
 
@@ -1238,7 +1273,11 @@ class CollectionSearch(object):
             ).filter(
                 site_code__icontains=self.search_query,
                 ecosystem_type__in=self.ecosystem_type
-            ).extra(
+            )
+            if self.filtered_location_sites is not None:
+                sites_without_occurrences = sites_without_occurrences.filter(
+                    id__in=self.filtered_location_sites)
+            sites_without_occurrences = sites_without_occurrences.extra(
                 select={
                     'name': 'site_code'
                 }

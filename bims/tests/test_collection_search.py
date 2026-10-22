@@ -139,6 +139,22 @@ class TestCollectionSearch(TestCase):
             msg="Expected records when searching by tag name"
         )
 
+    def test_search_without_match_returns_no_records(self):
+        search = CollectionSearch({'search': 'no_such_thing_anywhere'})
+        self.assertEqual(search.process_search().count(), 0)
+
+    def test_search_name_match_wins_over_site_code(self):
+        """A taxon match is used even if a later source also matches."""
+        other = TaxonomyF.create(canonical_name='other', scientific_name='o')
+        site = LocationSiteF.create(site_code='test_site_code')
+        BiologicalCollectionRecordF.create(
+            original_species_name='other', taxonomy=other, site=site)
+        records = CollectionSearch({'search': 'test'}).process_search()
+        self.assertEqual(
+            set(records.values_list('taxonomy_id', flat=True)),
+            {self.taxa.id}
+        )
+
     def test_filter_by_taxon_tags_param(self):
         """
         Passing ?tags=["invasive_tag"] should filter to taxa that have that tag.
