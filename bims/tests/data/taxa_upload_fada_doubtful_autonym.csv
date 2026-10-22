@@ -1,0 +1,10 @@
+On GBIF,FADA ID,Taxon Rank,Kingdom,Phylum,Class,Order,Family,SubFamily,Genus,Species,SubSpecies,Taxon,Author(s),Taxonomic Status,Accepted Taxon
+No,83189,Species,Animalia,Arthropoda,Ostracoda,Podocopida,Notodromadidae,Centrocypridinae,Centrocypris,matthaii,,Centrocypris matthaii,"(Arora, 1931)",Accepted,
+No,83959,Species,Animalia,Arthropoda,Ostracoda,Podocopida,Cytherideidae,Cytherideinae,Cyprideis,salebrosa,,Cyprideis salebrosa,"Van Den Bold, 1963",Accepted,
+No,84084,SubSpecies,Animalia,Arthropoda,Ostracoda,Podocopida,Cytherideidae,Cytherideinae,Cyprideis,salebrosa,hartmanni,Cyprideis salebrosa hartmanni,"(Ramirez, 1967)",Accepted,
+No,82505,SubSpecies,Animalia,Arthropoda,Ostracoda,Podocopida,Cytherideidae,Cytherideinae,Cyprideis,salebrosa,salebrosa,Cyprideis salebrosa salebrosa,"van den Bold, 1963",Accepted,
+No,83360,Species,Animalia,Arthropoda,Ostracoda,Podocopida,Cyprididae,Cypridinae,Cypris,matthaii,,Cypris matthaii,"(Arora, 1931)",Doubtful,
+No,SYN-501349,Species,Animalia,Arthropoda,Ostracoda,Podocopida,,Cypridinae,Eurycypris,matthaii,,Eurycypris matthaii,"Arora, 1931",Doubtful,Cypris matthaii
+No,SYN-500434,Species,Animalia,Arthropoda,Ostracoda,Podocopida,,Cytherideinae,Cyprideis,salebrosa,,Cyprideis salebrosa,"van den Bold, 1963",Synonym,Cyprideis salebrosa
+No,SYN-500285,Species,Animalia,Arthropoda,Ostracoda,Podocopida,,Centrocypridinae,Eurycypris,matthaii,,Eurycypris matthaii,"Arora, 1931",Synonym,Centrocypris matthaii
+No,SYN-34690,Species,Animalia,Arthropoda,Ostracoda,Podocopida,,Cytherideinae,Cyprideis,hartmanni,,Cyprideis hartmanni,"Ramirez, 1967",Synonym,Cyprideis salebrosa
