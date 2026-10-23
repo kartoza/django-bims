@@ -121,6 +121,15 @@ class SiteSetting(Preferences):
         )
     )
 
+    metadata_upload_template = models.FileField(
+        null=True,
+        blank=True,
+        help_text=(
+            'File template for dataset metadata, offered to data providers '
+            'in the upload portal'
+        )
+    )
+
     landing_page_partners_title = models.CharField(
         default='PARTNERS',
         help_text='Header title for Partners section in landing page',
