@@ -504,7 +504,7 @@ class TestTaxonGroupTotalValidated(TestCase):
         # Parent group
         tg = TaxonGroupF.create()
 
-        # Accepted validated (ACCEPTED, DOUBTFUL, and BLANK should count as accepted)
+        # Accepted validated (ACCEPTED and BLANK count as accepted; DOUBTFUL is its own bucket)
         t_acc = TaxonomyF.create(taxonomic_status="ACCEPTED")
         t_doubt = TaxonomyF.create(taxonomic_status="DOUBTFUL")
         t_blank = TaxonomyF.create(taxonomic_status="")  # blank -> accepted
@@ -527,7 +527,8 @@ class TestTaxonGroupTotalValidated(TestCase):
 
         data = self._call(tg, self.superuser)
 
-        self.assertEqual(data["accepted_validated"], 3)     # acc + doubtful + blank
+        self.assertEqual(data["accepted_validated"], 2)     # acc + blank
+        self.assertEqual(data["doubtful_validated"], 1)
         self.assertEqual(data["synonym_validated"], 1)      # synonym
         self.assertEqual(data["accepted_unvalidated"], 1)   # acc_u
         self.assertEqual(data["synonym_unvalidated"], 1)    # misapplied
@@ -565,7 +566,7 @@ class TestTaxonGroupTotalValidated(TestCase):
         child = TaxonGroupF.create(parent=parent)
 
         # Put everything on the child and assert parent includes them
-        t_acc = TaxonomyF.create(taxonomic_status="DOUBTFUL")  # accepted bucket
+        t_acc = TaxonomyF.create(taxonomic_status="ACCEPTED")
         t_syn = TaxonomyF.create(taxonomic_status="PROPARTE_SYNONYM")
 
         self._link(child, t_acc, is_validated=True)

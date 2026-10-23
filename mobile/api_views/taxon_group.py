@@ -47,7 +47,6 @@ class TaxonGroupTotalValidated(APIView):
     def _status_queries(self):
         accepted_names = {
             TaxonomicStatus.ACCEPTED.name,
-            TaxonomicStatus.DOUBTFUL.name,
         }
         synonym_names = {
             TaxonomicStatus.SYNONYM.name,
@@ -160,11 +159,13 @@ class TaxonGroupTotalValidated(APIView):
         total_validated = (
             self.accepted_validated
             + self.synonym_validated
+            + self.doubtful_validated
             + self.unaccepted_validated
         )
         total_unvalidated = (
             accepted_unvalidated
             + synonym_unvalidated
+            + doubtful_unvalidated
             + unaccepted_unvalidated
         )
 

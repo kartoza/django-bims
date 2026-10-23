@@ -368,7 +368,11 @@ class TestProtectedEndpoints(FastTenantTestCase):
         self.assertEqual(response['Retry-After'], '7')
 
     def test_repeated_fresh_evaluations_are_limited(self):
-        with override_settings(OGC_RATE_LIMIT_EVALUATIONS=2):
+        # Freeze the clock: the limit is counted per minute, and a minute
+        # change between the requests would reset the count
+        with override_settings(OGC_RATE_LIMIT_EVALUATIONS=2), \
+                mock.patch('bims.utils.ogc_protection.time.time',
+                           return_value=1_700_000_010):
             codes = []
             for _ in range(3):
                 cache.delete(ogc_layer_utils._cache_key(self.layer))
