@@ -1512,6 +1512,47 @@ class TaxonGroupListFilter(django_admin.SimpleListFilter):
             return queryset
 
 
+class BrokenHierarchyFilter(django_admin.SimpleListFilter):
+    """
+    Filter taxa whose parent chain stops before reaching a Kingdom/Domain,
+    e.g. species under a subgenus (or genus) that has no parent, so their
+    family, order, etc. are missing. Synonyms are ignored.
+    """
+    title = 'Hierarchy'
+    parameter_name = 'broken_hierarchy'
+
+    TOP_RANKS = ('KINGDOM', 'DOMAIN')
+    MAX_DEPTH = 15
+
+    def lookups(self, request, model_admin):
+        return (
+            ('broken', 'Missing suprageneric hierarchy'),
+        )
+
+    def _broken_ids(self):
+        taxa = Taxonomy.objects.exclude(
+            taxonomic_status__icontains='SYNONYM')
+        frontier = set(
+            taxa.filter(parent__isnull=True).exclude(
+                rank__in=self.TOP_RANKS + ('',)
+            ).values_list('pk', flat=True)
+        )
+        broken = set(frontier)
+        for _ in range(self.MAX_DEPTH):
+            frontier = set(
+                taxa.filter(parent_id__in=frontier).values_list('pk', flat=True)
+            ) - broken
+            if not frontier:
+                break
+            broken |= frontier
+        return broken
+
+    def queryset(self, request, queryset):
+        if self.value() == 'broken':
+            return queryset.filter(pk__in=self._broken_ids())
+        return queryset
+
+
 class DuplicateTaxonomyFilter(django_admin.SimpleListFilter):
     """
     Filter Taxonomy rows that have duplicate canonical_name values.
@@ -1684,6 +1725,7 @@ class TaxonomyAdmin(admin.ModelAdmin):
         TaxonGroupListFilter,
         DuplicateTaxonomyFilter,
         InvalidParentRankFilter,
+        BrokenHierarchyFilter,
         QualityCheckFilter,
     )
 
